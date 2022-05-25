@@ -85,6 +85,6 @@ func respond(message string, conn net.Conn) {
 	_, err := bufio.NewWriter(conn).WriteString(message)
 
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println(err.Error())
 	}
 }
