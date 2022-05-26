@@ -3,13 +3,14 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"os"
 	"strings"
 
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/urfave/cli/v2"
@@ -17,8 +18,9 @@ import (
 
 func main() {
 	app := &cli.App{
-		Name:  "forest",
-		Usage: "",
+		Name:        "forest",
+		Usage:       "",
+		Description: "ForestVPN client for Linux",
 		Commands: []*cli.Command{
 			{
 				Name:    "signup",
@@ -28,13 +30,14 @@ func main() {
 					reader := bufio.NewReader(os.Stdin)
 					var email string
 					var password []byte
+					var confirmation string
 
 					for {
 						fmt.Print("Enter email: ")
 						input, _ := reader.ReadString('\n')
 
 						if len(input) > 5 && strings.Index(input, "@") > 0 {
-							email = input
+							email = input[:len(input)-1]
 							break
 						} else {
 							fmt.Println("Please, enter a correct email")
@@ -42,7 +45,7 @@ func main() {
 					}
 					for {
 						fmt.Print("Enter password: ")
-						input, _ := terminal.ReadPassword(0)
+						input, _ := term.ReadPassword(0)
 
 						if len(input) > 6 {
 							password = input
@@ -52,35 +55,42 @@ func main() {
 						}
 
 					}
+
 					fmt.Println()
 
 					for {
 						fmt.Print("Confirm password: ")
-						input, _ := terminal.ReadPassword(0)
+						input, _ := term.ReadPassword(0)
 						fmt.Println()
 
-						if bytes.Compare(password, input) != 0 {
-							return errors.New("Passwords doesn't match")
+						if !bytes.Equal(password, input) {
+							confirmation = string(input)
+							break
+						} else {
+							return errors.New("password confirmation doesn't match")
 						}
-						break
 					}
 
-					firebaseAuthDomain := os.Getenv("FB_AUTH_DOMAIN")
 					firebaseApiKey := os.Getenv("FB_API_KEY")
 					client := resty.New()
+					body, err := json.Marshal(map[string]any{"email": email, "password": confirmation, "returnSecureToken": true})
+
+					if err != nil {
+						return err
+					}
+
 					resp, err := client.R().
 						SetHeader("Content-Type", "application/json").
 						SetQueryParams(map[string]string{
 							"key": firebaseApiKey,
 						}).
-						SetBody(fmt.Sprintf(`{"email":"%d", "password":"%d", returnSecureToken:true}`, email, password)).
-						Post(firebaseAuthDomain)
+						SetBody(body).
+						Post("https://identitytoolkit.googleapis.com/v1/accounts:signUp")
 
-					if err != nil {
+					if err == nil {
 						fmt.Print(resp)
 					}
-
-					return nil
+					return err
 				},
 			},
 		},
