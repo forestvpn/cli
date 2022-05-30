@@ -2,92 +2,94 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"forest/api"
+	"forest/forms"
 	"forest/utils"
 	"os"
-	"strings"
 
 	"golang.org/x/term"
 
 	"github.com/fatih/color"
-	"github.com/go-resty/resty/v2"
 	"github.com/urfave/cli/v2"
 )
 
 func main() {
 	utils.Init()
+	var email string
+	var password string
 	app := &cli.App{
 		Name:        "forest",
-		Usage:       "",
+		Usage:       "Connect to ForestVPN servers around the world!",
 		Description: "ForestVPN client for Linux",
 		Commands: []*cli.Command{
 			{
 				Name:    "signup",
 				Aliases: []string{"s"},
 				Usage:   "Sign up and use ForestVPN",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:        "email",
+						Destination: &email,
+						Usage:       "Email address to use to sign up",
+						Value:       "",
+						Aliases:     []string{"e"},
+					},
+					&cli.StringFlag{
+						Name:        "password",
+						Destination: &password,
+						Usage:       "Password must be at least 8 characters long",
+						Value:       "",
+						Aliases:     []string{"p"},
+					},
+				},
 				Action: func(c *cli.Context) error {
 					reader := bufio.NewReader(os.Stdin)
-					var email string
-					var password []byte
-					var confirmation string
+					signupform := forms.SignUpForm{}
+					signupform.Email = email
+					signupform.Password = []byte(password)
 
-					for {
+					if len(email) == 0 && len(password) == 0 {
 						fmt.Print("Enter email: ")
-						input, _ := reader.ReadString('\n')
+						email, err := reader.ReadString('\n')
 
-						if len(input) > 5 && strings.Index(input, "@") > 0 {
-							email = input[:len(input)-1]
-							break
-						} else {
-							fmt.Println("Please, enter a correct email")
+						if err != nil {
+							return err
 						}
-					}
-					for {
+
+						signupform.Email = email[:len(email)-1]
 						fmt.Print("Enter password: ")
-						input, _ := term.ReadPassword(0)
+						password, err := term.ReadPassword(0)
 
-						if len(input) > 6 {
-							password = input
-							break
-						} else {
-							fmt.Println("\nPassword should be at least 7 characters long")
+						if err != nil {
+							return err
+
 						}
 
-					}
-
-					fmt.Println()
-
-					for {
-						fmt.Print("Confirm password: ")
-						input, _ := term.ReadPassword(0)
+						signupform.Password = password
 						fmt.Println()
 
-						if bytes.Equal(password, input) {
-							confirmation = string(input)
-							break
-						} else {
-							return errors.New("password confirmation doesn't match")
-						}
 					}
 
-					firebaseApiKey := os.Getenv("FB_API_KEY")
-					client := resty.New()
-					req, err := json.Marshal(map[string]any{"email": email, "password": confirmation, "returnSecureToken": true})
+					fmt.Println("Confirm password: ")
+					PasswordConfirmation, err := term.ReadPassword(0)
 
 					if err != nil {
 						return err
 					}
 
-					resp, err := client.R().
-						SetHeader("Content-Type", "application/json").
-						SetQueryParams(map[string]string{
-							"key": firebaseApiKey,
-						}).
-						SetBody(req).
-						Post("https://identitytoolkit.googleapis.com/v1/accounts:signUp")
+					fmt.Println()
+					signupform.PasswordConfirmation = PasswordConfirmation
+
+					valid, err := forms.IsValidForm(signupform)
+
+					if !valid {
+						return err
+					}
+
+					resp, err := api.SignUp(os.Getenv("FB_API_KEY"), signupform)
 
 					if err == nil {
 						var body map[string]map[string]string
@@ -102,7 +104,6 @@ func main() {
 						if err != nil {
 							return err
 						}
-
 						color.Green("Signed Up")
 					}
 					return err
