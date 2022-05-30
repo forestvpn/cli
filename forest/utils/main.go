@@ -2,36 +2,59 @@ package utils
 
 import (
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"os"
 )
 
-var APP_DIR = os.Getenv("HOME") + "/.forest"
+var APP_DIR = os.Getenv("HOME") + "/.forestvpn"
 var AUTH_DIR = APP_DIR + "/auth"
 var FB_AUTH_DIR = AUTH_DIR + "/firebase"
 
-func init() {
+// Creates directories structure
+func Init() {
 	for _, path := range []string{APP_DIR, AUTH_DIR, FB_AUTH_DIR} {
 		if _, err := os.Stat(path); os.IsNotExist(err) {
-			os.Mkdir(APP_DIR, 0755)
+			os.Mkdir(path, 0755)
 		}
 	}
-
 }
 
-func jsonDump(data map[string]any, filename string) error {
-	file, err := json.MarshalIndent(data, "", " ")
+func JsonDump(data []byte, filepath string) error {
+	var localError error
+	file, err := os.Create(filepath)
 	if err == nil {
-		err = ioutil.WriteFile(filename+".json", file, 0755)
+		defer file.Close()
+		n, err := file.WriteString(string(data))
+
+		if err == nil {
+			if n != len(string(data)) {
+				localError = errors.New("error writing json to file")
+			}
+		} else {
+			localError = err
+		}
+	} else {
+		localError = err
 	}
-	return err
+	return localError
 }
 
-func jsonLoad(filepath string) map[string]any {
+func JsonLoad(filepath string) (map[string]any, error) {
 	var data map[string]any
-	file, _ := os.Open(filepath)
-	defer file.Close()
-	byteStream, _ := ioutil.ReadAll(file)
-	json.Unmarshal(byteStream, &data)
-	return data
+	var localError error
+	file, err := os.Open(filepath)
+	if err == nil {
+		defer file.Close()
+		byteStream, err := ioutil.ReadAll(file)
+
+		if err == nil {
+			json.Unmarshal(byteStream, &data)
+		} else {
+			localError = err
+		}
+	} else {
+		localError = err
+	}
+	return data, localError
 }

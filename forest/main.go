@@ -6,17 +6,19 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
+	"forest/utils"
 	"os"
 	"strings"
 
 	"golang.org/x/term"
 
+	"github.com/fatih/color"
 	"github.com/go-resty/resty/v2"
 	"github.com/urfave/cli/v2"
 )
 
 func main() {
+	utils.Init()
 	app := &cli.App{
 		Name:        "forest",
 		Usage:       "",
@@ -63,7 +65,7 @@ func main() {
 						input, _ := term.ReadPassword(0)
 						fmt.Println()
 
-						if !bytes.Equal(password, input) {
+						if bytes.Equal(password, input) {
 							confirmation = string(input)
 							break
 						} else {
@@ -73,7 +75,7 @@ func main() {
 
 					firebaseApiKey := os.Getenv("FB_API_KEY")
 					client := resty.New()
-					body, err := json.Marshal(map[string]any{"email": email, "password": confirmation, "returnSecureToken": true})
+					req, err := json.Marshal(map[string]any{"email": email, "password": confirmation, "returnSecureToken": true})
 
 					if err != nil {
 						return err
@@ -84,20 +86,41 @@ func main() {
 						SetQueryParams(map[string]string{
 							"key": firebaseApiKey,
 						}).
-						SetBody(body).
+						SetBody(req).
 						Post("https://identitytoolkit.googleapis.com/v1/accounts:signUp")
 
 					if err == nil {
-						fmt.Print(resp)
+						var body map[string]map[string]string
+						json.Unmarshal(resp.Body(), &body)
+
+						if body["error"] != nil {
+							respError := body["error"]
+							return errors.New(respError["message"])
+						}
+						err := utils.JsonDump(resp.Body(), utils.FB_AUTH_DIR+"/firebase.json")
+
+						if err != nil {
+							return err
+						}
+
+						color.Green("Signed Up")
 					}
 					return err
 				},
 			},
+			// {
+			// 	Name:    "login",
+			// 	Aliases: []string{"l"},
+			// 	Usage:   "Login to your forestVPN account",
+			// 	Action: func(c *cli.Context) error {
+			// 		//
+			// 	},
+			// },
 		},
 	}
 	err := app.Run(os.Args)
 	if err != nil {
-		log.Fatal(err)
+		color.Red(err.Error())
 	}
 
 }
