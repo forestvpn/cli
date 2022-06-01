@@ -1,21 +1,22 @@
 package main
 
 import (
-	"encoding/json"
-	"errors"
+	"fmt"
 	"forest/api"
-	"forest/forms"
+	"forest/auth/forms"
 	"forest/utils"
 	"os"
 
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
+	"golang.org/x/term"
 )
 
 func main() {
 	utils.Init()
 	var email string
 	var password string
+	var firebaseApiKey = os.Getenv("FB_API_KEY")
 	app := &cli.App{
 		Name:        "forest",
 		Usage:       "Connect to ForestVPN servers around the world!",
@@ -41,45 +42,22 @@ func main() {
 					},
 				},
 				Action: func(c *cli.Context) error {
-					signinform := forms.SignInForm{email, []byte(password)}
-
-					for {
-						if !signinform.IsFilled() {
-							err := signinform.PromptEmail()
-
-							if err != nil {
-								return err
-							}
-
-							err = signinform.PromptPassword()
-
-							if err != nil {
-								return err
-							}
-						} else {
-							break
-						}
-					}
-
-					err := signinform.ValidateEmail()
-
-					if err != nil {
-						return err
-					}
-
-					err = signinform.ValidatePassword()
+					signinform, err := forms.PromptSignInForm(email, password)
 
 					if err != nil {
 						return err
 					}
 
 					signupform := forms.SignUpForm{}
-					err = signupform.PromptPasswordConfirmation()
+					fmt.Print("Confirm password: ")
+					password, err := term.ReadPassword(0)
+					fmt.Println()
 
 					if err != nil {
 						return err
 					}
 
+					signupform.PasswordConfirmation = password
 					signupform.SignInForm = signinform
 					err = signupform.ValidatePasswordConfirmation()
 
@@ -87,29 +65,17 @@ func main() {
 						return err
 					}
 
-					resp, err := api.SignUp(os.Getenv("FB_API_KEY"), signupform)
+					resp, err := api.SignUp(firebaseApiKey, signupform)
 
 					if err == nil {
-						var body map[string]map[string]string
-						json.Unmarshal(resp.Body(), &body)
-
-						if body["error"] != nil {
-							respError := body["error"]
-							return errors.New(respError["message"])
-						}
-
-						err := utils.JsonDump(resp.Body(), utils.FirebaseAuthFile)
-
-						if err == nil {
-							color.Green("Signed Up")
-						}
+						return utils.HandleFirebaseSignInUpResponse(resp, "Signed up")
 					}
 					return err
 				},
 			},
 			{
 				Name:  "signin",
-				Usage: "Sign into your forestVPN account",
+				Usage: "Sign into your ForestVPN account",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:        "email",
@@ -127,13 +93,17 @@ func main() {
 					},
 				},
 				Action: func(c *cli.Context) error {
-					auth, _ := utils.IsAuthenticated()
+					signinform, err := forms.PromptSignInForm(email, password)
 
-					if auth {
-						color.Green("Signed in")
-					} else {
-						//
+					if err != nil {
+						return err
 					}
+					resp, err := api.SignIn(firebaseApiKey, signinform)
+
+					if err == nil {
+						return utils.HandleFirebaseSignInUpResponse(resp, "Signed in")
+					}
+					return err
 
 				},
 			},

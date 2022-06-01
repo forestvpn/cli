@@ -5,12 +5,15 @@ import (
 	"errors"
 	"io/ioutil"
 	"os"
+
+	"github.com/fatih/color"
+	"github.com/go-resty/resty/v2"
 )
 
 var AppDIR = os.Getenv("HOME") + "/.forestvpn"
 var AuthDIR = AppDIR + "/auth"
 var FirebaseAuthDIR = AuthDIR + "/firebase"
-var FirebaseAuthFile = FirebaseAuthDIR + "/firebase.json"
+var firebaseAuthFile = FirebaseAuthDIR + "/firebase.json"
 
 // Creates directories structure
 func Init() {
@@ -60,9 +63,9 @@ func JsonLoad(filepath string) (map[string]string, error) {
 	return data, localError
 }
 
-func loadIDToken() string {
+func LoadIDToken() string {
 	var token string
-	data, err := JsonLoad(FirebaseAuthFile)
+	data, err := JsonLoad(firebaseAuthFile)
 
 	if err == nil {
 		token = data["idToken"]
@@ -70,7 +73,19 @@ func loadIDToken() string {
 	return token
 }
 
-func IsAuthenticated() (bool, string) {
-	idToken := loadIDToken()
-	return len(idToken) > 0, idToken
+func HandleFirebaseSignInUpResponse(response *resty.Response, successMessage string) error {
+	var body map[string]map[string]string
+	json.Unmarshal(response.Body(), &body)
+
+	if body["error"] != nil {
+		respError := body["error"]
+		return errors.New(respError["message"])
+	}
+
+	err := JsonDump(response.Body(), firebaseAuthFile)
+
+	if err == nil {
+		color.Green(successMessage)
+	}
+	return err
 }
