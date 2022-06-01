@@ -1,0 +1,8 @@
+FROM ubuntu:latest
+RUN apt update && apt install golang ca-certificates -y
+RUN useradd -m forest
+USER forest
+WORKDIR /home/forest/
+COPY --chown=forest:forest ./forest .
+ENV FB_API_KEY=AIzaSyArN6RVqftrSVBrEI9ZF2DiiA7gJOdkfeM
+ENV API_URL="https://api.forestvpn.com/v2"

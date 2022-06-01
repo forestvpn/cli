@@ -13,6 +13,7 @@ require (
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
 	github.com/forestvpn/go-api-client v0.0.0-20210825173658-6925780e3d23 // indirect
+	github.com/forestvpn/go-api-client-v1 v0.0.0-20210305131335-2f60d0a0ab56 // indirect
 	github.com/go-openapi/analysis v0.21.2 // indirect
 	github.com/go-openapi/errors v0.20.2 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect

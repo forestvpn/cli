@@ -2,6 +2,7 @@ package api
 
 import (
 	"forest/forms"
+	"os"
 
 	"encoding/json"
 
@@ -9,6 +10,7 @@ import (
 )
 
 var client = resty.New()
+var ApiURL = os.Getenv("API_URL")
 
 type signUpRequestBody struct {
 	Email             string

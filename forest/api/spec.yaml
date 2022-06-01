@@ -1,0 +1,2800 @@
+openapi: "3.0.3"
+info:
+  title: ForestVPN public API OpenAPI documentation
+  description: |
+    ForestVPN defeats content restrictions and censorship to deliver unlimited access to video, music, social media,
+    and more, from anywhere in the world.
+  termsOfService: https://forestvpn.com/terms/
+  contact:
+    name: Digital Services LLC
+    url: https://forestvpn.com/
+    email: support@forestvpn.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  version: "2.0"
+
+externalDocs:
+  description: Fast, secure, and modern VPN
+  url: https://forestvpn.com/
+
+
+servers:
+  - url: '{scheme}://{host}/v2'
+    variables:
+      host:
+        default: "api.forestvpn.com"
+      scheme:
+        enum:
+          - 'https'
+          - 'http'
+        default: 'https'
+
+security:
+  - bearerAuth: [ ]
+
+paths:
+  /geo/countries/:
+    get:
+      summary: Countries list
+      operationId: ListCountries
+      tags:
+        - geo
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Country"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /geo/currencies/:
+    get:
+      summary: Correncies list
+      operationId: ListCurrencies
+      tags:
+        - geo
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Currency"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /locations/:
+    get:
+      summary: Location list
+      operationId: ListLocations
+      security:
+        - { }
+        - bearerAuth: [ ]
+      tags:
+        - geo
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Location"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /devices/:
+    post:
+      summary: Create new device
+      description: |
+        Create new device
+      operationId: CreateDevice
+      tags:
+        - device
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrUpdateDeviceRequest"
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Device"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    get:
+      summary: Device List
+      description: |
+        Retrieve devices list
+      operationId: ListDevices
+      tags:
+        - device
+      parameters:
+        - in: query
+          name: external_key
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: per_page
+          schema:
+            type: number
+        - in: query
+          name: page
+          schema:
+            type: number
+      responses:
+        '200':
+          description: ok
+          headers:
+            Link:
+              schema:
+                type: string
+                description: https://docs.github.com/en/rest/guides/traversing-with-pagination
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Device"
+
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /devices/{deviceID}/:
+    get:
+      summary: Device Info
+      description: |
+        Retrieve device info
+      operationId: GetDevice
+      tags:
+        - device
+      parameters:
+        - in: path
+          name: deviceID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Device"
+
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      summary: Delete Device
+      description: |
+        Delete device by id
+      operationId: DeleteDevice
+      tags:
+        - device
+      parameters:
+        - in: path
+          name: deviceID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        204:
+          description: no content
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    patch:
+      summary: Update device properties
+      description: |
+        Update device properties
+      operationId: UpdateDevice
+      tags:
+        - device
+      parameters:
+        - in: path
+          name: deviceID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrUpdateDeviceRequest"
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Device"
+
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /devices/{deviceID}/bindings/:
+    get:
+      summary: Device bindings
+      description: |
+        Each device has bindings to specific servers. This methods returns hostnames where this device binded
+        in a particular time.
+      operationId: ListDeviceBindings
+      tags:
+        - device
+      security:
+        - { }
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: deviceID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeviceBindings"
+
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /devices/{deviceID}/connection-modes/:
+    get:
+      summary: Device connection modes
+      description: |
+        This methods returns list of connection modes are availbale for current device.
+      operationId: ListDeviceConnectionModes
+      tags:
+        - device
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: deviceID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: header
+          name: X-Android-Package
+          schema:
+            type: string
+        - in: header
+          name: X-Android-SHA1
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ConnectionMode"
+
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /devices/{deviceID}/wireguards/:
+    get:
+      summary: Device's wireguard profiles list
+      operationId: ListDeviceWireGuards
+      tags:
+        - device
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: deviceID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: per_page
+          schema:
+            type: number
+        - in: query
+          name: page
+          schema:
+            type: number
+      responses:
+        '200':
+          description: ok
+          headers:
+            Link:
+              schema:
+                type: string
+                description: https://docs.github.com/en/rest/guides/traversing-with-pagination
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WireGuard"
+
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /devices/{deviceID}/wireguards/{wireGuardID}/:
+    get:
+      summary: Device's wireguard profile detail
+      operationId: GetDeviceWireGuard
+      tags:
+        - device
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: deviceID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: path
+          name: wireGuardID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WireGuard"
+
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /devices/{deviceID}/wireguards/{wireGuardID}/peers/:
+    get:
+      summary: Device's wireguard peers
+      operationId: ListDeviceWireGuardPeers
+      tags:
+        - device
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: deviceID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: path
+          name: wireGuardID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WireGuardPeer"
+
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /devices/{deviceID}/stats/:
+    get:
+      summary: Device's stats list
+      operationId: ListDeviceStats
+      tags:
+        - device
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: deviceID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: date_after
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: date_before
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: per_page
+          schema:
+            type: number
+        - in: query
+          name: page
+          schema:
+            type: number
+      responses:
+        '200':
+          description: ok
+          headers:
+            Link:
+              schema:
+                type: string
+                description: https://docs.github.com/en/rest/guides/traversing-with-pagination
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DeviceStats"
+
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /devices/{deviceID}/stats/{statsID}/:
+    get:
+      summary: Device's stats detail
+      operationId: GetDeviceStats
+      tags:
+        - device
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: deviceID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: path
+          name: statsID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeviceStats"
+
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /devices/{deviceID}/detail-stats/:
+    get:
+      summary: Device's detail stats list
+      operationId: ListDeviceDetailStats
+      tags:
+        - device
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: deviceID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: date_time_after
+          schema:
+            type: string
+            format: datetime
+        - in: query
+          name: date_time_before
+          schema:
+            type: string
+            format: datetime
+        - in: query
+          name: per_page
+          schema:
+            type: number
+        - in: query
+          name: page
+          schema:
+            type: number
+      responses:
+        '200':
+          description: ok
+          headers:
+            Link:
+              schema:
+                type: string
+                description: https://docs.github.com/en/rest/guides/traversing-with-pagination
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DeviceStats"
+
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /devices/{deviceID}/port-forwarding/:
+    get:
+      summary: Device Port Forwarding List
+      description: |
+        Retrieve device's port forwarding lis
+      operationId: ListDevicePortForwardings
+      tags:
+        - device
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: deviceID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: per_page
+          schema:
+            type: number
+        - in: query
+          name: page
+          schema:
+            type: number
+      responses:
+        '200':
+          description: ok
+          headers:
+            Link:
+              schema:
+                type: string
+                description: https://docs.github.com/en/rest/guides/traversing-with-pagination
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PortForwarding"
+
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      summary: Create new device port forwarding
+      description: |
+        Create new device port forwarding
+      operationId: CreateDevicePortForwarding
+      tags:
+        - device
+      parameters:
+        - in: path
+          name: deviceID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrUpdatePortForwardingRequest"
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortForwarding"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /devices/{deviceID}/port-forwarding/{portForwardingID}/:
+    delete:
+      summary: Delete Device's Port Forwarding
+      description: |
+        Delete device's port forwarding by id
+      operationId: DeleteDevicePortForwarding
+      tags:
+        - device
+      parameters:
+        - in: path
+          name: deviceID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: path
+          name: portForwardingID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        204:
+          description: no content
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    patch:
+      summary: Update device's port forwarding
+      description: |
+        Update device's port forwarding dst_port
+      operationId: UpdateDevicePortForwarding
+      tags:
+        - device
+      parameters:
+        - in: path
+          name: deviceID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: path
+          name: portForwardingID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrUpdatePortForwardingRequest"
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortForwarding"
+
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /notification/fcm/:
+    post:
+      summary: Device registration for push notification through out Firebase Cloud Messaging
+      operationId: CreateFCMDevice
+      tags:
+        - fcm
+      security:
+        - { }
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFCMDeviceRequest"
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FCMDevice"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /notification/fcm/{registrationID}/:
+    get:
+      summary: Device info
+      operationId: GetFCMDevice
+      tags:
+        - fcm
+      security:
+        - { }
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: registrationID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FCMDevice"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      summary: Delete fcm device
+      operationId: DeleteFCMDevice
+      tags:
+        - fcm
+      security:
+        - { }
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: registrationID
+          required: true
+          schema:
+            type: string
+      responses:
+        204:
+          description: no content
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    patch:
+      summary: Update device fcm properties
+      operationId: UpdateFCMDevice
+      tags:
+        - fcm
+      security:
+        - { }
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: registrationID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateFCMDeviceRequest"
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FCMDevice"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /purchase/apple/verify/:
+    post:
+      summary: App store receipt verification
+      operationId: VerifyAppStoreReceipt
+      tags:
+        - apple
+      security:
+        - { }
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppStoreReceiptVerificationRequest"
+      responses:
+        '200':
+          description: ok
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /purchase/google/verify/:
+    post:
+      summary: Play store purchase verification
+      operationId: VerifyPlayStorePurchase
+      tags:
+        - google
+      security:
+        - { }
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlayStorePurchaseVerificationRequest"
+      responses:
+        '200':
+          description: ok
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /legacy/auth/:
+    get:
+      summary: Legacy auth migration
+      operationId: MigrateLegacyAuth
+      tags:
+        - auth
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LegacyAuthMigrationToken"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /auth/token/obtain/:
+    get:
+      summary: Obtain JWT token
+      operationId: ObtainToken
+      tags:
+        - auth
+      security:
+        - { }
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenObtain"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /auth/token/login/:
+    post:
+      summary: Login with JWT token
+      operationId: LoginToken
+      tags:
+        - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTokenLogin"
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenLogin"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /billing/features/:
+    get:
+      summary: Billing feature list
+      operationId: ListBillingFeatures
+      tags:
+        - billing
+      security:
+        - bearerAuth: [ ]
+        - wireguardAuth: [ ]
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BillingFeature"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /billing/products/:
+    get:
+      summary: Billing products list
+      operationId: ListBillingProducts
+      tags:
+        - billing
+      security:
+        - { }
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /billing/products/{productID}/:
+    get:
+      summary: Product info
+      operationId: GetBillingProduct
+      tags:
+        - billing
+      security:
+        - { }
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: productID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        '404':
+          description: not found
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /billing/bundles/:
+    get:
+      summary: Billing bundles list
+      operationId: ListBillingBundles
+      tags:
+        - billing
+      security:
+        - { }
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Bundle"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /billing/bundles/{bundleID}/:
+    get:
+      summary: Bundle info
+      operationId: GetBillingBundle
+      tags:
+        - billing
+      security:
+        - { }
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: bundleID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Bundle"
+        '404':
+          description: not found
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /billing/payment-methods/:
+    get:
+      summary: Billing payment methods list
+      operationId: ListBillingPaymentMethods
+      tags:
+        - billing
+      security:
+        - { }
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PaymentMethod"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /billing/payment-methods/{paymentMethodID}/:
+    get:
+      summary: Payment method info
+      operationId: GetBillingPaymentMethod
+      tags:
+        - billing
+      security:
+        - { }
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: paymentMethodID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentMethod"
+        '404':
+          description: not found
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /friendship/friends/:
+    get:
+      summary: Get friends list
+      operationId: ListFriends
+      tags:
+        - friendship
+      parameters:
+        - in: query
+          name: per_page
+          schema:
+            type: number
+        - in: query
+          name: page
+          schema:
+            type: number
+      responses:
+        '200':
+          description: ok
+          headers:
+            Link:
+              schema:
+                type: string
+                description: https://docs.github.com/en/rest/guides/traversing-with-pagination
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Friendship"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /friendship/friends/{id}/:
+    get:
+      summary: Friend details
+      operationId: GetFriend
+      tags:
+        - friendship
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Friendship"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      summary: Delete friend
+      operationId: DeleteFriend
+      tags:
+        - friendship
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        204:
+          description: no content
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /friendship/invitations/:
+    post:
+      summary: Create friendship invitation
+      operationId: CreateFriendshipInvitation
+      tags:
+        - friendship
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: query
+          name: per_page
+          schema:
+            type: number
+        - in: query
+          name: page
+          schema:
+            type: number
+      responses:
+        '200':
+          description: ok
+          headers:
+            Link:
+              schema:
+                type: string
+                description: https://docs.github.com/en/rest/guides/traversing-with-pagination
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FriendshipInvitation"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /friendship/invitations/{code}/:
+    get:
+      summary: Friendship invitation details
+      operationId: GetFriendshipInvitation
+      tags:
+        - friendship
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: code
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FriendshipInvitation"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      summary: Reject friendship invitation
+      operationId: RejectFriendshipInvitation
+      tags:
+        - friendship
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: code
+          required: true
+          schema:
+            type: string
+      responses:
+        204:
+          description: no content
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    patch:
+      summary: Accept friendship invitation
+      operationId: AcceptFriendshipInvitation
+      tags:
+        - friendship
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: code
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: no content
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /auth/whoami/:
+    get:
+      summary: Who am I
+      operationId: WhoAmI
+      tags:
+        - auth
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /auth/profile/:
+    get:
+      summary: Profile
+      operationId: UserProfile
+      tags:
+        - auth
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    patch:
+      summary: Update profile
+      operationId: UpdateUserProfile
+      tags:
+        - auth
+      security:
+        - { }
+        - bearerAuth: [ ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/User"
+
+      responses:
+        '200':
+          description: updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /wireguard/peers/:
+    get:
+      summary: Wireguard peers list
+      operationId: ListWireGuardPeers
+      tags:
+        - wireguard
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WireGuardPeerInfo"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /wireguard/peers/{pubKey}/:
+    get:
+      summary: Wireguard peer info
+      operationId: GetWireGuardPeerInfo
+      tags:
+        - wireguard
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: pubKey
+          required: true
+          schema:
+            type: string
+            format: base64
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WireGuardPeerInfo"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /checkout/sessions/:
+    post:
+      summary: Create checkout session
+      operationId: CreateCheckoutSession
+      tags:
+        - checkout
+      security:
+        - { }
+        - bearerAuth: [ ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCheckoutSessionRequest"
+
+      responses:
+        '201':
+          description: created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutSession"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /checkout/sessions/{sessionID}/:
+    get:
+      summary: Checkout session details
+      operationId: GetCheckoutSession
+      tags:
+        - checkout
+      security:
+        - { }
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: sessionID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutSession"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /checkout/sessions/{sessionID}/apply_coupon/:
+    post:
+      summary: Apply coupon to session
+      operationId: ApplyCouponCheckoutSession
+      tags:
+        - checkout
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: sessionID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCouponCheckoutSession"
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CouponCheckoutSession"
+        '404':
+          description: not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /checkout/sessions/{sessionID}/expire/:
+    post:
+      summary: Expire checkout session
+      operationId: ExpireCheckoutSession
+      tags:
+        - checkout
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: sessionID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: no content
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /checkout/sessions/{sessionID}/stripe/checkout/session/:
+    get:
+      summary: Stripe checkout session details
+      operationId: GetStripeCheckoutSession
+      tags:
+        - checkout
+      security:
+        - { }
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: sessionID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StripeCheckoutSession"
+        '404':
+          description: not found
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /checkout/sessions/{sessionID}/cloud-payments/auth/:
+    post:
+      summary: Cloud payments auth
+      operationId: ProcessCloudPaymentsAuth
+      tags:
+        - checkout
+      security:
+        - { }
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: sessionID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCloudPaymentsAuth"
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CloudPaymentsAuth"
+        '404':
+          description: not found
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /checkout/sessions/{sessionID}/cloud-payments/post3ds/:
+    post:
+      summary: Cloud payments post3ds
+      operationId: ProcessCloudPaymentsPost3ds
+      tags:
+        - checkout
+      security:
+        - { }
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: sessionID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCloudPaymentsPost3ds"
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CloudPaymentsPost3ds"
+        '404':
+          description: not found
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /ads/placements/:
+    get:
+      summary: Get ad placement list
+      operationId: ListAdPlacements
+      tags:
+        - ads
+      security:
+        - { }
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdPlacement"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /ads/request-logs/:
+    post:
+      summary: Create ad unit request log
+      operationId: CreateAdUnitRequestLog
+      tags:
+        - ads
+      security:
+        - { }
+        - bearerAuth: [ ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAdUnitRequestLogRequest"
+      responses:
+        '201':
+          description: created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateAdUnitRequestLogRequest"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /news/notifications/{notificationID}/mark_read/:
+    patch:
+      summary: Mark notification as read by user
+      operationId: UpdateNotificationMarkRead
+      tags:
+        - news
+      security:
+        - { }
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: notificationID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: ok
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /news/notifications/mark_read_all/:
+    patch:
+      summary: Mark all notifications as read by user
+      operationId: UpdateNotificationMarkReadAll
+      tags:
+        - news
+      security:
+        - { }
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: ok
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /news/unread_count/:
+    get:
+      summary: Get unread notifications count
+      operationId: GetNotificationsUnreadCount
+      tags:
+        - news
+      security:
+        - { }
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationUnreadCount"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /news/notifications/:
+    get:
+      summary: Get notifications list
+      operationId: ListNotifications
+      tags:
+        - news
+      security:
+        - { }
+        - bearerAuth: [ ]
+      parameters:
+        - in: query
+          name: is_published
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /news/notifications/{notificationID}/:
+    get:
+      summary: Get notification content
+      operationId: GetNotification
+      tags:
+        - news
+      security:
+        - { }
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: notificationID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationDetail"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    wireguardAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: |
+        Authorization: WireGuard <private key>
+
+  schemas:
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+    Country:
+      type: object
+      required:
+        - id
+        - name
+        - emoji
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        emoji:
+          type: string
+        currency_code:
+          type: string
+        alternative_names:
+          type: array
+          items:
+            type: string
+    Currency:
+      type: object
+      required:
+        - currency_code
+      properties:
+        currency_code:
+          type: string
+    Location:
+      type: object
+      required:
+        - id
+        - name
+        - latitude
+        - longitude
+        - country
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        country:
+          $ref: "#/components/schemas/Country"
+        alternative_names:
+          type: array
+          items:
+            type: string
+    TokenObtain:
+      type: object
+      required:
+        - access
+        - refresh
+        - login_url
+      properties:
+        access:
+          type: string
+        refresh:
+          type: string
+        login_url:
+          type: string
+    TokenLogin:
+      type: object
+      required:
+        - firebase_token
+      properties:
+        firebase_token:
+          type: string
+    CreateTokenLogin:
+      type: object
+      required:
+        - jwt_token
+      properties:
+        jwt_token:
+          type: string
+    CreateOrUpdatePortForwardingRequest:
+      type: object
+      required:
+        - dst
+      properties:
+        dst_port:
+          type: integer
+    PortForwarding:
+      type: object
+      required:
+        - id
+        - dst
+      properties:
+        id:
+          type: string
+          format: uuid
+        src_port:
+          type: integer
+        dst_port:
+          type: integer
+    WireGuard:
+      type: object
+      required:
+        - id
+        - priv_key
+        - pub_key
+        - peers
+      properties:
+        id:
+          type: string
+          format: uuid
+        priv_key:
+          type: string
+        pub_key:
+          type: string
+        peers:
+          type: array
+          items:
+            $ref: "#/components/schemas/WireGuardPeer"
+    DeviceStats:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        connections:
+          type: number
+        received_bytes:
+          type: number
+        transmitted_bytes:
+          type: number
+        blocked_ads:
+          type: number
+        blocked_malwares:
+          type: number
+        date:
+          type: string
+          format: date-time
+    CreateOrUpdateDeviceRequest:
+      type: object
+      properties:
+        external_key:
+          type: string
+          nullable: true
+        name:
+          type: string
+        location:
+          type: string
+          format: uuid
+          nullable: true
+        tor_over:
+          type: boolean
+          default: false
+        connection_mode:
+          type: string
+          format: uuid
+          nullable: true
+        random_server:
+          type: boolean
+          default: false
+        info:
+          type: object
+          required:
+            - type
+            - info
+          properties:
+            type:
+              type: string
+              enum:
+                - ios
+                - ipados
+                - watchos
+                - macos
+                - android
+                - wp
+                - other
+            info:
+              additionalProperties:
+                type: string
+          nullable: true
+    Device:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+          format: uuid
+        external_key:
+          type: string
+        name:
+          type: string
+        ips:
+          type: array
+          items:
+            type: string
+          x-go-name: IPs
+        dns:
+          type: array
+          items:
+            type: string
+        tor_over:
+          type: boolean
+          default: false
+        connection_mode:
+          $ref: "#/components/schemas/ConnectionMode"
+        wireguard:
+          $ref: "#/components/schemas/WireGuard"
+        location:
+          $ref: "#/components/schemas/Location"
+        servers:
+          type: array
+          items:
+            $ref: "#/components/schemas/Server"
+        last_active_at:
+          type: string
+          format: date-time
+    DeviceBindings:
+      type: array
+      items:
+        type: string
+        example: example.com
+    NetworkService:
+      type: object
+      required:
+        - proto
+        - connection_uri
+      properties:
+        proto:
+          type: string
+          enum:
+            - wireguard
+        connection_uri:
+          type: string
+          example: udp://1.2.3.4:51390
+    Server:
+      type: object
+      required:
+        - host
+        - network_services
+      properties:
+        host:
+          type: string
+        network_services:
+          type: array
+          items:
+            $ref: "#/components/schemas/NetworkService"
+    WireGuardPeerUser:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+        email:
+          type: string
+        photo_url:
+          type: string
+    WireGuardPeerDevice:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+    WireGuardPeerInfo:
+      type: object
+      properties:
+        pub_key:
+          type: string
+        user:
+          $ref: "#/components/schemas/WireGuardPeerUser"
+        device:
+          $ref: "#/components/schemas/WireGuardPeerDevice"
+    WireGuardPeer:
+      type: object
+      required:
+        - pub_key
+        - ips
+      properties:
+        pub_key:
+          type: string
+        ps_key:
+          type: string
+        endpoint:
+          type: string
+        allowed_ips:
+          type: array
+          items:
+            type: string
+          x-go-name: AllowedIPs
+    CreateFCMDeviceRequest:
+      type: object
+      required:
+        - registration_id
+        - active
+      properties:
+        registration_id:
+          type: string
+        device_id:
+          type: string
+          nullable: true
+        active:
+          type: boolean
+    UpdateFCMDeviceRequest:
+      type: object
+      properties:
+        device_id:
+          type: string
+          nullable: true
+        active:
+          type: boolean
+          nullable: true
+    FCMDevice:
+      type: object
+      required:
+        - registration_id
+        - active
+        - created_at
+      properties:
+        registration_id:
+          type: string
+        device_id:
+          type: string
+        active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+    AppStoreReceiptVerificationRequest:
+      type: object
+      required:
+        - receipt
+      properties:
+        receipt:
+          type: string
+          format: byte
+          description: The latest Base64-encoded transaction receipt.
+        price:
+          type: integer
+          format: int64
+        currency:
+          type: string
+    PlayStorePurchaseVerificationRequest:
+      type: object
+      required:
+        - product_sku
+        - purchase_token
+      properties:
+        product_sku:
+          type: string
+          description: The inapp product SKU (for example, 'com.some.thing.inapp1').
+        purchase_token:
+          type: string
+          description: The token provided to the user's device when the inapp product was purchased.
+    LegacyAuthMigrationToken:
+      type: object
+      required:
+        - token
+      properties:
+        token:
+          type: string
+          description: Firebase authentication token
+    Constraint:
+      type: object
+      properties:
+        namespace:
+          type: string
+        relation:
+          type: string
+        subject:
+          type: array
+          items:
+            type: string
+    BillingFeature:
+      type: object
+      required:
+        - bundle_id
+      properties:
+        bundle_id:
+          type: string
+          description: Billing feature's slug
+          example: com.forestvpn.premium
+        expiry_date:
+          type: string
+          description: Billing feature's expiry date
+          format: date-time
+        constraints:
+          type: array
+          items:
+            $ref: "#/components/schemas/Constraint"
+    User:
+      type: object
+      required:
+        - id
+        - username
+      properties:
+        id:
+          type: string
+          format: uuid
+        promo_code:
+          type: string
+        username:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+        email:
+          type: string
+        email_verified:
+          type: boolean
+        photo_url:
+          type: string
+        date_joined:
+          type: string
+          format: date-time
+        country:
+          type: string
+        currency_code:
+          type: string
+        environments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Environment"
+          nullable: true
+    Environment:
+      type: object
+      required:
+        - id
+        - name
+        - api_base_url
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        api_base_url:
+          type: string
+          format: url
+    Friendship:
+      type: object
+      required:
+        - id
+        - friend
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        user:
+          $ref: "#/components/schemas/User"
+        created_at:
+          type: string
+          format: date-time
+    FriendshipInvitation:
+      type: object
+      required:
+        - code
+        - user
+        - share_text
+        - created_at
+      properties:
+        code:
+          type: string
+        user:
+          $ref: "#/components/schemas/User"
+        share_text:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    ConnectionMode:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        icon:
+          type: string
+    Bundle:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        trial_period:
+          type: string
+          example: P7D
+          description: Trial period duration in ISO 8601 format.
+        products:
+          type: array
+          items:
+            $ref: "#/components/schemas/Product"
+    Price:
+      type: object
+      required:
+        - currency
+        - amount
+        - tax
+      properties:
+        currency:
+          type: string
+        amount:
+          type: string
+          format: decimal
+        tax:
+          type: string
+          format: decimal
+    Recurring:
+      type: object
+      required:
+        - period
+      properties:
+        period:
+          type: string
+          example: P1M
+          description: Recurring period in ISO 8601 format.
+    Product:
+      type: object
+      required:
+        - id
+        - name
+        - price
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        bundle:
+          $ref: "#/components/schemas/Bundle"
+        price:
+          $ref: "#/components/schemas/Price"
+        recurring:
+          $ref: "#/components/schemas/Recurring"
+    PaymentMethod:
+      type: object
+      required:
+        - id
+        - slug
+        - name
+      properties:
+        id:
+          type: string
+        slug:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+    CreateCheckoutSessionProduct:
+      type: object
+      required:
+        - product
+        - quantity
+      properties:
+        product:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+    CreateCheckoutSessionRequest:
+      type: object
+      required:
+        - cancel_url
+        - success_url
+        - products
+      properties:
+        cancel_url:
+          type: string
+        success_url:
+          type: string
+        currency:
+          type: string
+        locale:
+          type: string
+        email:
+          type: string
+        products:
+          type: array
+          items:
+            $ref: "#/components/schemas/CreateCheckoutSessionProduct"
+    CheckoutSessionProduct:
+      type: object
+      required:
+        - product
+        - quantity
+      properties:
+        product:
+          $ref: "#/components/schemas/Product"
+        quantity:
+          type: integer
+    CheckoutSession:
+      type: object
+      required:
+        - id
+        - cancel_url
+        - success_url
+        - currency
+        - amount_subtotal
+        - amount_total
+        - products
+        - payment_status
+        - status
+        - created_at
+        - expires_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        cancel_url:
+          type: string
+        success_url:
+          type: string
+        redirect_url:
+          type: string
+        currency:
+          type: string
+        amount_subtotal:
+          type: string
+          format: decimal
+        amount_total:
+          type: string
+          format: decimal
+        locale:
+          type: string
+        email:
+          type: string
+        products:
+          type: array
+          items:
+            $ref: "#/components/schemas/CheckoutSessionProduct"
+        payment_status:
+          type: string
+          enum:
+            - paid
+            - unpaid
+            - no_payment_required
+        status:
+          type: string
+          enum:
+            - open
+            - complete
+            - expired
+        trial_period:
+          type: string
+          example: P7D
+          description: Trial period duration in ISO 8601 format.
+        user:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+    CreateCouponCheckoutSession:
+      type: object
+      required:
+        - key
+      properties:
+        key:
+          type: string
+    CouponCheckoutSession:
+      type: object
+      required:
+        - key
+        - discount
+      properties:
+        key:
+          type: string
+        discount:
+          type: string
+          format: decimal
+    StripeCheckoutSession:
+      type: object
+      required:
+        - session_id
+        - success_url
+        - cancel_url
+      properties:
+        session_id:
+          type: string
+        success_url:
+          type: string
+        cancel_url:
+          type: string
+    AdProvider:
+      type: object
+      required:
+        - id
+        - slug
+        - name
+      properties:
+        id:
+          type: string
+        slug:
+          type: string
+        name:
+          type: string
+    AdReward:
+      type: object
+      required:
+        - item
+        - amount
+      properties:
+        item:
+          type: string
+          example: minutes
+        amount:
+          type: integer
+          example: 30
+    AdUnit:
+      type: object
+      required:
+        - id
+        - name
+        - format
+        - provider
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        external_key:
+          type: string
+        format:
+          type: string
+          enum:
+            - splash
+            - native
+            - rewarded
+            - banner
+            - interstitial
+            - rewarded_interstitial
+            - roll
+        reward:
+          $ref: "#/components/schemas/AdReward"
+        provider:
+          $ref: "#/components/schemas/AdProvider"
+    AdPlacement:
+      type: object
+      required:
+        - id
+        - slug
+        - units
+      properties:
+        id:
+          type: string
+        slug:
+          type: string
+        units:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdUnit"
+    CreateCloudPaymentsAuth:
+      type: object
+      required:
+        - cryptogram
+        - name
+      properties:
+        cryptogram:
+          type: string
+        name:
+          type: string
+    CloudPaymentsAuth:
+      type: object
+      required:
+        - transactionId
+      properties:
+        transaction_id:
+          type: integer
+        secure3d:
+          $ref: "#/components/schemas/CloudPaymentsSecure3d"
+    CloudPaymentsSecure3d:
+      type: object
+      required:
+        - pa_req
+        - acs_url
+        - term_url
+      properties:
+        pa_req:
+          type: string
+        acs_url:
+          type: string
+        term_url:
+          type: string
+    CreateCloudPaymentsPost3ds:
+      type: object
+      required:
+        - paRes
+      properties:
+        paRes:
+          type: string
+    CloudPaymentsPost3ds:
+      type: object
+      required:
+        - transactionId
+      properties:
+        transactionId:
+          type: integer
+    CreateAdUnitRequestLogRequest:
+      type: object
+      required:
+        - unit
+        - request_date
+        - duration
+      properties:
+        unit:
+          type: string
+          format: uuid
+        request_date:
+          type: string
+          format: date-time
+        error_code:
+          type: integer
+        error_message:
+          type: string
+        duration:
+          type: string
+          description: ISO-8601 duration format
+          example: PT0.125S - 125ms
+    NotificationUnreadCount:
+      type: object
+      required:
+        - count
+      properties:
+        count:
+          type: integer
+    Notification:
+      type: object
+      required:
+        - id
+        - created_at
+        - title
+        - summary
+        - featured_image
+        - is_unread
+        - is_featured
+      properties:
+        id:
+          type: integer
+        created_at:
+          type: string
+          format: 'date-time'
+        title:
+          type: string
+        summary:
+          type: string
+        featured_image:
+          $ref: "#/components/schemas/FeaturedImage"
+        is_unread:
+          type: boolean
+        is_featured:
+          type: boolean
+    NotificationDetail:
+      type: object
+      required:
+        - id
+        - created_at
+        - title
+        - summary
+        - featured_image
+        - content
+        - is_unread
+        - is_featured
+      properties:
+        id:
+          type: integer
+        created_at:
+          type: string
+          format: 'date-time'
+        title:
+          type: string
+        summary:
+          type: string
+        featured_image:
+          $ref: "#/components/schemas/FeaturedImage"
+        content:
+          type: string
+        is_unread:
+          type: boolean
+        is_featured:
+          type: boolean
+    FeaturedImage:
+      type: object
+      required:
+        - small
+        - medium
+        - large
+        - x-large
+        - x-large@2
+      properties:
+        small:
+          type: string
+        medium:
+          type: string
+        large:
+          type: string
+        x-large:
+          type: string
+        x-large@2:
+          type: string

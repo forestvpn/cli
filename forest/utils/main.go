@@ -7,13 +7,14 @@ import (
 	"os"
 )
 
-var APP_DIR = os.Getenv("HOME") + "/.forestvpn"
-var AUTH_DIR = APP_DIR + "/auth"
-var FB_AUTH_DIR = AUTH_DIR + "/firebase"
+var AppDIR = os.Getenv("HOME") + "/.forestvpn"
+var AuthDIR = AppDIR + "/auth"
+var FirebaseAuthDIR = AuthDIR + "/firebase"
+var FirebaseAuthFile = FirebaseAuthDIR + "/firebase.json"
 
 // Creates directories structure
 func Init() {
-	for _, path := range []string{APP_DIR, AUTH_DIR, FB_AUTH_DIR} {
+	for _, path := range []string{AppDIR, AuthDIR, FirebaseAuthDIR} {
 		if _, err := os.Stat(path); os.IsNotExist(err) {
 			os.Mkdir(path, 0755)
 		}
@@ -40,8 +41,8 @@ func JsonDump(data []byte, filepath string) error {
 	return localError
 }
 
-func JsonLoad(filepath string) (map[string]any, error) {
-	var data map[string]any
+func JsonLoad(filepath string) (map[string]string, error) {
+	var data map[string]string
 	var localError error
 	file, err := os.Open(filepath)
 	if err == nil {
@@ -57,4 +58,19 @@ func JsonLoad(filepath string) (map[string]any, error) {
 		localError = err
 	}
 	return data, localError
+}
+
+func loadIDToken() string {
+	var token string
+	data, err := JsonLoad(FirebaseAuthFile)
+
+	if err == nil {
+		token = data["idToken"]
+	}
+	return token
+}
+
+func IsAuthenticated() (bool, string) {
+	idToken := loadIDToken()
+	return len(idToken) > 0, idToken
 }
