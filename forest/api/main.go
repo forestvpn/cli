@@ -19,7 +19,7 @@ type signInUpRequestBody struct {
 }
 
 func SignUp(firebaseApiKey string, form forms.SignUpForm) (*resty.Response, error) {
-	body := signInUpRequestBody{Email: form.Email, Password: string(form.Password), ReturnSecureToken: true}
+	body := signInUpRequestBody{Email: form.EmailField.Value, Password: string(form.PasswordField.Value), ReturnSecureToken: true}
 	req := make(map[string]any)
 	req["email"] = body.Email
 	req["password"] = body.Password
@@ -42,7 +42,7 @@ func SignUp(firebaseApiKey string, form forms.SignUpForm) (*resty.Response, erro
 }
 
 func SignIn(firebaseApiKey string, form forms.SignInForm) (*resty.Response, error) {
-	body := signInUpRequestBody{Email: form.Email, Password: string(form.Password), ReturnSecureToken: true}
+	body := signInUpRequestBody{Email: form.EmailField.Value, Password: string(form.PasswordField.Value), ReturnSecureToken: true}
 	req := make(map[string]any)
 	req["email"] = body.Email
 	req["password"] = body.Password
