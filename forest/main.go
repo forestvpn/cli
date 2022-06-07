@@ -1,26 +1,44 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"forest/api"
+	"forest/auth"
 	"forest/auth/forms"
 	"forest/utils"
 	"os"
 
 	"github.com/fatih/color"
+	"github.com/manifoldco/promptui"
+	"github.com/mitchellh/mapstructure"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/term"
 )
 
 func main() {
-	utils.Init()
+	var firebaseApiKey = os.Getenv("FIREBASE_API_KEY")
 	var email string
 	var password string
-	var firebaseApiKey = os.Getenv("FB_API_KEY")
+	utils.Init()
+
+	if utils.IsRefreshTokenExists() {
+		response, err := auth.GetAccessToken(firebaseApiKey)
+
+		if err != nil {
+			color.Red(err.Error())
+		}
+
+		err = utils.JsonDump(response.Body(), utils.FirebaseAuthFile)
+
+		if err != nil {
+			color.Red(err.Error())
+		}
+	}
 	app := &cli.App{
 		Name:        "forest",
-		Usage:       "Connect to ForestVPN servers around the world!",
-		Description: "ForestVPN client for Linux",
+		Usage:       "ForestVPN client for Linux",
+		Description: "Fast, secure, and modern VPN",
 		Commands: []*cli.Command{
 			{
 				Name:  "auth",
@@ -69,10 +87,16 @@ func main() {
 								return err
 							}
 
-							resp, err := api.SignUp(firebaseApiKey, signupform)
+							response, err := auth.SignUp(firebaseApiKey, signupform)
+
+							if err != nil {
+								return err
+							}
+
+							err = utils.HandleFirebaseAuthResponse(response)
 
 							if err == nil {
-								return utils.HandleFirebaseSignInUpResponse(resp, "Signed up")
+								color.Green("Signed up")
 							}
 							return err
 						},
@@ -97,18 +121,74 @@ func main() {
 							},
 						},
 						Action: func(c *cli.Context) error {
-							signinform, err := forms.GetSignInForm(email, []byte(password))
+							if !utils.IsRefreshTokenExists() {
+								signinform, err := forms.GetSignInForm(email, []byte(password))
 
-							if err != nil {
-								return err
+								if err != nil {
+									return err
+								}
+
+								response, err := auth.SignIn(firebaseApiKey, signinform)
+
+								if err != nil {
+									return err
+								}
+
+								err = utils.HandleFirebaseSignInResponse(response)
+
+								if err != nil {
+									return err
+								}
+
+								err = utils.JsonDump(response.Body(), utils.FirebaseAuthFile)
+
+								if err != nil {
+									return err
+								}
+
+								response, err = auth.GetAccessToken(firebaseApiKey)
+
+								if err != nil {
+									return err
+								}
+
+								err = utils.JsonDump(response.Body(), utils.FirebaseAuthFile)
+
+								if err != nil {
+									return err
+								}
 							}
-							resp, err := api.SignIn(firebaseApiKey, signinform)
 
-							if err == nil {
-								return utils.HandleFirebaseSignInUpResponse(resp, "Signed in")
+							if !utils.IsDeviceRegistered() {
+								accessToken, err := utils.LoadAccessToken()
+
+								if err != nil {
+									return err
+								}
+
+								response, err := api.RegisterDevice(accessToken)
+
+								if err != nil {
+									return err
+								}
+
+								err = utils.HandleApiResponse(response)
+
+								if err != nil {
+									return err
+								}
+
+								err = utils.JsonDump(response.Body(), utils.DeviceFile)
+
+								if err != nil {
+									return err
+								}
+
 							}
-							return err
 
+							color.Green("Signed in")
+
+							return nil
 						},
 					},
 					{
@@ -142,6 +222,72 @@ func main() {
 							},
 						},
 					},
+				},
+			},
+			{
+				Name:  "locations",
+				Usage: "Show available locations",
+				Action: func(c *cli.Context) error {
+					response, err := api.GetLocations()
+
+					if err != nil {
+						return err
+					}
+
+					err = utils.HandleApiResponse(response)
+
+					if err != nil {
+						return err
+					}
+
+					var locations []map[string]any
+
+					err = json.Unmarshal(response.Body(), &locations)
+
+					if err != nil {
+						return err
+					}
+
+					var location api.Location
+					var locationStructs []api.Location
+
+					for _, loc := range locations {
+						var country api.Country
+						err := mapstructure.Decode(loc["country"], &country)
+
+						if err != nil {
+							return err
+						}
+
+						err = mapstructure.Decode(loc, &location)
+
+						if err != nil {
+							return err
+						}
+
+						location.Country = country
+						locationStructs = append(locationStructs, location)
+					}
+
+					var items []string
+
+					for _, loc := range locationStructs {
+						items = append(items, fmt.Sprintf("%s, %s", loc.Name, loc.Country.Name))
+					}
+
+					prompt := promptui.Select{
+						Label: "Select location",
+						Items: items,
+					}
+
+					_, result, err := prompt.Run()
+
+					if err != nil {
+						return err
+					}
+
+					fmt.Printf("You choose %q\n", result)
+					return err
 				},
 			},
 		},

@@ -22,6 +22,16 @@ type SignUpForm struct {
 	PasswordConfirmationField
 }
 
+type Info struct {
+	AdditionalProperties string
+}
+
+type InfoForm struct {
+	Type string
+	Info Info
+}
+
+
 // Compares *forest.auth.forms.SignUpForm.SignInForm.PasswordField and *forest.auth.forms.SignUpForm.PasswordConfirmationField
 func (s SignUpForm) ValidatePasswordConfirmation() error {
 	if !bytes.Equal(s.PasswordField.Value, s.PasswordConfirmationField.Value) {

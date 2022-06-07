@@ -1,0 +1,5 @@
+package wireguard
+
+func dumpConfig() {
+	//
+}
