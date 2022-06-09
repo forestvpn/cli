@@ -12,7 +12,7 @@ import (
 )
 
 var client = resty.New()
-var ApiURL = os.Getenv("API_URL")
+var FirebaseApiKey = os.Getenv("STAGING_FIREBASE_API_KEY")
 
 type signInUpRequestBody struct {
 	Email             string
@@ -20,7 +20,7 @@ type signInUpRequestBody struct {
 	ReturnSecureToken bool
 }
 
-func SignUp(firebaseApiKey string, form forms.SignUpForm) (*resty.Response, error) {
+func SignUp(form forms.SignUpForm) (*resty.Response, error) {
 	url := "https://identitytoolkit.googleapis.com/v1/accounts:signUp"
 	body := signInUpRequestBody{Email: form.EmailField.Value, Password: string(form.PasswordField.Value), ReturnSecureToken: true}
 	request := make(map[string]any)
@@ -36,13 +36,13 @@ func SignUp(firebaseApiKey string, form forms.SignUpForm) (*resty.Response, erro
 	return client.R().
 		SetHeader("Content-Type", "application/json").
 		SetQueryParams(map[string]string{
-			"key": firebaseApiKey,
+			"key": FirebaseApiKey,
 		}).
 		SetBody(jsonRequest).
 		Post(url)
 }
 
-func SignIn(firebaseApiKey string, form forms.SignInForm) (*resty.Response, error) {
+func SignIn(form forms.SignInForm) (*resty.Response, error) {
 	url := "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword"
 	body := signInUpRequestBody{Email: form.EmailField.Value, Password: string(form.PasswordField.Value), ReturnSecureToken: true}
 	request := make(map[string]any)
@@ -58,13 +58,13 @@ func SignIn(firebaseApiKey string, form forms.SignInForm) (*resty.Response, erro
 	return client.R().
 		SetHeader("Content-Type", "application/json").
 		SetQueryParams(map[string]string{
-			"key": firebaseApiKey,
+			"key": FirebaseApiKey,
 		}).
 		SetBody(jsonRequest).
 		Post(url)
 }
 
-func ExchangeRefreshForIdToken(firebaseApiKey string) (*resty.Response, error) {
+func ExchangeRefreshForIdToken() (*resty.Response, error) {
 	url := "https://securetoken.googleapis.com/v1/token"
 	refreshToken, err := utils.LoadRefreshToken()
 
@@ -77,14 +77,14 @@ func ExchangeRefreshForIdToken(firebaseApiKey string) (*resty.Response, error) {
 	return client.R().
 		SetHeader("Content-Type", "application/x-www-form-urlencoded").
 		SetQueryParams(map[string]string{
-			"key": firebaseApiKey,
+			"key": FirebaseApiKey,
 		}).
 		SetBody(body).
 		Post(url)
 }
 
-func GetAccessToken(firebaseApiKey string) (*resty.Response, error) {
-	response, err := ExchangeRefreshForIdToken(firebaseApiKey)
+func GetAccessToken() (*resty.Response, error) {
+	response, err := ExchangeRefreshForIdToken()
 
 	if err != nil {
 		return nil, err

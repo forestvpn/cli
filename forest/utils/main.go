@@ -10,22 +10,8 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
-func resolveAppDir() (string, error) {
-	confDir, err := os.UserConfigDir()
-
-	if err != nil {
-		homeDir, err := os.UserHomeDir()
-
-		if err != nil {
-			panic(err)
-		}
-
-		return homeDir + "/.forestvpn/", err
-	}
-	return confDir + "/.forestvpn/", err
-}
-
-var AppDir, _ = resolveAppDir()
+var home, _ = os.UserHomeDir()
+var AppDir = home + "/.forestvpn/"
 var AuthDir = AppDir + "auth/"
 var FirebaseAuthFile = AuthDir + "firebase.json"
 var DeviceDir = AppDir + "device/"
@@ -147,7 +133,7 @@ func IsRefreshTokenExists() bool {
 	return err == nil
 }
 
-func IsDeviceRegistered() bool {
+func IsDeviceCreated() bool {
 	_, err := os.ReadFile(DeviceFile)
 	return err == nil
 }

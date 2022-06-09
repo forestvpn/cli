@@ -1,17 +1,15 @@
 package api
 
 import (
-	"fmt"
-	"forest/utils"
 	"os"
 
 	"github.com/go-resty/resty/v2"
 )
 
 var client = resty.New()
-var ApiURL = os.Getenv("API_URL")
+var ApiURL = os.Getenv("STAGING_API_URL")
 
-func RegisterDevice(accessToken string) (*resty.Response, error) {
+func CreateDevice(accessToken string) (*resty.Response, error) {
 	url := ApiURL + "devices/"
 	return client.R().
 		SetHeader("Content-Type", "application/json").
@@ -19,22 +17,30 @@ func RegisterDevice(accessToken string) (*resty.Response, error) {
 		Post(url)
 }
 
-func GetWireguards(accessToken string) (*resty.Response, error) {
-	deviceId, err := utils.LoadDeviceID()
-
-	if err != nil {
-		return nil, err
-	}
-	url := fmt.Sprintf("%sdevices/%s/wireguards/", ApiURL, deviceId)
+func UpdateDevice(accessToken string, DeviceId string, LocationId string) (*resty.Response, error) {
+	url := ApiURL + "devices/{deviceID}/"
 	return client.R().
-		SetHeader("Content-Type", "application/json").
 		SetAuthToken(accessToken).
-		Get(url)
+		SetPathParam("deviceID", DeviceId).
+		SetHeader("Content-Type", "application/json").
+		SetBody(map[string]string{"location": LocationId}).
+		Patch(url)
 }
+
+// func GetWireguards(accessToken string) (*resty.Response, error) {
+// 	deviceId, err := utils.LoadDeviceID()
+
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	url := fmt.Sprintf("%sdevices/%s/wireguards/", ApiURL, deviceId)
+// 	return client.R().
+// 		SetHeader("Content-Type", "application/json").
+// 		SetAuthToken(accessToken).
+// 		Get(url)
+// }
 
 func GetLocations() (*resty.Response, error) {
 	url := ApiURL + "locations/"
-	return client.R().
-		// SetHeader("Content-Type", "application/json").
-		Get(url)
+	return client.R().Get(url)
 }

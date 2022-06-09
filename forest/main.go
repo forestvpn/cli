@@ -8,6 +8,8 @@ import (
 	"forest/auth/forms"
 	"forest/utils"
 	"os"
+	"sort"
+	"strings"
 
 	"github.com/fatih/color"
 	"github.com/manifoldco/promptui"
@@ -17,13 +19,12 @@ import (
 )
 
 func main() {
-	var firebaseApiKey = os.Getenv("FIREBASE_API_KEY")
 	var email string
 	var password string
 	utils.Init()
 
 	if utils.IsRefreshTokenExists() {
-		response, err := auth.GetAccessToken(firebaseApiKey)
+		response, err := auth.GetAccessToken()
 
 		if err != nil {
 			color.Red(err.Error())
@@ -87,7 +88,7 @@ func main() {
 								return err
 							}
 
-							response, err := auth.SignUp(firebaseApiKey, signupform)
+							response, err := auth.SignUp(signupform)
 
 							if err != nil {
 								return err
@@ -128,7 +129,7 @@ func main() {
 									return err
 								}
 
-								response, err := auth.SignIn(firebaseApiKey, signinform)
+								response, err := auth.SignIn(signinform)
 
 								if err != nil {
 									return err
@@ -146,7 +147,7 @@ func main() {
 									return err
 								}
 
-								response, err = auth.GetAccessToken(firebaseApiKey)
+								response, err = auth.GetAccessToken()
 
 								if err != nil {
 									return err
@@ -159,14 +160,14 @@ func main() {
 								}
 							}
 
-							if !utils.IsDeviceRegistered() {
+							if !utils.IsDeviceCreated() {
 								accessToken, err := utils.LoadAccessToken()
 
 								if err != nil {
 									return err
 								}
 
-								response, err := api.RegisterDevice(accessToken)
+								response, err := api.CreateDevice(accessToken)
 
 								if err != nil {
 									return err
@@ -189,6 +190,18 @@ func main() {
 							color.Green("Signed in")
 
 							return nil
+						},
+					},
+					{
+						Name:  "signout",
+						Usage: "Sign out from your ForestVPN account on this device",
+						Action: func(c *cli.Context) error {
+							err := os.Remove(utils.FirebaseAuthFile)
+
+							if err == nil {
+								color.Green("Signed out")
+							}
+							return err
 						},
 					},
 					{
@@ -225,8 +238,8 @@ func main() {
 				},
 			},
 			{
-				Name:  "locations",
-				Usage: "Show available locations",
+				Name:  "connect",
+				Usage: "Connect to the ForestVPN",
 				Action: func(c *cli.Context) error {
 					response, err := api.GetLocations()
 
@@ -240,18 +253,18 @@ func main() {
 						return err
 					}
 
-					var locations []map[string]any
+					var body []map[string]any
 
-					err = json.Unmarshal(response.Body(), &locations)
+					err = json.Unmarshal(response.Body(), &body)
 
 					if err != nil {
 						return err
 					}
 
 					var location api.Location
-					var locationStructs []api.Location
+					var locations []api.Location
 
-					for _, loc := range locations {
+					for _, loc := range body {
 						var country api.Country
 						err := mapstructure.Decode(loc["country"], &country)
 
@@ -266,27 +279,62 @@ func main() {
 						}
 
 						location.Country = country
-						locationStructs = append(locationStructs, location)
+						locations = append(locations, location)
 					}
 
-					var items []string
+					sort.Slice(locations, func(i, j int) bool {
+						return locations[i].Name < locations[j].Name
+					})
 
-					for _, loc := range locationStructs {
-						items = append(items, fmt.Sprintf("%s, %s", loc.Name, loc.Country.Name))
+					template := promptui.SelectTemplates{
+						Active:   "{{.Name | green }}, {{.Country.Name}}",
+						Inactive: "{{.Name}}, {{.Country.Name | faint}}",
+						Selected: fmt.Sprintf(`{{ "%s" | green }} {{ .Name | faint }}%s {{.Country.Name | faint}}`, promptui.IconGood, color.New(color.FgHiBlack).Sprint(",")),
 					}
 
 					prompt := promptui.Select{
-						Label: "Select location",
-						Items: items,
+						Label:     "Select location",
+						Items:     locations,
+						Size:      15,
+						Templates: &template,
 					}
 
 					_, result, err := prompt.Run()
+					var locationId string
+
+					for _, location := range locations {
+						if strings.Contains(result, location.Id) {
+							locationId = location.Id
+						}
+					}
+
+					if len(locationId) == 0 {
+						return fmt.Errorf("no location found with ID: %s", locationId)
+					}
 
 					if err != nil {
 						return err
 					}
 
-					fmt.Printf("You choose %q\n", result)
+					deviceID, err := utils.LoadDeviceID()
+
+					if err != nil {
+						return err
+					}
+
+					accessToken, err := utils.LoadAccessToken()
+
+					if err != nil {
+						return err
+					}
+
+					response, err = api.UpdateDevice(accessToken, deviceID, locationId)
+
+					if err != nil {
+						return err
+					}
+
+					fmt.Print(response.String())
 					return err
 				},
 			},
