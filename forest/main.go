@@ -5,15 +5,12 @@ import (
 	"fmt"
 	"forest/api"
 	"forest/auth"
-	"forest/auth/forms"
 	"forest/utils"
 	"os"
 	"sort"
-	"strings"
 
 	"github.com/fatih/color"
 	"github.com/manifoldco/promptui"
-	"github.com/mitchellh/mapstructure"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/term"
 )
@@ -65,13 +62,13 @@ func main() {
 							},
 						},
 						Action: func(c *cli.Context) error {
-							signinform, err := forms.GetSignInForm(email, []byte(password))
+							signinform, err := auth.GetSignInForm(email, []byte(password))
 
 							if err != nil {
 								return err
 							}
 
-							signupform := forms.SignUpForm{}
+							signupform := auth.SignUpForm{}
 							fmt.Print("Confirm password: ")
 							password, err := term.ReadPassword(0)
 							fmt.Println()
@@ -123,7 +120,7 @@ func main() {
 						},
 						Action: func(c *cli.Context) error {
 							if !utils.IsRefreshTokenExists() {
-								signinform, err := forms.GetSignInForm(email, []byte(password))
+								signinform, err := auth.GetSignInForm(email, []byte(password))
 
 								if err != nil {
 									return err
@@ -167,19 +164,19 @@ func main() {
 									return err
 								}
 
-								response, err := api.CreateDevice(accessToken)
+								resp, err := api.CreateDevice(accessToken)
 
 								if err != nil {
 									return err
 								}
 
-								err = utils.HandleApiResponse(response)
+								b, err := json.MarshalIndent(resp, "", "    ")
 
 								if err != nil {
 									return err
 								}
 
-								err = utils.JsonDump(response.Body(), utils.DeviceFile)
+								err = utils.JsonDump(b, utils.DeviceFile)
 
 								if err != nil {
 									return err
@@ -225,7 +222,7 @@ func main() {
 									},
 								},
 								Action: func(c *cli.Context) error {
-									emailfield, err := forms.GetEmailField(email)
+									emailfield, err := auth.GetEmailField(email)
 
 									if err == nil {
 										fmt.Println(emailfield.Value)
@@ -241,45 +238,10 @@ func main() {
 				Name:  "connect",
 				Usage: "Connect to the ForestVPN",
 				Action: func(c *cli.Context) error {
-					response, err := api.GetLocations()
+					locations, err := api.GetLocations()
 
 					if err != nil {
 						return err
-					}
-
-					err = utils.HandleApiResponse(response)
-
-					if err != nil {
-						return err
-					}
-
-					var body []map[string]any
-
-					err = json.Unmarshal(response.Body(), &body)
-
-					if err != nil {
-						return err
-					}
-
-					var location api.Location
-					var locations []api.Location
-
-					for _, loc := range body {
-						var country api.Country
-						err := mapstructure.Decode(loc["country"], &country)
-
-						if err != nil {
-							return err
-						}
-
-						err = mapstructure.Decode(loc, &location)
-
-						if err != nil {
-							return err
-						}
-
-						location.Country = country
-						locations = append(locations, location)
 					}
 
 					sort.Slice(locations, func(i, j int) bool {
@@ -300,41 +262,37 @@ func main() {
 					}
 
 					_, result, err := prompt.Run()
-					var locationId string
+					fmt.Print(result)
+					// var locationId string
 
-					for _, location := range locations {
-						if strings.Contains(result, location.Id) {
-							locationId = location.Id
-						}
-					}
+					// for _, location := range locations {
+					// 	if strings.Contains(result, location.Id) {
+					// 		locationId = location.Id
+					// 	}
+					// }
 
-					if len(locationId) == 0 {
-						return fmt.Errorf("no location found with ID: %s", locationId)
-					}
+					// if len(locationId) == 0 {
+					// 	return fmt.Errorf("no location found with ID: %s", locationId)
+					// }
 
-					if err != nil {
-						return err
-					}
+					// if err != nil {
+					// 	return err
+					// }
 
-					deviceID, err := utils.LoadDeviceID()
+					// deviceID, err := LoadDeviceID()
 
-					if err != nil {
-						return err
-					}
+					// if err != nil {
+					// 	return err
+					// }
 
-					accessToken, err := utils.LoadAccessToken()
+					// accessToken, err := LoadAccessToken()
 
-					if err != nil {
-						return err
-					}
+					// if err != nil {
+					// 	return err
+					// }
 
-					response, err = api.UpdateDevice(accessToken, deviceID, locationId)
+					// UpdateDevice(accessToken, deviceID, locationId)
 
-					if err != nil {
-						return err
-					}
-
-					fmt.Print(response.String())
 					return err
 				},
 			},

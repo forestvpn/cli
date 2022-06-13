@@ -2,8 +2,7 @@ package auth
 
 import (
 	"fmt"
-	"forest/auth/forms"
-	"forest/utils"
+	utils "forest/utils"
 	"os"
 
 	"encoding/json"
@@ -20,7 +19,7 @@ type signInUpRequestBody struct {
 	ReturnSecureToken bool
 }
 
-func SignUp(form forms.SignUpForm) (*resty.Response, error) {
+func SignUp(form SignUpForm) (*resty.Response, error) {
 	url := "https://identitytoolkit.googleapis.com/v1/accounts:signUp"
 	body := signInUpRequestBody{Email: form.EmailField.Value, Password: string(form.PasswordField.Value), ReturnSecureToken: true}
 	request := make(map[string]any)
@@ -42,7 +41,7 @@ func SignUp(form forms.SignUpForm) (*resty.Response, error) {
 		Post(url)
 }
 
-func SignIn(form forms.SignInForm) (*resty.Response, error) {
+func SignIn(form SignInForm) (*resty.Response, error) {
 	url := "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword"
 	body := signInUpRequestBody{Email: form.EmailField.Value, Password: string(form.PasswordField.Value), ReturnSecureToken: true}
 	request := make(map[string]any)

@@ -1,46 +1,38 @@
 package api
 
 import (
+	"context"
 	"os"
 
-	"github.com/go-resty/resty/v2"
+	forestAPI "github.com/forestvpn/api-client-go"
 )
 
-var client = resty.New()
-var ApiURL = os.Getenv("STAGING_API_URL")
+func CreateDevice(accessToken string) (*forestAPI.Device, error) {
+	configuration := forestAPI.NewConfiguration()
+	configuration.Host = os.Getenv("STAGING_API_URL")
+	var apiClient = forestAPI.NewAPIClient(configuration)
+	auth := context.WithValue(context.Background(), forestAPI.ContextAccessToken, accessToken)
+	request := *forestAPI.NewCreateOrUpdateDeviceRequest()
+	resp, _, err := apiClient.DeviceApi.CreateDevice(auth).CreateOrUpdateDeviceRequest(request).Execute()
+	return resp, err
 
-func CreateDevice(accessToken string) (*resty.Response, error) {
-	url := ApiURL + "devices/"
-	return client.R().
-		SetHeader("Content-Type", "application/json").
-		SetAuthToken(accessToken).
-		Post(url)
 }
 
-func UpdateDevice(accessToken string, DeviceId string, LocationId string) (*resty.Response, error) {
-	url := ApiURL + "devices/{deviceID}/"
-	return client.R().
-		SetAuthToken(accessToken).
-		SetPathParam("deviceID", DeviceId).
-		SetHeader("Content-Type", "application/json").
-		SetBody(map[string]string{"location": LocationId}).
-		Patch(url)
+func UpdateDevice(accessToken string, deviceID string, locationID string) {
+	// request := *forestApiClient.NewCreateOrUpdateDeviceRequest()
+	// apiClient := forestApiClient.NewAPIClient(configuration)
+	// resp, r, err := apiClient.DeviceApi.UpdateDevice(context.Background(), deviceID).CreateOrUpdateDeviceRequest(request).Execute()
+	// if err != nil {
+	// 	fmt.Fprintf(os.Stderr, "Error when calling `DeviceApi.UpdateDevice``: %v\n", err)
+	// 	fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	// }
+	// fmt.Fprintf(os.Stdout, "Response from `DeviceApi.UpdateDevice`: %v\n", resp)
 }
 
-// func GetWireguards(accessToken string) (*resty.Response, error) {
-// 	deviceId, err := utils.LoadDeviceID()
-
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	url := fmt.Sprintf("%sdevices/%s/wireguards/", ApiURL, deviceId)
-// 	return client.R().
-// 		SetHeader("Content-Type", "application/json").
-// 		SetAuthToken(accessToken).
-// 		Get(url)
-// }
-
-func GetLocations() (*resty.Response, error) {
-	url := ApiURL + "locations/"
-	return client.R().Get(url)
+func GetLocations() ([]forestAPI.Location, error) {
+	configuration := forestAPI.NewConfiguration()
+	configuration.Host = os.Getenv("STAGING_API_URL")
+	apiClient := forestAPI.NewAPIClient(configuration)
+	resp, _, err := apiClient.GeoApi.ListLocations(context.Background()).Execute()
+	return resp, err
 }

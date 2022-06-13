@@ -1,4 +1,4 @@
-package forms
+package auth
 
 import (
 	"bufio"
@@ -30,7 +30,6 @@ type InfoForm struct {
 	Type string
 	Info Info
 }
-
 
 // Compares *forest.auth.forms.SignUpForm.SignInForm.PasswordField and *forest.auth.forms.SignUpForm.PasswordConfirmationField
 func (s SignUpForm) ValidatePasswordConfirmation() error {

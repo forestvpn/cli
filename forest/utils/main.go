@@ -46,7 +46,7 @@ func JsonDump(data []byte, filepath string) error {
 	return err
 }
 
-func ReadFile(filepath string) ([]byte, error) {
+func readFile(filepath string) ([]byte, error) {
 	file, err := os.Open(filepath)
 
 	if err != nil {
@@ -60,7 +60,7 @@ func ReadFile(filepath string) ([]byte, error) {
 
 func JsonLoad(filepath string) (map[string]string, error) {
 	var data map[string]string
-	byteStream, err := ReadFile(filepath)
+	byteStream, err := readFile(filepath)
 
 	if err == nil {
 		json.Unmarshal(byteStream, &data)
@@ -134,7 +134,7 @@ func IsRefreshTokenExists() bool {
 }
 
 func IsDeviceCreated() bool {
-	_, err := os.ReadFile(DeviceFile)
+	_, err := readFile(DeviceFile)
 	return err == nil
 }
 

@@ -1,5 +1,0 @@
-package wireguard
-
-func dumpConfig() {
-	//
-}
