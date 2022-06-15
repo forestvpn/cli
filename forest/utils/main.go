@@ -16,10 +16,12 @@ var AuthDir = AppDir + "auth/"
 var FirebaseAuthFile = AuthDir + "firebase.json"
 var DeviceDir = AppDir + "device/"
 var DeviceFile = DeviceDir + "device.json"
+var wireguardDir = AppDir + "wireguard/"
+var WireguardConfig = wireguardDir + "wireguard.cfg"
 
 // Creates directories structure
 func Init() {
-	for _, path := range []string{AppDir, AuthDir, DeviceDir} {
+	for _, path := range []string{AppDir, AuthDir, DeviceDir, wireguardDir} {
 		if _, err := os.Stat(path); os.IsNotExist(err) {
 			os.Mkdir(path, 0755)
 		}
