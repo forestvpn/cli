@@ -1,18 +1,23 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"forest/api"
 	"forest/auth"
 	"forest/utils"
+	"net"
 	"os"
 	"sort"
+	"strings"
 
 	"github.com/fatih/color"
+	forestvpn_api "github.com/forestvpn/api-client-go"
 	"github.com/manifoldco/promptui"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/term"
+	ini "gopkg.in/ini.v1"
 )
 
 func main() {
@@ -244,8 +249,34 @@ func main() {
 						return err
 					}
 
-					sort.Slice(locations, func(i, j int) bool {
-						return locations[i].Name < locations[j].Name
+					accessToken, err := utils.LoadAccessToken()
+
+					if err != nil {
+						return err
+					}
+
+					resp, err := api.GetBillingFeatures(accessToken)
+
+					if err != nil {
+						return err
+					}
+
+					billingFeature := resp[0]
+					constraint := billingFeature.GetConstraints()[0]
+					subject := constraint.GetSubject()
+
+					var items []forestvpn_api.Location
+
+					for _, loc := range locations {
+						for _, locationID := range subject {
+							if loc.GetId() == locationID {
+								items = append(items, loc)
+							}
+						}
+					}
+
+					sort.Slice(items, func(i, j int) bool {
+						return items[i].Name < items[j].Name
 					})
 
 					template := promptui.SelectTemplates{
@@ -256,42 +287,106 @@ func main() {
 
 					prompt := promptui.Select{
 						Label:     "Select location",
-						Items:     locations,
+						Items:     items,
 						Size:      15,
 						Templates: &template,
 					}
 
 					_, result, err := prompt.Run()
-					fmt.Print(result)
-					// var locationId string
 
-					// for _, location := range locations {
-					// 	if strings.Contains(result, location.Id) {
-					// 		locationId = location.Id
-					// 	}
-					// }
+					if err != nil {
+						return err
+					}
 
-					// if len(locationId) == 0 {
-					// 	return fmt.Errorf("no location found with ID: %s", locationId)
-					// }
+					var locationID string
 
-					// if err != nil {
-					// 	return err
-					// }
+					for _, location := range locations {
+						if strings.Contains(result, location.Id) {
+							locationID = location.Id
+						}
+					}
 
-					// deviceID, err := LoadDeviceID()
+					if len(locationID) == 0 {
+						return fmt.Errorf("no location found with ID: %s", locationID)
+					}
 
-					// if err != nil {
-					// 	return err
-					// }
+					deviceID, err := utils.LoadDeviceID()
 
-					// accessToken, err := LoadAccessToken()
+					if err != nil {
+						return err
+					}
 
-					// if err != nil {
-					// 	return err
-					// }
+					device, err := api.UpdateDevice(accessToken, deviceID, locationID)
 
-					// UpdateDevice(accessToken, deviceID, locationId)
+					if err != nil {
+						return err
+					}
+
+					config := ini.Empty()
+					interfaceSection, err := config.NewSection("Interface")
+
+					if err != nil {
+						return err
+					}
+
+					_, err = interfaceSection.NewKey("Address", "127.0.0.1/8")
+
+					if err != nil {
+						return err
+					}
+
+					_, err = interfaceSection.NewKey("PrivateKey", device.Wireguard.GetPrivKey())
+
+					if err != nil {
+						return err
+					}
+
+					_, err = interfaceSection.NewKey("DNS", strings.Join(device.GetDns()[:], ","))
+
+					if err != nil {
+						return err
+					}
+
+					for _, peer := range device.Wireguard.GetPeers() {
+						peerSection, err := config.NewSection("Peer")
+
+						if err != nil {
+							return err
+						}
+
+						_, err = peerSection.NewKey("AllowedIPs", strings.Join(peer.GetAllowedIps()[:], ","))
+
+						if err != nil {
+							return err
+						}
+
+						_, err = peerSection.NewKey("Endpoint", peer.GetEndpoint())
+
+						if err != nil {
+							return err
+						}
+
+						_, err = peerSection.NewKey("PublicKey", peer.GetPubKey())
+
+						if err != nil {
+							return err
+						}
+
+					}
+
+					err = config.SaveTo(utils.WireguardConfig)
+
+					if err != nil {
+						return err
+					}
+
+					conn, err := net.Dial("tcp", "localhost:2405")
+
+					if err != nil {
+						return err
+					}
+
+					_, err = bufio.NewWriter(conn).WriteString(fmt.Sprintf("connect %s", utils.WireguardConfig))
 
 					return err
 				},
