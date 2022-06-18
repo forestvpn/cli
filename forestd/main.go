@@ -1,90 +1,125 @@
-// Forest daemon is a wireguard controller designed to run in root.
 package main
 
 import (
-	"bufio"
 	"fmt"
+	"log"
 	"net"
+	"os"
 	"os/exec"
 	"strings"
+	"syscall"
 )
 
 func main() {
-	address := "localhost:2405"
-	listener, _ := net.Listen("tcp", address)
+	address := "localhost:9999"
+	listener, err := net.Listen("tcp", address)
+	if err != nil {
+		log.Print(err.Error())
+		os.Exit(1)
+	}
 
 	for {
-
-		fmt.Println("Listening on " + address)
-
+		log.Printf("Listening on %s", address)
 		conn, err := listener.Accept()
-
-		fmt.Println("Incoming connection from", conn.RemoteAddr())
-
 		if err != nil {
+			log.Print(err.Error())
 			continue
 		}
-		go handleClient(conn)
+
+		log.Printf("Incoming connection from %s", conn.RemoteAddr())
+
+		go handleRequest(conn)
 	}
 }
 
-// A connection handler routine.
-// Sets wireguard connection down or up.
-// If an error occurs it writes it to the client.
-func handleClient(conn net.Conn) {
+func handleRequest(conn net.Conn) {
+	remoteAddr := conn.RemoteAddr()
+	var command *exec.Cmd
+	var knownActions []string
+	var status int
+	var config string
 	defer conn.Close()
-
 	for {
-		scanner := bufio.NewScanner(conn)
-		data := scanner.Text()
+		content, err := Read(conn, DELIMITER)
 
-		if err := scanner.Err(); err != nil {
-			respond(err.Error(), conn)
+		if err != nil {
+			log.Print(err.Error())
+		}
+
+		if content == QUIT_SIGN {
+			log.Printf("%s disconnected", remoteAddr)
 			break
 		}
 
-		request := strings.Fields(data)
-		action, config := request[0], request[1]
+		knownActions = append(knownActions, "connect", "disconnect")
+		request := strings.Fields(content)
+		action := request[0]
 
-		if action == "connect" {
-			cmd := connect(config)
-			stdout, err := cmd.Output()
+		log.Printf(`Incoming request "%s" from %s`, action, remoteAddr)
 
-			if err != nil {
-				respond(err.Error(), conn)
-			} else {
-				respond(string(stdout), conn)
+		if len(request) > 1 && strings.Contains(strings.Join(knownActions, ""), action) {
+			config = request[1]
+
+			log.Printf("Corresponding method found: %s", action)
+
+			if action == knownActions[0] {
+				command = exec.Command("wg-quick", "up", config)
+			} else if action == knownActions[1] {
+				command = exec.Command("wg-quick", "down", config)
 			}
-		} else if action == "disconnect" {
-			cmd := disconnect()
-			stdout, err := cmd.Output()
 
-			if err != nil {
-				respond(err.Error(), conn)
-			} else {
-				respond(string(stdout), conn)
-			}
+			log.Printf("Executing: %s", command.String())
+
+			status = execute(command)
+		} else if action == "status" {
+			status = isActiveWireGuard()
 		} else {
-			respond("Not implemented", conn)
+			status = -1
+		}
+
+		log.Printf("Responding %c to %s", status, remoteAddr)
+
+		response := fmt.Sprintf("%c%c", status, DELIMITER)
+		_, err = Write(conn, response)
+
+		if err != nil {
+			log.Print(err.Error())
 		}
 	}
 }
 
-// Executes the wireguard binary to establish the connection.
-func connect(config string) *exec.Cmd {
-	return exec.Command("wg-quick", "up", config)
-}
+// Indicates status of current wireguard connection
+//
+// Returns:
+//
+// - 0 - if not connecnted to any wireguard peer
+//
+// - 1 - if connected
+func isActiveWireGuard() int {
+	stdout, _ := exec.Command("wg-quick", "show").Output()
 
-// Executes the wireguard binary to terminate the connection.
-func disconnect() *exec.Cmd {
-	return exec.Command("wg-quick", "down")
-}
-
-// A basic function to send a text message to other site.
-func respond(message string, conn net.Conn) {
-	_, err := bufio.NewWriter(conn).WriteString(message)
-
-	if err != nil {
-		fmt.Println(err.Error())
+	if len(stdout) > 0 {
+		return 1
 	}
+	return 0
+}
+
+// Executes shell commands
+// Used to start/stop wireguard connection
+// Returns an exit status of a shell command executed
+func execute(command *exec.Cmd) int {
+	if err := command.Start(); err != nil {
+		log.Print(err.Error())
+	}
+
+	if err := command.Wait(); err != nil {
+		if exiterr, ok := err.(*exec.ExitError); ok {
+			if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
+				return status.ExitStatus()
+			}
+		} else {
+			log.Print(err.Error())
+		}
+	}
+	return 0
 }

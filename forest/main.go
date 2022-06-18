@@ -1,19 +1,18 @@
 package main
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"forest/api"
 	"forest/auth"
+	"forest/sockets"
 	"forest/utils"
-	"net"
 	"os"
+	"os/exec"
 	"sort"
 	"strings"
 
 	"github.com/fatih/color"
-	forestvpn_api "github.com/forestvpn/api-client-go"
 	"github.com/manifoldco/promptui"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/term"
@@ -249,6 +248,13 @@ func main() {
 						return err
 					}
 
+					var wrappedLocations []*utils.LocationWrapper
+
+					for _, loc := range locations {
+						location := utils.LocationWrapper{Location: loc}
+						wrappedLocations = append(wrappedLocations, &location)
+					}
+
 					accessToken, err := utils.LoadAccessToken()
 
 					if err != nil {
@@ -265,29 +271,29 @@ func main() {
 					constraint := billingFeature.GetConstraints()[0]
 					subject := constraint.GetSubject()
 
-					var items []forestvpn_api.Location
-
-					for _, loc := range locations {
-						for _, locationID := range subject {
-							if loc.GetId() == locationID {
-								items = append(items, loc)
-							}
+					for _, loc := range wrappedLocations {
+						if strings.Contains(strings.Join(subject[:], " "), loc.Location.GetId()) {
+							loc.IsAvailableOnSubscritionOnly = false
+						} else {
+							loc.IsAvailableOnSubscritionOnly = true
+							loc.Message = "This location is available only for our subscribers. See our pricing details: https://forestvpn.com/pricing/"
 						}
 					}
 
-					sort.Slice(items, func(i, j int) bool {
-						return items[i].Name < items[j].Name
+					sort.Slice(wrappedLocations, func(i, j int) bool {
+						return wrappedLocations[i].Location.Name < wrappedLocations[j].Location.Name
 					})
 
 					template := promptui.SelectTemplates{
-						Active:   "{{.Name | green }}, {{.Country.Name}}",
-						Inactive: "{{.Name}}, {{.Country.Name | faint}}",
-						Selected: fmt.Sprintf(`{{ "%s" | green }} {{ .Name | faint }}%s {{.Country.Name | faint}}`, promptui.IconGood, color.New(color.FgHiBlack).Sprint(",")),
+						Active:   "{{.Location.Name | green }}, {{.Location.Country.Name}}",
+						Inactive: "{{if .IsAvailableOnSubscritionOnly}} {{.Location.Name | faint }} {{else}} {{.Location.Name}} {{end}}" + ", {{.Location.Country.Name | faint}}",
+						Selected: fmt.Sprintf(`{{ "%s" | green }} {{ .Location.Name | faint }}%s {{.Location.Country.Name | faint}}`, promptui.IconGood, color.New(color.FgHiBlack).Sprint(",")),
+						Details:  "{{if .IsAvailableOnSubscritionOnly}} {{ .Message | cyan}} {{end}}",
 					}
 
 					prompt := promptui.Select{
 						Label:     "Select location",
-						Items:     items,
+						Items:     wrappedLocations,
 						Size:      15,
 						Templates: &template,
 					}
@@ -298,95 +304,131 @@ func main() {
 						return err
 					}
 
-					var locationID string
+					var choice *utils.LocationWrapper
 
-					for _, location := range locations {
-						if strings.Contains(result, location.Id) {
-							locationID = location.Id
+					for _, loc := range wrappedLocations {
+						if strings.Contains(result, loc.Location.GetId()) {
+							choice = loc
 						}
 					}
 
-					if len(locationID) == 0 {
-						return fmt.Errorf("no location found with ID: %s", locationID)
-					}
+					if !strings.Contains(strings.Join(subject[:], " "), choice.Location.GetId()) {
+						prompt := promptui.Prompt{
+							Label: "See pricing? ([Y]es/[N]o)",
+						}
 
-					deviceID, err := utils.LoadDeviceID()
+						result, _ := prompt.Run()
 
-					if err != nil {
-						return err
-					}
+						if strings.Contains("YESyesYesYEsyEsyeSyES", result) {
+							err := exec.Command("xdg-open", "https://forestvpn.com/pricing/").Run()
 
-					device, err := api.UpdateDevice(accessToken, deviceID, locationID)
+							if err != nil {
+								return err
+							}
+						}
+						return nil
 
-					if err != nil {
-						return err
-					}
-
-					config := ini.Empty()
-					interfaceSection, err := config.NewSection("Interface")
-
-					if err != nil {
-						return err
-					}
-
-					_, err = interfaceSection.NewKey("Address", "127.0.0.1/8")
-
-					if err != nil {
-						return err
-					}
-
-					_, err = interfaceSection.NewKey("PrivateKey", device.Wireguard.GetPrivKey())
-
-					if err != nil {
-						return err
-					}
-
-					_, err = interfaceSection.NewKey("DNS", strings.Join(device.GetDns()[:], ","))
-
-					if err != nil {
-						return err
-					}
-
-					for _, peer := range device.Wireguard.GetPeers() {
-						peerSection, err := config.NewSection("Peer")
+					} else {
+						deviceID, err := utils.LoadDeviceID()
 
 						if err != nil {
 							return err
 						}
 
-						_, err = peerSection.NewKey("AllowedIPs", strings.Join(peer.GetAllowedIps()[:], ","))
+						device, err := api.UpdateDevice(accessToken, deviceID, choice.Location.GetId())
 
 						if err != nil {
 							return err
 						}
 
-						_, err = peerSection.NewKey("Endpoint", peer.GetEndpoint())
+						config := ini.Empty()
+						interfaceSection, err := config.NewSection("Interface")
 
 						if err != nil {
 							return err
 						}
 
-						_, err = peerSection.NewKey("PublicKey", peer.GetPubKey())
+						_, err = interfaceSection.NewKey("Address", "127.0.0.1/8")
 
 						if err != nil {
 							return err
 						}
 
+						_, err = interfaceSection.NewKey("PrivateKey", device.Wireguard.GetPrivKey())
+
+						if err != nil {
+							return err
+						}
+
+						_, err = interfaceSection.NewKey("DNS", strings.Join(device.GetDns()[:], ","))
+
+						if err != nil {
+							return err
+						}
+
+						for _, peer := range device.Wireguard.GetPeers() {
+							peerSection, err := config.NewSection("Peer")
+
+							if err != nil {
+								return err
+							}
+
+							_, err = peerSection.NewKey("AllowedIPs", strings.Join(peer.GetAllowedIps()[:], ","))
+
+							if err != nil {
+								return err
+							}
+
+							_, err = peerSection.NewKey("Endpoint", peer.GetEndpoint())
+
+							if err != nil {
+								return err
+							}
+
+							_, err = peerSection.NewKey("PublicKey", peer.GetPubKey())
+
+							if err != nil {
+								return err
+							}
+
+						}
+
+						err = config.SaveTo(utils.WireguardConfig)
+
+						if err != nil {
+							return err
+						}
+
+						err = sockets.Disconnect()
+
+						if err != nil {
+							return err
+						}
+
+						request := fmt.Sprintf("connect %s%c", utils.WireguardConfig, sockets.DELIMITER)
+						status, err := sockets.Communicate(request)
+
+						if err != nil {
+							return err
+						}
+
+						if status != 0 {
+							return fmt.Errorf(`forestd could not perform action "connect" (exit status: %d)`, status)
+						}
+						color.Green(fmt.Sprintf("Connected to %s, %s", choice.Location.Name, choice.Location.Country.Name))
 					}
+					return nil
+				},
+			},
+			{
+				Name:        "disconnect",
+				Description: "Disconnect from ForestVPN",
+				Action: func(ctx *cli.Context) error {
+					err := sockets.Disconnect()
 
-					err = config.SaveTo(utils.WireguardConfig)
-
-					if err != nil {
-						return err
+					if err == nil {
+						color.Red("Disconnected")
 					}
-
-					conn, err := net.Dial("tcp", "localhost:2405")
-
-					if err != nil {
-						return err
-					}
-
-					_, err = bufio.NewWriter(conn).WriteString(fmt.Sprintf("connect %s", utils.WireguardConfig))
 
 					return err
 				},

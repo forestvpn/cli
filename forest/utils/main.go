@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	forestvpn_api "github.com/forestvpn/api-client-go"
 	"github.com/go-resty/resty/v2"
 )
 
@@ -17,7 +18,7 @@ var FirebaseAuthFile = AuthDir + "firebase.json"
 var DeviceDir = AppDir + "device/"
 var DeviceFile = DeviceDir + "device.json"
 var wireguardDir = AppDir + "wireguard/"
-var WireguardConfig = wireguardDir + "wireguard.cfg"
+var WireguardConfig = wireguardDir + "wg0.conf"
 
 // Creates directories structure
 func Init() {
@@ -147,4 +148,10 @@ func LoadDeviceID() (string, error) {
 		return "", err
 	}
 	return key, nil
+}
+
+type LocationWrapper struct {
+	Location                     forestvpn_api.Location
+	IsAvailableOnSubscritionOnly bool
+	Message                      string
 }
