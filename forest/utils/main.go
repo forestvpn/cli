@@ -19,6 +19,7 @@ var DeviceDir = AppDir + "device/"
 var DeviceFile = DeviceDir + "device.json"
 var wireguardDir = AppDir + "wireguard/"
 var WireguardConfig = wireguardDir + "wg0.conf"
+var SessionFile = AppDir + "session.json"
 
 // Creates directories structure
 func Init() {

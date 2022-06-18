@@ -37,16 +37,15 @@ func Communicate(request string) (int, error) {
 }
 
 func Disconnect() error {
-	request := fmt.Sprintf("status%c", DELIMITER)
-	status, err := Communicate(request)
+	isActive, err := IsActiveConnection()
 
 	if err != nil {
 		return err
 	}
 
-	if status > 0 {
+	if isActive {
 		request := fmt.Sprintf("disconnect %s%c", utils.WireguardConfig, DELIMITER)
-		status, err = Communicate(request)
+		status, err := Communicate(request)
 
 		if err != nil {
 			return err
@@ -57,4 +56,18 @@ func Disconnect() error {
 		}
 	}
 	return nil
+}
+
+func IsActiveConnection() (bool, error) {
+	request := fmt.Sprintf("status%c", DELIMITER)
+	status, err := Communicate(request)
+
+	if err != nil {
+		return false, err
+	}
+
+	if status > 0 {
+		return true, nil
+	}
+	return false, nil
 }

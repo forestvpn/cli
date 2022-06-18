@@ -92,11 +92,11 @@ func handleRequest(conn net.Conn) {
 //
 // Returns:
 //
-// - 0 - if not connecnted to any wireguard peer
+// - 0 - if not connected to any wireguard peer
 //
 // - 1 - if connected
 func isActiveWireGuard() int {
-	stdout, _ := exec.Command("wg-quick", "show").Output()
+	stdout, _ := exec.Command("wg", "show").Output()
 
 	if len(stdout) > 0 {
 		return 1

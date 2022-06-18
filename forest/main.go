@@ -10,9 +10,11 @@ import (
 	"os"
 	"os/exec"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/fatih/color"
+	forestvpn_api "github.com/forestvpn/api-client-go"
 	"github.com/manifoldco/promptui"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/term"
@@ -27,14 +29,8 @@ func main() {
 	if utils.IsRefreshTokenExists() {
 		response, err := auth.GetAccessToken()
 
-		if err != nil {
-			color.Red(err.Error())
-		}
-
-		err = utils.JsonDump(response.Body(), utils.FirebaseAuthFile)
-
-		if err != nil {
-			color.Red(err.Error())
+		if err == nil {
+			utils.JsonDump(response.Body(), utils.FirebaseAuthFile)
 		}
 	}
 	app := &cli.App{
@@ -416,6 +412,14 @@ func main() {
 							return fmt.Errorf(`forestd could not perform action "connect" (exit status: %d)`, status)
 						}
 						color.Green(fmt.Sprintf("Connected to %s, %s", choice.Location.Name, choice.Location.Country.Name))
+						session := map[string]string{"locationID": choice.Location.Id, "status": strconv.Itoa(status)}
+						data, err := json.Marshal(session)
+
+						if err != nil {
+							return err
+						}
+
+						utils.JsonDump(data, utils.SessionFile)
 					}
 					return nil
 				},
@@ -433,6 +437,43 @@ func main() {
 					return err
 				},
 			},
+			{
+				Name:        "status",
+				Description: "See wether connection is active",
+				Action: func(ctx *cli.Context) error {
+					isActive, err := sockets.IsActiveConnection()
+
+					if err != nil {
+						return err
+					}
+
+					session, err := utils.JsonLoad(utils.SessionFile)
+
+					if err != nil {
+						return err
+					}
+
+					if isActive && session["status"] == "0" {
+						locationID := session["locationID"]
+						locations, err := api.GetLocations()
+						var location *forestvpn_api.Location
+
+						if err != nil {
+							return err
+						}
+
+						for _, loc := range locations {
+							if loc.Id == locationID {
+								location = &loc
+							}
+						}
+
+						color.Green(fmt.Sprintf("Connected to %s, %s", location.Name, location.Country.Name))
+					} else {
+						color.Red("Disconnected")
+					}
+					return nil
+				}},
 		},
 	}
 	err := app.Run(os.Args)
