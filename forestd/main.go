@@ -21,6 +21,7 @@ func main() {
 	for {
 		log.Printf("Listening on %s", address)
 		conn, err := listener.Accept()
+
 		if err != nil {
 			log.Print(err.Error())
 			continue
@@ -39,6 +40,7 @@ func handleRequest(conn net.Conn) {
 	var status int
 	var config string
 	defer conn.Close()
+
 	for {
 		content, err := Read(conn, DELIMITER)
 

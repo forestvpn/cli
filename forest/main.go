@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/fatih/color"
 	forestvpn_api "github.com/forestvpn/api-client-go"
@@ -266,6 +267,12 @@ func main() {
 					billingFeature := resp[0]
 					constraint := billingFeature.GetConstraints()[0]
 					subject := constraint.GetSubject()
+					expireDate := billingFeature.GetExpiryDate()
+					now := time.Now()
+
+					if !expireDate.After(now) {
+						return fmt.Errorf("access expired: %s < %s; want >", expireDate, now)
+					}
 
 					for _, loc := range wrappedLocations {
 						if strings.Contains(strings.Join(subject[:], " "), loc.Location.GetId()) {
