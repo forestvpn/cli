@@ -1,4 +1,4 @@
-package utils
+package auth
 
 import (
 	"encoding/json"
@@ -17,17 +17,18 @@ var AuthDir = AppDir + "auth/"
 var FirebaseAuthFile = AuthDir + "firebase.json"
 var DeviceDir = AppDir + "device/"
 var DeviceFile = DeviceDir + "device.json"
-var wireguardDir = AppDir + "wireguard/"
-var WireguardConfig = wireguardDir + "wg0.conf"
+var WireguardDir = AppDir + "wireguard/"
+var WireguardConfig = WireguardDir + "wg0.conf"
 var SessionFile = AppDir + "session.json"
 
 // Creates directories structure
-func Init() {
-	for _, path := range []string{AppDir, AuthDir, DeviceDir, wireguardDir} {
+func Init() error {
+	for _, path := range []string{AppDir, AuthDir, DeviceDir, WireguardDir} {
 		if _, err := os.Stat(path); os.IsNotExist(err) {
 			os.Mkdir(path, 0755)
 		}
 	}
+	return nil
 }
 
 func JsonDump(data []byte, filepath string) error {
@@ -69,6 +70,7 @@ func JsonLoad(filepath string) (map[string]string, error) {
 	if err == nil {
 		json.Unmarshal(byteStream, &data)
 	}
+
 	return data, err
 }
 

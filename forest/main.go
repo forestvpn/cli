@@ -3,10 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"forest/api"
-	"forest/auth"
-	"forest/sockets"
-	"forest/utils"
 	"os"
 	"os/exec"
 	"sort"
@@ -14,8 +10,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/forestvpn/cli/api"
+	"github.com/forestvpn/cli/auth"
+	"github.com/forestvpn/cli/sockets"
+
 	"github.com/fatih/color"
 	forestvpn_api "github.com/forestvpn/api-client-go"
+	"github.com/getsentry/sentry-go"
 	"github.com/manifoldco/promptui"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/term"
@@ -25,15 +26,30 @@ import (
 func main() {
 	var email string
 	var password string
-	utils.Init()
 
-	if utils.IsRefreshTokenExists() {
+	err := auth.Init()
+
+	if err != nil {
+		panic(err)
+	}
+
+	if auth.IsRefreshTokenExists() {
 		response, err := auth.GetAccessToken()
 
 		if err == nil {
-			utils.JsonDump(response.Body(), utils.FirebaseAuthFile)
+			auth.JsonDump(response.Body(), auth.FirebaseAuthFile)
 		}
 	}
+
+	err = sentry.Init(sentry.ClientOptions{
+		Dsn:              os.Getenv("SENTRY_DSN"),
+		TracesSampleRate: 1.0,
+	})
+
+	if err != nil {
+		sentry.Logger.Panicf("sentry.Init: %s", err)
+	}
+
 	app := &cli.App{
 		Name:        "forest",
 		Usage:       "ForestVPN client for Linux",
@@ -66,6 +82,7 @@ func main() {
 							signinform, err := auth.GetSignInForm(email, []byte(password))
 
 							if err != nil {
+								sentry.CaptureException(err)
 								return err
 							}
 
@@ -75,6 +92,7 @@ func main() {
 							fmt.Println()
 
 							if err != nil {
+								sentry.CaptureException(err)
 								return err
 							}
 
@@ -83,20 +101,25 @@ func main() {
 							err = signupform.ValidatePasswordConfirmation()
 
 							if err != nil {
+								sentry.CaptureException(err)
 								return err
 							}
 
 							response, err := auth.SignUp(signupform)
 
 							if err != nil {
+								sentry.CaptureException(err)
 								return err
 							}
 
-							err = utils.HandleFirebaseAuthResponse(response)
+							err = auth.HandleFirebaseAuthResponse(response)
 
 							if err == nil {
 								color.Green("Signed up")
+							} else {
+								sentry.CaptureException(err)
 							}
+
 							return err
 						},
 					},
@@ -120,66 +143,76 @@ func main() {
 							},
 						},
 						Action: func(c *cli.Context) error {
-							if !utils.IsRefreshTokenExists() {
+							if !auth.IsRefreshTokenExists() {
 								signinform, err := auth.GetSignInForm(email, []byte(password))
 
 								if err != nil {
+									sentry.CaptureException(err)
 									return err
 								}
 
 								response, err := auth.SignIn(signinform)
 
 								if err != nil {
+									sentry.CaptureException(err)
 									return err
 								}
 
-								err = utils.HandleFirebaseSignInResponse(response)
+								err = auth.HandleFirebaseSignInResponse(response)
 
 								if err != nil {
+									sentry.CaptureException(err)
 									return err
 								}
 
-								err = utils.JsonDump(response.Body(), utils.FirebaseAuthFile)
+								err = auth.JsonDump(response.Body(), auth.FirebaseAuthFile)
 
 								if err != nil {
+									sentry.CaptureException(err)
 									return err
 								}
 
 								response, err = auth.GetAccessToken()
 
 								if err != nil {
+									sentry.CaptureException(err)
 									return err
 								}
 
-								err = utils.JsonDump(response.Body(), utils.FirebaseAuthFile)
+								err = auth.JsonDump(response.Body(), auth.FirebaseAuthFile)
 
 								if err != nil {
+									sentry.CaptureException(err)
 									return err
 								}
 							}
 
-							if !utils.IsDeviceCreated() {
-								accessToken, err := utils.LoadAccessToken()
+							if !auth.IsDeviceCreated() {
+								accessToken, err := auth.LoadAccessToken()
 
 								if err != nil {
+									sentry.CaptureException(err)
 									return err
 								}
 
 								resp, err := api.CreateDevice(accessToken)
 
 								if err != nil {
+									sentry.CaptureException(err)
 									return err
 								}
 
 								b, err := json.MarshalIndent(resp, "", "    ")
 
 								if err != nil {
+									sentry.CaptureException(err)
 									return err
 								}
 
-								err = utils.JsonDump(b, utils.DeviceFile)
+								err = auth.JsonDump(b, auth.DeviceFile)
 
 								if err != nil {
+									sentry.CaptureException(err)
 									return err
 								}
 
@@ -194,10 +227,12 @@ func main() {
 						Name:  "signout",
 						Usage: "Sign out from your ForestVPN account on this device",
 						Action: func(c *cli.Context) error {
-							err := os.Remove(utils.FirebaseAuthFile)
+							err := os.Remove(auth.FirebaseAuthFile)
 
 							if err == nil {
 								color.Green("Signed out")
+							} else {
+								sentry.CaptureException(err)
 							}
 							return err
 						},
@@ -227,6 +262,8 @@ func main() {
 
 									if err == nil {
 										fmt.Println(emailfield.Value)
+									} else {
+										sentry.CaptureException(err)
 									}
 									return err
 								},
@@ -242,25 +279,28 @@ func main() {
 					locations, err := api.GetLocations()
 
 					if err != nil {
+						sentry.CaptureException(err)
 						return err
 					}
 
-					var wrappedLocations []*utils.LocationWrapper
+					var wrappedLocations []*auth.LocationWrapper
 
 					for _, loc := range locations {
-						location := utils.LocationWrapper{Location: loc}
+						location := auth.LocationWrapper{Location: loc}
 						wrappedLocations = append(wrappedLocations, &location)
 					}
 
-					accessToken, err := utils.LoadAccessToken()
+					accessToken, err := auth.LoadAccessToken()
 
 					if err != nil {
+						sentry.CaptureException(err)
 						return err
 					}
 
 					resp, err := api.GetBillingFeatures(accessToken)
 
 					if err != nil {
+						sentry.CaptureException(err)
 						return err
 					}
 
@@ -271,7 +311,7 @@ func main() {
 					now := time.Now()
 
 					if !expireDate.After(now) {
-						return fmt.Errorf("access expired: %s < %s; want >", expireDate, now)
+						return fmt.Errorf("expired: %s < %s; want >", expireDate, now)
 					}
 
 					for _, loc := range wrappedLocations {
@@ -304,10 +344,11 @@ func main() {
 					_, result, err := prompt.Run()
 
 					if err != nil {
+						sentry.CaptureException(err)
 						return err
 					}
 
-					var choice *utils.LocationWrapper
+					var choice *auth.LocationWrapper
 
 					for _, loc := range wrappedLocations {
 						if strings.Contains(result, loc.Location.GetId()) {
@@ -326,21 +367,24 @@ func main() {
 							err := exec.Command("xdg-open", "https://forestvpn.com/pricing/").Run()
 
 							if err != nil {
+								sentry.CaptureException(err)
 								return err
 							}
 						}
 						return nil
 
 					} else {
-						deviceID, err := utils.LoadDeviceID()
+						deviceID, err := auth.LoadDeviceID()
 
 						if err != nil {
+							sentry.CaptureException(err)
 							return err
 						}
 
 						device, err := api.UpdateDevice(accessToken, deviceID, choice.Location.GetId())
 
 						if err != nil {
+							sentry.CaptureException(err)
 							return err
 						}
 
@@ -348,24 +392,28 @@ func main() {
 						interfaceSection, err := config.NewSection("Interface")
 
 						if err != nil {
+							sentry.CaptureException(err)
 							return err
 						}
 
 						_, err = interfaceSection.NewKey("Address", "127.0.0.1/8")
 
 						if err != nil {
+							sentry.CaptureException(err)
 							return err
 						}
 
 						_, err = interfaceSection.NewKey("PrivateKey", device.Wireguard.GetPrivKey())
 
 						if err != nil {
+							sentry.CaptureException(err)
 							return err
 						}
 
 						_, err = interfaceSection.NewKey("DNS", strings.Join(device.GetDns()[:], ","))
 
 						if err != nil {
+							sentry.CaptureException(err)
 							return err
 						}
 
@@ -373,45 +421,52 @@ func main() {
 							peerSection, err := config.NewSection("Peer")
 
 							if err != nil {
+								sentry.CaptureException(err)
 								return err
 							}
 
 							_, err = peerSection.NewKey("AllowedIPs", strings.Join(peer.GetAllowedIps()[:], ","))
 
 							if err != nil {
+								sentry.CaptureException(err)
 								return err
 							}
 
 							_, err = peerSection.NewKey("Endpoint", peer.GetEndpoint())
 
 							if err != nil {
+								sentry.CaptureException(err)
 								return err
 							}
 
 							_, err = peerSection.NewKey("PublicKey", peer.GetPubKey())
 
 							if err != nil {
+								sentry.CaptureException(err)
 								return err
 							}
 
 						}
 
-						err = config.SaveTo(utils.WireguardConfig)
+						err = config.SaveTo(auth.WireguardConfig)
 
 						if err != nil {
+							sentry.CaptureException(err)
 							return err
 						}
 
 						err = sockets.Disconnect()
 
 						if err != nil {
+							sentry.CaptureException(err)
 							return err
 						}
 
-						request := fmt.Sprintf("connect %s%c", utils.WireguardConfig, sockets.DELIMITER)
+						request := fmt.Sprintf("connect %s%c", auth.WireguardConfig, sockets.DELIMITER)
 						status, err := sockets.Communicate(request)
 
 						if err != nil {
+							sentry.CaptureException(err)
 							return err
 						}
 
@@ -423,10 +478,11 @@ func main() {
 						data, err := json.Marshal(session)
 
 						if err != nil {
+							sentry.CaptureException(err)
 							return err
 						}
 
-						utils.JsonDump(data, utils.SessionFile)
+						auth.JsonDump(data, auth.SessionFile)
 					}
 					return nil
 				},
@@ -439,6 +495,8 @@ func main() {
 
 					if err == nil {
 						color.Red("Disconnected")
+					} else {
+						sentry.CaptureException(err)
 					}
 
 					return err
@@ -451,12 +509,14 @@ func main() {
 					isActive, err := sockets.IsActiveConnection()
 
 					if err != nil {
+						sentry.CaptureException(err)
 						return err
 					}
 
-					session, err := utils.JsonLoad(utils.SessionFile)
+					session, err := auth.JsonLoad(auth.SessionFile)
 
 					if err != nil {
+						sentry.CaptureException(err)
 						return err
 					}
 
@@ -466,6 +526,7 @@ func main() {
 						var location *forestvpn_api.Location
 
 						if err != nil {
+							sentry.CaptureException(err)
 							return err
 						}
 
@@ -483,7 +544,7 @@ func main() {
 				}},
 		},
 	}
-	err := app.Run(os.Args)
+	err = app.Run(os.Args)
 	if err != nil {
 		color.Red(err.Error())
 	}

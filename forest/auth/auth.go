@@ -2,7 +2,6 @@ package auth
 
 import (
 	"fmt"
-	utils "forest/utils"
 	"os"
 
 	"encoding/json"
@@ -65,7 +64,7 @@ func SignIn(form SignInForm) (*resty.Response, error) {
 
 func ExchangeRefreshForIdToken() (*resty.Response, error) {
 	url := "https://securetoken.googleapis.com/v1/token"
-	refreshToken, err := utils.LoadRefreshToken()
+	refreshToken, err := LoadRefreshToken()
 
 	if err != nil {
 		return nil, err
@@ -89,6 +88,6 @@ func GetAccessToken() (*resty.Response, error) {
 		return nil, err
 	}
 
-	err = utils.JsonDump(response.Body(), utils.FirebaseAuthFile)
+	err = JsonDump(response.Body(), FirebaseAuthFile)
 	return response, err
 }

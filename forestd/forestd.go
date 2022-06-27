@@ -8,14 +8,26 @@ import (
 	"os/exec"
 	"strings"
 	"syscall"
+
+	"github.com/getsentry/sentry-go"
 )
 
 func main() {
+	err := sentry.Init(sentry.ClientOptions{
+		Dsn:              os.Getenv("SENTRY_DSN"),
+		TracesSampleRate: 1.0,
+	})
+
+	if err != nil {
+		sentry.Logger.Panicf("sentry.Init: %s", err)
+	}
+
 	address := "localhost:9999"
 	listener, err := net.Listen("tcp", address)
+
 	if err != nil {
-		log.Print(err.Error())
-		os.Exit(1)
+		sentry.CaptureException(err)
+		log.Panic(err)
 	}
 
 	for {
@@ -23,7 +35,8 @@ func main() {
 		conn, err := listener.Accept()
 
 		if err != nil {
-			log.Print(err.Error())
+			log.Print(err)
+			sentry.CaptureException(err)
 			continue
 		}
 
@@ -45,7 +58,8 @@ func handleRequest(conn net.Conn) {
 		content, err := Read(conn, DELIMITER)
 
 		if err != nil {
-			log.Print(err.Error())
+			log.Print(err)
+			sentry.CaptureException(err)
 		}
 
 		if content == QUIT_SIGN {
@@ -85,7 +99,8 @@ func handleRequest(conn net.Conn) {
 		_, err = Write(conn, response)
 
 		if err != nil {
-			log.Print(err.Error())
+			log.Print(err)
+			sentry.CaptureException(err)
 		}
 	}
 }
@@ -98,7 +113,12 @@ func handleRequest(conn net.Conn) {
 //
 // - 1 - if connected
 func isActiveWireGuard() int {
-	stdout, _ := exec.Command("wg", "show").Output()
+	stdout, err := exec.Command("wg", "show").Output()
+
+	if err != nil {
+		log.Print(err)
+		sentry.CaptureException(err)
+	}
 
 	if len(stdout) > 0 {
 		return 1
@@ -111,7 +131,8 @@ func isActiveWireGuard() int {
 // Returns an exit status of a shell command executed
 func execute(command *exec.Cmd) int {
 	if err := command.Start(); err != nil {
-		log.Print(err.Error())
+		log.Print(err)
+		sentry.CaptureException(err)
 	}
 
 	if err := command.Wait(); err != nil {
@@ -120,7 +141,8 @@ func execute(command *exec.Cmd) int {
 				return status.ExitStatus()
 			}
 		} else {
-			log.Print(err.Error())
+			log.Print(err)
+			sentry.CaptureException(err)
 		}
 	}
 	return 0
