@@ -23,6 +23,8 @@ import (
 	ini "gopkg.in/ini.v1"
 )
 
+const VERSION = "Forest CLI v0.1.0"
+
 func main() {
 	var email string
 	var password string
@@ -541,7 +543,15 @@ func main() {
 						color.Red("Disconnected")
 					}
 					return nil
-				}},
+				},
+			},
+			{
+				Name: "version",
+				Action: func(ctx *cli.Context) error {
+					fmt.Println(VERSION)
+					return nil
+				},
+			},
 		},
 	}
 	err = app.Run(os.Args)
