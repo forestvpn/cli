@@ -23,7 +23,7 @@ import (
 	ini "gopkg.in/ini.v1"
 )
 
-const VERSION = "Forest CLI v0.1.0"
+const VERSION = "Forest CLI v0.1.0-beta"
 
 func main() {
 	var email string
