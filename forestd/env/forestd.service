@@ -1,9 +1,0 @@
-[Unit]
-Description=Forest VPN daemon
-After=network-online.target
-Wants=network-online.target
-[Service]
-Restart=on-failure
-ExecStart=/usr/local/bin/forestd
-[Install]
-WantedBy=multi-user.target

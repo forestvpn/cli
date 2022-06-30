@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
+	"strings"
 
 	forestvpn_api "github.com/forestvpn/api-client-go"
+	"github.com/getsentry/sentry-go"
 	"github.com/go-resty/resty/v2"
 )
 
@@ -18,7 +21,7 @@ var FirebaseAuthFile = AuthDir + "firebase.json"
 var DeviceDir = AppDir + "device/"
 var DeviceFile = DeviceDir + "device.json"
 var WireguardDir = AppDir + "wireguard/"
-var WireguardConfig = WireguardDir + "wg0.conf"
+var WireguardConfig = WireguardDir + "fvpn0.conf"
 var SessionFile = AppDir + "session.json"
 
 // Creates directories structure
@@ -33,6 +36,12 @@ func Init() error {
 
 func JsonDump(data []byte, filepath string) error {
 	file, err := os.Create(filepath)
+
+	if err != nil {
+		return err
+	}
+
+	err = os.Chmod(filepath, 0755)
 
 	if err != nil {
 		return err
@@ -154,7 +163,34 @@ func LoadDeviceID() (string, error) {
 }
 
 type LocationWrapper struct {
-	Location                     forestvpn_api.Location
-	IsAvailableOnSubscritionOnly bool
-	Message                      string
+	Location forestvpn_api.Location
+	Type     string
+}
+
+func BuyPremiumDialog() error {
+	var answer string
+	fmt.Println("Buy Premium? ([Y]es/[N]o)")
+	fmt.Scanln(&answer)
+
+	if strings.Contains("YESyesYesYEsyEsyeSyES", answer) {
+		err := exec.Command("xdg-open", "https://forestvpn.com/pricing/").Run()
+
+		if err != nil {
+			sentry.CaptureException(err)
+			return err
+		}
+	}
+	return nil
+}
+
+func IsAuthenticated() bool {
+	accessToken, err := LoadAccessToken()
+
+	if err != nil {
+		return false
+	} else if len(accessToken) < 1 {
+		return false
+	}
+	return true
+
 }

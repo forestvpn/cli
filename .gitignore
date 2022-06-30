@@ -1,6 +1,4 @@
 Dockerfile*
-forest/env
 .devcontainer
-forest/api/spec.yaml
-forestd/forestd
-forest/forest
+.vscode
+*env

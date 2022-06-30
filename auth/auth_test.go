@@ -5,8 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"testing"
-
-	"github.com/forestvpn/cli/auth"
+	// "github.com/forestvpn/cli/auth"
 )
 
 const filepath = "/tmp/test.json"
