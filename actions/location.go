@@ -151,6 +151,16 @@ func SetLocation(arg any, location forestvpn_api.Location) error {
 			return err
 		}
 
+		presharedKey := peer.GetPsKey()
+
+		if len(presharedKey) > 0 {
+			_, err = peerSection.NewKey("PresharedKey", presharedKey)
+		}
+
+		if err != nil {
+			sentry.CaptureException(err)
+			return err
+		}
 	}
 
 	err = config.SaveTo(auth.WireguardConfig)
