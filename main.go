@@ -171,16 +171,43 @@ func main() {
 								sentry.CaptureException(err)
 							}
 
-							session, err := auth.JsonLoad(auth.SessionFile)
+							locations, err := api.GetLocations()
 
 							if err != nil {
+								sentry.CaptureException(err)
 								return err
 							}
 
+							session, err := auth.JsonLoad(auth.SessionFile)
+
+							if err != nil {
+								sentry.CaptureException(err)
+								return err
+							}
+
+							var id, city, country string
+
+							for _, loc := range locations {
+								id = loc.GetId()
+
+								if id == session["id"] {
+									city = loc.GetName()
+									country = loc.Country.GetName()
+								}
+							}
+
+							if len(city)+len(country) < 0 {
+								err := fmt.Errorf("no such location: %s", id)
+								sentry.CaptureException(err)
+								return err
+							}
+
+							color.New(color.FgGreen).Printf("Connected to %s, %s", city, country)
 							session["status"] = "up"
 							data, err := json.MarshalIndent(session, "", "    ")
 
 							if err != nil {
+								sentry.CaptureException(err)
 								return err
 							}
 
