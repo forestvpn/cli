@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -317,6 +318,10 @@ func main() {
 							}
 
 							arg := cCtx.Args().Get(0)
+
+							if len(arg) < 1 {
+								return errors.New("UUID or name required")
+							}
 
 							locations, err := api.GetLocations()
 
