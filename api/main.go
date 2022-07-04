@@ -5,11 +5,22 @@ import (
 	"os"
 
 	forestAPI "github.com/forestvpn/api-client-go"
+	"github.com/forestvpn/cli/auth"
 )
 
 func CreateDevice(accessToken string) (*forestAPI.Device, error) {
 	configuration := forestAPI.NewConfiguration()
 	configuration.Host = os.Getenv("STAGING_API_URL")
+	configuration.AddDefaultHeader("X-App-Name", "com.forestvpn.web")
+	configuration.AddDefaultHeader("X-App-Version", "1.0.0")
+	id, err := auth.LoadDeviceID()
+
+	if err != nil {
+		return nil, err
+	}
+
+	configuration.AddDefaultHeader("X-Device-ID", id)
+
 	apiClient := forestAPI.NewAPIClient(configuration)
 	auth := context.WithValue(context.Background(), forestAPI.ContextAccessToken, accessToken)
 	request := *forestAPI.NewCreateOrUpdateDeviceRequest()

@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"net"
 	"os"
 	"sort"
 	"strings"
@@ -11,6 +12,7 @@ import (
 	"github.com/forestvpn/cli/api"
 	"github.com/forestvpn/cli/auth"
 	"github.com/getsentry/sentry-go"
+	externalip "github.com/glendc/go-external-ip"
 	"github.com/olekukonko/tablewriter"
 	"gopkg.in/ini.v1"
 )
@@ -48,7 +50,7 @@ func ListLocations(locations []forestvpn_api.Location, country string) error {
 	return nil
 }
 
-func SetLocation(arg any, location forestvpn_api.Location) error {
+func SetLocation(location forestvpn_api.Location, includeHostIP bool) error {
 
 	accessToken, err := auth.LoadAccessToken()
 
@@ -130,7 +132,33 @@ func SetLocation(arg any, location forestvpn_api.Location) error {
 			return err
 		}
 
-		_, err = peerSection.NewKey("AllowedIPs", strings.Join(peer.GetAllowedIps()[:], ","))
+		allowedIPs := peer.GetAllowedIps()
+
+		if includeHostIP {
+
+			consensus := externalip.DefaultConsensus(nil, nil)
+			hostip, err := consensus.ExternalIP()
+
+			if err != nil {
+				return err
+			}
+
+			for i, network := range allowedIPs {
+				_, ipnet, err := net.ParseCIDR(network)
+
+				if err != nil {
+					return err
+				}
+
+				if ipnet.Contains(net.ParseIP(hostip.String())) {
+					allowedIPs[i] = allowedIPs[len(allowedIPs)-1]
+					allowedIPs[len(allowedIPs)-1] = ""
+					allowedIPs = allowedIPs[:len(allowedIPs)-1]
+				}
+			}
+		}
+
+		_, err = peerSection.NewKey("AllowedIPs", strings.Join(allowedIPs[:], ","))
 
 		if err != nil {
 			sentry.CaptureException(err)

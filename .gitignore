@@ -2,3 +2,4 @@ Dockerfile*
 .devcontainer
 .vscode
 *env
+spec.yaml

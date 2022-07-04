@@ -22,6 +22,7 @@ func main() {
 	var email string
 	var password string
 	var country string
+	var includeHostIP bool
 
 	err := auth.Init()
 
@@ -308,6 +309,15 @@ func main() {
 					{
 						Name:        "set",
 						Description: "Set the default location by specifying `UUID` or `Name`",
+						Flags: []cli.Flag{
+							&cli.BoolFlag{
+								Name:        "include-host-ip",
+								Destination: &includeHostIP,
+								Usage:       "Include routing record for external interface",
+								Value:       true,
+								Aliases:     []string{"i"},
+							},
+						},
 						Action: func(cCtx *cli.Context) error {
 
 							if !auth.IsAuthenticated() {
@@ -350,7 +360,7 @@ func main() {
 								}
 							}
 
-							err = actions.SetLocation(arg, location)
+							err = actions.SetLocation(location, includeHostIP)
 
 							if err != nil {
 								return err
