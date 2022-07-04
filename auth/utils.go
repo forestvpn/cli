@@ -16,20 +16,21 @@ import (
 
 var home, _ = os.UserHomeDir()
 var AppDir = home + "/.forestvpn/"
-var AuthDir = AppDir + "auth/"
-var FirebaseAuthFile = AuthDir + "firebase.json"
-var DeviceDir = AppDir + "device/"
-var DeviceFile = DeviceDir + "device.json"
-var WireguardDir = AppDir + "wireguard/"
-var WireguardConfig = WireguardDir + "fvpn0.conf"
+
+// var AuthDir = AppDir + "auth/"
+var FirebaseAuthFile = AppDir + "firebase.json"
+
+// var DeviceDir = AppDir + "device/"
+var DeviceFile = AppDir + "device.json"
+
+// var WireguardDir = AppDir + "wireguard/"
+var WireguardConfig = AppDir + "fvpn0.conf"
 var SessionFile = AppDir + "session.json"
 
 // Creates directories structure
 func Init() error {
-	for _, path := range []string{AppDir, AuthDir, DeviceDir, WireguardDir} {
-		if _, err := os.Stat(path); os.IsNotExist(err) {
-			os.Mkdir(path, 0755)
-		}
+	if _, err := os.Stat(AppDir); os.IsNotExist(err) {
+		os.Mkdir(AppDir, 0755)
 	}
 	return nil
 }
@@ -41,11 +42,11 @@ func JsonDump(data []byte, filepath string) error {
 		return err
 	}
 
-	err = os.Chmod(filepath, 0755)
+	// err = os.Chmod(filepath, 0755)
 
-	if err != nil {
-		return err
-	}
+	// if err != nil {
+	// 	return err
+	// }
 
 	defer file.Close()
 	n, err := file.WriteString(string(data))

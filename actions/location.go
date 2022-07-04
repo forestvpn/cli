@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"fmt"
 	"net"
 	"os"
 	"sort"
@@ -144,17 +145,23 @@ func SetLocation(location forestvpn_api.Location, includeHostIP bool) error {
 			}
 
 			for i, network := range allowedIPs {
-				_, ipnet, err := net.ParseCIDR(network)
 
-				if err != nil {
-					return err
+				if len(network) > 0 {
+
+					_, ipnet, err := net.ParseCIDR(network)
+
+					if err != nil {
+						return err
+					}
+
+					if ipnet.Contains(net.ParseIP(hostip.String())) {
+						allowedIPs[i] = allowedIPs[len(allowedIPs)-1]
+						allowedIPs[len(allowedIPs)-1] = ""
+						allowedIPs = allowedIPs[:len(allowedIPs)-1]
+					}
+
 				}
 
-				if ipnet.Contains(net.ParseIP(hostip.String())) {
-					allowedIPs[i] = allowedIPs[len(allowedIPs)-1]
-					allowedIPs[len(allowedIPs)-1] = ""
-					allowedIPs = allowedIPs[:len(allowedIPs)-1]
-				}
 			}
 		}
 
@@ -198,7 +205,7 @@ func SetLocation(location forestvpn_api.Location, includeHostIP bool) error {
 		return err
 	}
 
-	color.New(color.FgGreen).Printf("Default location is set to %s", location.GetId())
+	color.New(color.FgGreen).Println(fmt.Sprintf("Default location is set to %s", location.GetId()))
 
 	return nil
 }
