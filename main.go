@@ -314,7 +314,7 @@ func main() {
 								Name:        "include-host-ip",
 								Destination: &includeHostIP,
 								Usage:       "Include routing record for external interface",
-								Value:       true,
+								Value:       false,
 								Aliases:     []string{"i"},
 							},
 						},
