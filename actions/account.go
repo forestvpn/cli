@@ -114,9 +114,6 @@ func Login(email string, password string) error {
 		if err != nil {
 			return err
 		}
-
-		return err
-
 	}
 
 	color.Green("Signed in")
