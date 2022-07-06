@@ -22,7 +22,7 @@ func main() {
 	var email string
 	var password string
 	var country string
-	var includeHostIP bool
+	var includeRoutes bool
 
 	err := auth.Init()
 
@@ -311,9 +311,9 @@ func main() {
 						Description: "Set the default location by specifying `UUID` or `Name`",
 						Flags: []cli.Flag{
 							&cli.BoolFlag{
-								Name:        "include-host-ip",
-								Destination: &includeHostIP,
-								Usage:       "Include routing record for external interface",
+								Name:        "include-routes",
+								Destination: &includeRoutes,
+								Usage:       "Include existing routes",
 								Value:       false,
 								Aliases:     []string{"i"},
 							},
@@ -360,7 +360,7 @@ func main() {
 								}
 							}
 
-							err = actions.SetLocation(location, includeHostIP)
+							err = actions.SetLocation(location, includeRoutes)
 
 							if err != nil {
 								return err

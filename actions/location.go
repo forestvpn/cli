@@ -12,6 +12,7 @@ import (
 	forestvpn_api "github.com/forestvpn/api-client-go"
 	"github.com/forestvpn/cli/api"
 	"github.com/forestvpn/cli/auth"
+	"github.com/forestvpn/cli/utils"
 	"github.com/getsentry/sentry-go"
 	externalip "github.com/glendc/go-external-ip"
 	"github.com/olekukonko/tablewriter"
@@ -135,7 +136,7 @@ func SetLocation(location forestvpn_api.Location, includeHostIP bool) error {
 
 		allowedIPs := peer.GetAllowedIps()
 
-		if includeHostIP {
+		if !includeHostIP {
 
 			consensus := externalip.DefaultConsensus(nil, nil)
 			hostip, err := consensus.ExternalIP()
@@ -144,24 +145,54 @@ func SetLocation(location forestvpn_api.Location, includeHostIP bool) error {
 				return err
 			}
 
-			for i, network := range allowedIPs {
+			existingRoutes, err := utils.GetExistingRoutes()
 
-				if len(network) > 0 {
+			if err != nil {
+				return err
+			}
 
-					_, ipnet, err := net.ParseCIDR(network)
+			for i, ip := range allowedIPs {
+
+				if len(ip) > 0 {
+
+					_, ipnet, err := net.ParseCIDR(ip)
 
 					if err != nil {
 						return err
 					}
 
-					if ipnet.Contains(net.ParseIP(hostip.String())) {
-						allowedIPs[i] = allowedIPs[len(allowedIPs)-1]
-						allowedIPs[len(allowedIPs)-1] = ""
-						allowedIPs = allowedIPs[:len(allowedIPs)-1]
+					var address string
+
+					for _, route := range existingRoutes {
+						if len(route) > 3 {
+							if !strings.Contains(route, "/") {
+								segments := strings.Split(route, ".")[:3]
+								segments = append(segments, "0/24")
+								_, network, err := net.ParseCIDR(strings.Join(segments, "."))
+
+								if err != nil {
+									return err
+								}
+
+								address = network.String()
+							} else {
+								add, _, err := net.ParseCIDR(route)
+
+								if err != nil {
+									return err
+								}
+
+								address = add.String()
+							}
+						}
+
+						if ipnet.Contains(net.ParseIP(hostip.String())) || ipnet.Contains(net.ParseIP(address)) {
+							allowedIPs[i] = allowedIPs[len(allowedIPs)-1]
+							allowedIPs[len(allowedIPs)-1] = ""
+							allowedIPs = allowedIPs[:len(allowedIPs)-1]
+						}
 					}
-
 				}
-
 			}
 		}
 
