@@ -11,7 +11,6 @@ import (
 	forestvpn_api "github.com/forestvpn/api-client-go"
 	"github.com/forestvpn/cli/api"
 	"github.com/forestvpn/cli/auth"
-	"github.com/forestvpn/cli/utils"
 	"github.com/getsentry/sentry-go"
 	"github.com/olekukonko/tablewriter"
 	"gopkg.in/ini.v1"
@@ -122,30 +121,6 @@ func SetLocation(location forestvpn_api.Location, includeHostIP bool) error {
 	if err != nil {
 		sentry.CaptureException(err)
 		return err
-	}
-
-	if !includeHostIP {
-
-		defaultGateway := utils.GetDefaultGateway()
-
-		if err != nil {
-			return err
-		}
-
-		_, err = interfaceSection.NewKey("PreUp", fmt.Sprintf("ip route add %s", defaultGateway))
-
-		if err != nil {
-			sentry.CaptureException(err)
-			return err
-		}
-
-		_, err = interfaceSection.NewKey("PostDown", fmt.Sprintf("ip route del %s", defaultGateway))
-
-		if err != nil {
-			sentry.CaptureException(err)
-			return err
-		}
-
 	}
 
 	for _, peer := range device.Wireguard.GetPeers() {
