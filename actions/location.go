@@ -126,7 +126,7 @@ func SetLocation(location forestvpn_api.Location, includeHostIP bool) error {
 
 	if !includeHostIP {
 
-		defaultGateway, err := utils.GetDefaultGateway()
+		defaultGateway := utils.GetDefaultGateway()
 
 		if err != nil {
 			return err
