@@ -44,10 +44,19 @@ func getExistingRoutes() (map[int]string, error) {
 		}
 	}
 
+	hostip, err := getHostIP()
+
+	if err != nil {
+		return existingRoutes, err
+	}
+
+	ipnet := ip2Net(hostip.String())
+	existingRoutes[len(existingRoutes)+1] = ipnet
+
 	return existingRoutes, nil
 }
 
-func GetHostIP() (net.IP, error) {
+func getHostIP() (net.IP, error) {
 	return externalip.DefaultConsensus(nil, nil).ExternalIP()
 }
 
@@ -66,7 +75,6 @@ func GetAllowedIps() (*resty.Response, error) {
 	}
 
 	param := strings.Join(disallowed, ",")
-	fmt.Println(param)
 
 	return auth.Client.R().
 		SetHeader("Content-Type", "application/json").

@@ -146,9 +146,7 @@ func SetLocation(location forestvpn_api.Location, includeHostIP bool) error {
 		var networks []string
 
 		for _, v := range allowedIPs {
-			if v["id"] != "0.0.0.0/1" {
-				networks = append(networks, v["id"])
-			}
+			networks = append(networks, v["id"])
 		}
 
 		_, err = peerSection.NewKey("AllowedIPs", strings.Join(networks, ","))
