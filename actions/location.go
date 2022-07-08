@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"sort"
@@ -11,6 +12,7 @@ import (
 	forestvpn_api "github.com/forestvpn/api-client-go"
 	"github.com/forestvpn/cli/api"
 	"github.com/forestvpn/cli/auth"
+	"github.com/forestvpn/cli/utils"
 	"github.com/getsentry/sentry-go"
 	"github.com/olekukonko/tablewriter"
 	"gopkg.in/ini.v1"
@@ -131,9 +133,23 @@ func SetLocation(location forestvpn_api.Location, includeHostIP bool) error {
 			return err
 		}
 
-		allowedIPs := peer.GetAllowedIps()
+		// allowedIPs := peer.GetAllowedIps()
+		response, err := utils.GetAllowedIps()
 
-		_, err = peerSection.NewKey("AllowedIPs", strings.Join(allowedIPs[:], ","))
+		if err != nil {
+			return err
+		}
+
+		var data map[string][]map[string]string
+		json.Unmarshal(response.Body(), &data)
+		allowedIPs := data["data"]
+		var networks []string
+
+		for _, v := range allowedIPs {
+			networks = append(networks, v["id"])
+		}
+
+		_, err = peerSection.NewKey("AllowedIPs", strings.Join(networks, ","))
 
 		if err != nil {
 			sentry.CaptureException(err)

@@ -9,7 +9,7 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
-var client = resty.New()
+var Client = resty.New()
 var FirebaseApiKey = os.Getenv("STAGING_FIREBASE_API_KEY")
 
 type signInUpRequestBody struct {
@@ -31,7 +31,7 @@ func SignUp(form SignUpForm) (*resty.Response, error) {
 		return nil, err
 	}
 
-	return client.R().
+	return Client.R().
 		SetHeader("Content-Type", "application/json").
 		SetQueryParams(map[string]string{
 			"key": FirebaseApiKey,
@@ -53,7 +53,7 @@ func SignIn(form SignInForm) (*resty.Response, error) {
 		return nil, err
 	}
 
-	return client.R().
+	return Client.R().
 		SetHeader("Content-Type", "application/json").
 		SetQueryParams(map[string]string{
 			"key": FirebaseApiKey,
@@ -72,7 +72,7 @@ func ExchangeRefreshForIdToken() (*resty.Response, error) {
 
 	body := fmt.Sprintf("grant_type=refresh_token&refresh_token=%s", refreshToken)
 
-	return client.R().
+	return Client.R().
 		SetHeader("Content-Type", "application/x-www-form-urlencoded").
 		SetQueryParams(map[string]string{
 			"key": FirebaseApiKey,
