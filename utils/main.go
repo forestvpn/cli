@@ -12,7 +12,7 @@ import (
 )
 
 func ip2Net(ip string) string {
-	return strings.Join(strings.Split(ip, ".")[:2], ".") + ".0/24"
+	return strings.Join(strings.Split(ip, ".")[:3], ".") + ".0/24"
 }
 
 func getExistingRoutes() (map[int]string, error) {
