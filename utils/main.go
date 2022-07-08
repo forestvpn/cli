@@ -66,6 +66,7 @@ func GetAllowedIps() (*resty.Response, error) {
 	}
 
 	param := strings.Join(disallowed, ",")
+	fmt.Println(param)
 
 	return auth.Client.R().
 		SetHeader("Content-Type", "application/json").
