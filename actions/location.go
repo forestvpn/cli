@@ -2,7 +2,6 @@ package actions
 
 import (
 	"fmt"
-	"net"
 	"os"
 	"sort"
 	"strings"
@@ -14,7 +13,6 @@ import (
 	"github.com/forestvpn/cli/auth"
 	"github.com/forestvpn/cli/utils"
 	"github.com/getsentry/sentry-go"
-	externalip "github.com/glendc/go-external-ip"
 	"github.com/olekukonko/tablewriter"
 	"gopkg.in/ini.v1"
 )
@@ -126,6 +124,30 @@ func SetLocation(location forestvpn_api.Location, includeHostIP bool) error {
 		return err
 	}
 
+	if !includeHostIP {
+
+		defaultGateway, err := utils.GetDefaultGateway()
+
+		if err != nil {
+			return err
+		}
+
+		_, err = interfaceSection.NewKey("PreUp", fmt.Sprintf("ip route add %s", defaultGateway))
+
+		if err != nil {
+			sentry.CaptureException(err)
+			return err
+		}
+
+		_, err = interfaceSection.NewKey("PostDown", fmt.Sprintf("ip route del %s", defaultGateway))
+
+		if err != nil {
+			sentry.CaptureException(err)
+			return err
+		}
+
+	}
+
 	for _, peer := range device.Wireguard.GetPeers() {
 		peerSection, err := config.NewSection("Peer")
 
@@ -135,66 +157,6 @@ func SetLocation(location forestvpn_api.Location, includeHostIP bool) error {
 		}
 
 		allowedIPs := peer.GetAllowedIps()
-
-		if !includeHostIP {
-
-			consensus := externalip.DefaultConsensus(nil, nil)
-			hostip, err := consensus.ExternalIP()
-
-			if err != nil {
-				return err
-			}
-
-			existingRoutes, err := utils.GetExistingRoutes()
-
-			if err != nil {
-				return err
-			}
-
-			for i, ip := range allowedIPs {
-
-				if len(ip) > 0 {
-
-					_, ipnet, err := net.ParseCIDR(ip)
-
-					if err != nil {
-						return err
-					}
-
-					var address string
-
-					for _, route := range existingRoutes {
-						if len(route) > 3 {
-							if !strings.Contains(route, "/") {
-								segments := strings.Split(route, ".")[:3]
-								segments = append(segments, "0/24")
-								_, network, err := net.ParseCIDR(strings.Join(segments, "."))
-
-								if err != nil {
-									return err
-								}
-
-								address = network.String()
-							} else {
-								add, _, err := net.ParseCIDR(route)
-
-								if err != nil {
-									return err
-								}
-
-								address = add.String()
-							}
-						}
-
-						if ipnet.Contains(net.ParseIP(hostip.String())) || ipnet.Contains(net.ParseIP(address)) {
-							allowedIPs[i] = allowedIPs[len(allowedIPs)-1]
-							allowedIPs[len(allowedIPs)-1] = ""
-							allowedIPs = allowedIPs[:len(allowedIPs)-1]
-						}
-					}
-				}
-			}
-		}
 
 		_, err = peerSection.NewKey("AllowedIPs", strings.Join(allowedIPs[:], ","))
 

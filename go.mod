@@ -15,6 +15,7 @@ require (
 )
 
 require (
+	github.com/c-robinson/iplib v1.0.3 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/glendc/go-external-ip v0.1.0 // indirect
 	github.com/golang/protobuf v1.4.2 // indirect

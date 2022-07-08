@@ -1,25 +1,29 @@
 package utils
 
 import (
+	"errors"
+	"net"
 	"os/exec"
 	"strings"
+
+	externalip "github.com/glendc/go-external-ip"
 )
 
-func GetExistingRoutes() ([]string, error) {
-	stdout, err := exec.Command("ip", "r").Output()
+func GetDefaultGateway() (net.IP, error) {
+	stdout, err := exec.Command("ip", "route").Output()
 
 	if err != nil {
 		return nil, err
 	}
 
-	var addr []string
-
-	for _, s := range strings.Split(string(stdout), "\n") {
-		if !strings.Contains(s, "default") {
-			addr = append(addr, strings.Split(s, " ")[0])
+	for _, record := range strings.Split(string(stdout), "\n") {
+		if strings.Contains(record, "default") {
+			return net.ParseIP(strings.Join(strings.Split(record, " ")[1:], " ")), nil
 		}
 	}
+	return nil, errors.New("default route not found")
+}
 
-	return addr, nil
-
+func GetHostIP() (net.IP, error) {
+	return externalip.DefaultConsensus(nil, nil).ExternalIP()
 }
