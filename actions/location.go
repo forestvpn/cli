@@ -133,8 +133,7 @@ func SetLocation(location forestvpn_api.Location, includeHostIP bool) error {
 			return err
 		}
 
-		// allowedIPs := peer.GetAllowedIps()
-		response, err := utils.GetAllowedIps()
+		response, err := utils.GetAllowedIps(peer)
 
 		if err != nil {
 			return err

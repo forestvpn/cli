@@ -192,7 +192,7 @@ func main() {
 							for _, loc := range locations {
 								id = loc.GetId()
 
-								if id == session["id"] {
+								if id == session["location"] {
 									city = loc.GetName()
 									country = loc.Country.GetName()
 								}
@@ -204,7 +204,7 @@ func main() {
 								return err
 							}
 
-							color.New(color.FgGreen).Printf("Connected to %s, %s", city, country)
+							color.New(color.FgGreen).Println("Connected to %s, %s", city, country)
 							session["status"] = "up"
 							data, err := json.MarshalIndent(session, "", "    ")
 
@@ -366,7 +366,7 @@ func main() {
 								return err
 							}
 
-							session := map[string]string{"location": location.GetId(), "status": "up"}
+							session := map[string]string{"location": location.GetId(), "status": "down"}
 							data, err := json.MarshalIndent(session, "", "    ")
 
 							if err != nil {

@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"strings"
 
+	forestvpn_api "github.com/forestvpn/api-client-go"
 	"github.com/forestvpn/cli/auth"
 	externalip "github.com/glendc/go-external-ip"
 	"github.com/go-resty/resty/v2"
@@ -15,11 +16,11 @@ func ip2Net(ip string) string {
 	return strings.Join(strings.Split(ip, ".")[:3], ".") + ".0/24"
 }
 
-func getExistingRoutes() (map[int]string, error) {
-	existingRoutes := make(map[int]string)
+func getExistingRoutes() ([]string, error) {
+	var existingRoutes []string
 	stdout, _ := exec.Command("ip", "route").Output()
 
-	for index, record := range strings.Split(string(stdout), "\n") {
+	for _, record := range strings.Split(string(stdout), "\n") {
 		if !strings.Contains(record, "default") && len(record) > 0 {
 			target := strings.Split(record, " ")[0]
 
@@ -39,7 +40,7 @@ func getExistingRoutes() (map[int]string, error) {
 				}
 			}
 
-			existingRoutes[index] = network.String()
+			existingRoutes = append(existingRoutes, network.IP.String())
 
 		}
 	}
@@ -51,7 +52,7 @@ func getExistingRoutes() (map[int]string, error) {
 	}
 
 	ipnet := ip2Net(hostip.String())
-	existingRoutes[len(existingRoutes)+1] = ipnet
+	existingRoutes = append(existingRoutes, ipnet)
 
 	return existingRoutes, nil
 }
@@ -60,7 +61,7 @@ func getHostIP() (net.IP, error) {
 	return externalip.DefaultConsensus(nil, nil).ExternalIP()
 }
 
-func GetAllowedIps() (*resty.Response, error) {
+func GetAllowedIps(peer forestvpn_api.WireGuardPeer) (*resty.Response, error) {
 	url := "https://hooks.arcemtene.com/wireguard/allowedips"
 	existingRoutes, err := getExistingRoutes()
 
@@ -68,19 +69,15 @@ func GetAllowedIps() (*resty.Response, error) {
 		return nil, err
 	}
 
-	var disallowed []string
+	disallowed := strings.Join(existingRoutes, ",")
 
-	for _, value := range existingRoutes {
-		disallowed = append(disallowed, value)
-	}
-
-	param := strings.Join(disallowed, ",")
+	allowed := strings.Join(peer.GetAllowedIps(), ",")
 
 	return auth.Client.R().
 		SetHeader("Content-Type", "application/json").
 		SetQueryParams(map[string]string{
-			"allowed":    "0.0.0.0/0",
-			"disallowed": param,
+			"allowed":    allowed,
+			"disallowed": disallowed,
 		}).
 		Get(url)
 
