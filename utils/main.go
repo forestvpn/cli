@@ -40,7 +40,7 @@ func getExistingRoutes() ([]string, error) {
 				}
 			}
 
-			existingRoutes = append(existingRoutes, network.IP.String())
+			existingRoutes = append(existingRoutes, network.String())
 
 		}
 	}
