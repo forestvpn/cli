@@ -102,7 +102,7 @@ func getActiveSshClientIps() ([]string, error) {
 
 	for _, record := range records {
 		if len(record) > 1 {
-			ip := record[strings.Index(record, "("):strings.Index(record, ")")]
+			ip := record[strings.Index(record, "(")+1 : strings.Index(record, ")")]
 			fmt.Println(ip)
 			// record := strings.ReplaceAll(record, " ", " ")
 			// ip := strings.Split(record, " ")[4]
