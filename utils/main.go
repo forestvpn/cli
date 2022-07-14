@@ -103,6 +103,8 @@ func GetAllowedIpsLocal(peer forestvpn_api.WireGuardPeer) ([]string, error) {
 			}
 
 			for anet4.ContainsNet(dnet4) {
+				fmt.Println(anet4.String())
+				fmt.Println(dnet4.String())
 				asubnets, err := anet4.Subnet(0)
 
 				if err != nil {
