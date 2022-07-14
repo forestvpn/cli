@@ -35,8 +35,6 @@ func getExistingRoutes() ([]string, error) {
 					return existingRoutes, fmt.Errorf("error parsing routing table network: %s", ip)
 				}
 
-				fmt.Println(ip)
-
 				_, network, err = net.ParseCIDR(ip2Net(ip.String()))
 
 				if err != nil {
@@ -104,9 +102,7 @@ func GetAllowedIpsLocal(peer forestvpn_api.WireGuardPeer) ([]string, error) {
 				break
 			}
 
-			for anet4.ContainsNet(dnet4) {
-				fmt.Println(anet4.String())
-				fmt.Println(dnet4.String())
+			for anet4.ContainsNet(dnet4) && anet4.String() != dnet4.String() {
 				asubnets, err := anet4.Subnet(0)
 
 				if err != nil {
