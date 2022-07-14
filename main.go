@@ -18,7 +18,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-var DSN string
+var Dsn = os.Getenv("SENTRY_DSN")
 
 func main() {
 	var email string
@@ -41,7 +41,7 @@ func main() {
 	}
 
 	err = sentry.Init(sentry.ClientOptions{
-		Dsn:              DSN,
+		Dsn:              Dsn,
 		TracesSampleRate: 1.0,
 	})
 
