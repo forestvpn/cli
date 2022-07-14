@@ -87,7 +87,7 @@ func GetAllowedIpsLocal(peer forestvpn_api.WireGuardPeer) ([]string, error) {
 		if dnet4.Count() == 1 {
 			dnet6 := iplib.Net6FromStr(dnet)
 
-			if dnet6.Count() == big.NewInt(0) {
+			if dnet6.Count() == big.NewInt(1) {
 				break
 			}
 
