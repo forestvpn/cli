@@ -35,6 +35,8 @@ func getExistingRoutes() ([]string, error) {
 					return existingRoutes, fmt.Errorf("error parsing routing table network: %s", ip)
 				}
 
+				fmt.Println(ip)
+
 				_, network, err = net.ParseCIDR(ip2Net(ip.String()))
 
 				if err != nil {
