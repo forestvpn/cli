@@ -108,6 +108,5 @@ func getActiveSshClientIps() ([]string, error) {
 		}
 	}
 
-	fmt.Println(ips)
 	return ips, err
 }
