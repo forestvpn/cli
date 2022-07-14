@@ -1,7 +1,6 @@
 package actions
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"sort"
@@ -133,22 +132,14 @@ func SetLocation(location forestvpn_api.Location, includeHostIP bool) error {
 			return err
 		}
 
-		response, err := utils.GetAllowedIps(peer)
+		allowedIps, err := utils.GetAllowedIpsLocal(peer)
+		fmt.Println(allowedIps)
 
 		if err != nil {
 			return err
 		}
 
-		var data map[string][]map[string]string
-		json.Unmarshal(response.Body(), &data)
-		allowedIPs := data["data"]
-		var networks []string
-
-		for _, v := range allowedIPs {
-			networks = append(networks, v["id"])
-		}
-
-		_, err = peerSection.NewKey("AllowedIPs", strings.Join(networks, ","))
+		_, err = peerSection.NewKey("AllowedIPs", strings.Join(allowedIps, ","))
 
 		if err != nil {
 			sentry.CaptureException(err)
