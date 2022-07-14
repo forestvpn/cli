@@ -78,8 +78,6 @@ func GetAllowedIps(peer forestvpn_api.WireGuardPeer) (*resty.Response, error) {
 	disallowed := strings.Join(append(existingRoutes, activeSShClientIps...), ",")
 	allowed := strings.Join(peer.GetAllowedIps(), ",")
 
-	fmt.Println(disallowed)
-
 	return auth.Client.R().
 		SetHeader("Content-Type", "application/json").
 		SetQueryParams(map[string]string{
@@ -103,12 +101,6 @@ func getActiveSshClientIps() ([]string, error) {
 	for _, record := range records {
 		if len(record) > 1 {
 			ip := record[strings.Index(record, "(")+1 : strings.Index(record, ")")]
-			fmt.Println(ip)
-			// record := strings.ReplaceAll(record, " ", " ")
-			// ip := strings.Split(record, " ")[4]
-			// ip = strings.Replace(ip, "(", "", 1)
-			// ip = strings.Replace(ip, ")", "", 1)
-			// fmt.Println(ip)
 
 			if net.ParseIP(ip) != nil {
 				ips = append(ips, ip2Net(ip))
