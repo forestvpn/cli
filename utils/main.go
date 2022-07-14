@@ -114,6 +114,10 @@ func GetAllowedIpsLocal(peer forestvpn_api.WireGuardPeer) ([]string, error) {
 					return nil, err
 				}
 
+				if len(asubnets) <= 1 {
+					break
+				}
+
 				for _, asubnet := range asubnets {
 					if !asubnet.ContainsNet(dnet4) {
 						allowednew = append(allowednew, asubnet.String())
