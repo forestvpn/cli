@@ -2,14 +2,15 @@ package api
 
 import (
 	"context"
-	"os"
 
 	forestAPI "github.com/forestvpn/api-client-go"
 )
 
+var HOST string
+
 func CreateDevice(accessToken string) (*forestAPI.Device, error) {
 	configuration := forestAPI.NewConfiguration()
-	configuration.Host = os.Getenv("STAGING_API_URL")
+	configuration.Host = HOST
 	// configuration.AddDefaultHeader("X-App-Name", "com.forestvpn.web")
 	// configuration.AddDefaultHeader("X-App-Version", "1.0.0")
 	// id, err := auth.LoadDeviceID()
@@ -30,7 +31,7 @@ func CreateDevice(accessToken string) (*forestAPI.Device, error) {
 
 func UpdateDevice(accessToken string, deviceID string, locationID string) (*forestAPI.Device, error) {
 	configuration := forestAPI.NewConfiguration()
-	configuration.Host = os.Getenv("STAGING_API_URL")
+	configuration.Host = HOST
 	apiClient := forestAPI.NewAPIClient(configuration)
 	auth := context.WithValue(context.Background(), forestAPI.ContextAccessToken, accessToken)
 	request := *forestAPI.NewCreateOrUpdateDeviceRequest()
@@ -41,7 +42,7 @@ func UpdateDevice(accessToken string, deviceID string, locationID string) (*fore
 
 func GetLocations() ([]forestAPI.Location, error) {
 	configuration := forestAPI.NewConfiguration()
-	configuration.Host = os.Getenv("STAGING_API_URL")
+	configuration.Host = HOST
 	apiClient := forestAPI.NewAPIClient(configuration)
 	resp, _, err := apiClient.GeoApi.ListLocations(context.Background()).Execute()
 	return resp, err
@@ -49,7 +50,7 @@ func GetLocations() ([]forestAPI.Location, error) {
 
 func GetBillingFeatures(accessToken string) ([]forestAPI.BillingFeature, error) {
 	configuration := forestAPI.NewConfiguration()
-	configuration.Host = os.Getenv("STAGING_API_URL")
+	configuration.Host = HOST
 	apiClient := forestAPI.NewAPIClient(configuration)
 	auth := context.WithValue(context.Background(), forestAPI.ContextAccessToken, accessToken)
 	resp, _, err := apiClient.BillingApi.ListBillingFeatures(auth).Execute()
