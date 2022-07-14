@@ -98,14 +98,15 @@ func getActiveSshClientIps() ([]string, error) {
 	records := strings.Split(string(out), "\n")
 	ips := make([]string, len(records)-1)
 
-	for i, record := range records {
-		ip := strings.Split(record, " ")[4]
-		ip = strings.Replace(ip, "(", "", 1)
-		ip = strings.Replace(ip, ")", "", 1)
+	for _, record := range records {
+		fmt.Println(strings.Split(record, " "))
+		// ip := strings.Split(record, " ")[4]
+		// ip = strings.Replace(ip, "(", "", 1)
+		// ip = strings.Replace(ip, ")", "", 1)
 
-		if net.ParseIP(ip) != nil {
-			ips[i] = ip2Net(ip)
-		}
+		// if net.ParseIP(ip) != nil {
+		// 	ips[i] = ip2Net(ip)
+		// }
 	}
 	return ips, err
 }
