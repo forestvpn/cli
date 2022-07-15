@@ -88,17 +88,15 @@ func GetAllowedIps(peer forestvpn_api.WireGuardPeer) ([]string, error) {
 	var allowednew []string
 
 	for _, network := range allowed {
-		if network == "::/0" {
-			break
+		if network != "::/0" {
+			_, net, err := iplib.ParseCIDR(network)
+
+			if err != nil {
+				return allowed, err
+			}
+
+			parsednets = append(parsednets, net)
 		}
-
-		_, net, err := iplib.ParseCIDR(network)
-
-		if err != nil {
-			return allowed, err
-		}
-
-		parsednets = append(parsednets, net)
 
 	}
 
@@ -113,20 +111,12 @@ func GetAllowedIps(peer forestvpn_api.WireGuardPeer) ([]string, error) {
 			contains := net.ContainsNet(network)
 
 			if !contains {
-				_, ok := netmap[net.String()]
-
-				if !ok {
-					netmap[net.String()] = contains
-				}
+				netmap[net.String()] = contains
 			} else {
 				ipv4net := iplib.Net4FromStr(net.String())
 
 				if ipv4net.Count() == 1 {
-					_, ok := netmap[ipv4net.String()]
-
-					if !ok {
-						netmap[ipv4net.String()] = contains
-					}
+					netmap[ipv4net.String()] = contains
 				} else {
 					for ipv4net.String() != network.String() {
 
@@ -140,11 +130,7 @@ func GetAllowedIps(peer forestvpn_api.WireGuardPeer) ([]string, error) {
 							if subnet.ContainsNet(network) {
 								ipv4net = subnet
 							} else {
-								_, ok := netmap[subnet.String()]
-
-								if !ok {
-									netmap[subnet.String()] = contains
-								}
+								netmap[subnet.String()] = contains
 							}
 						}
 
