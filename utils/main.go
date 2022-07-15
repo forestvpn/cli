@@ -63,62 +63,6 @@ func getHostIP() (net.IP, error) {
 	return externalip.DefaultConsensus(nil, nil).ExternalIP()
 }
 
-func excludeIPv4NetFromIPv4Net(from iplib.Net4, target iplib.Net4) ([]string, error) {
-	var allowedips []string
-
-	for from.String() != target.String() {
-		if !from.ContainsNet(target) {
-			allowedips = append(allowedips, from.String())
-			break
-		}
-
-		asubnets, err := from.Subnet(0)
-
-		if err != nil {
-			return allowedips, err
-		}
-
-		for _, asubnet := range asubnets {
-			if !asubnet.ContainsNet(target) {
-				allowedips = append(allowedips, asubnet.String())
-			} else {
-				from = asubnet
-			}
-		}
-	}
-
-	return allowedips, nil
-
-}
-
-func excludeIPv4NetFromIPv6Net(from iplib.Net6, target iplib.Net4) ([]string, error) {
-	var allowedips []string
-
-	for from.String() != target.String() {
-		if !from.ContainsNet(target) {
-			allowedips = append(allowedips, from.String())
-			break
-		}
-
-		asubnets, err := from.Subnet(0, 0)
-
-		if err != nil {
-			return allowedips, err
-		}
-
-		for _, asubnet := range asubnets {
-			if !asubnet.ContainsNet(target) {
-				allowedips = append(allowedips, asubnet.String())
-			} else {
-				from = asubnet
-			}
-		}
-	}
-
-	return allowedips, nil
-
-}
-
 func GetAllowedIpsLocal(peer forestvpn_api.WireGuardPeer) ([]string, error) {
 	existingRoutes, err := getExistingRoutes()
 
@@ -134,52 +78,51 @@ func GetAllowedIpsLocal(peer forestvpn_api.WireGuardPeer) ([]string, error) {
 
 	disallowed := append(existingRoutes, activeSShClientIps...)
 	allowed := peer.GetAllowedIps()
-	var allowednew = make(map[int]string)
-	var allowedips []string
-	var anet6 iplib.Net6
+	var allowednew []string
 
 	for _, dnet := range disallowed {
+
 		dnet4 := iplib.Net4FromStr(dnet)
+
+		if dnet4.Count() == 0 {
+			dnet6 := iplib.Net6FromStr(dnet)
+
+			if dnet6.Count() == big.NewInt(0) {
+				break
+			}
+
+			allowednew = append(allowednew, dnet)
+			break
+		}
 
 		for _, anet := range allowed {
 			anet4 := iplib.Net4FromStr(anet)
 
-			if anet4.Count() == 1 {
-				anet6 = iplib.Net6FromStr(anet)
+			if anet4.Count() == 0 {
+				break
+			}
 
-				if anet6.Count() == big.NewInt(1) {
-					break
+			for anet4.ContainsNet(dnet4) && anet4.String() != dnet4.String() {
+				asubnets, err := anet4.Subnet(0)
+
+				if err != nil {
+					return nil, err
+				}
+
+				for _, asubnet := range asubnets {
+					if !asubnet.ContainsNet(dnet4) {
+						allowednew = append(allowednew, asubnet.String())
+					} else {
+						anet4 = asubnet
+					}
 				}
 			}
-
-			if anet4.Count() > 1 {
-				allowedips, err = excludeIPv4NetFromIPv4Net(anet4, dnet4)
-			} else {
-				allowedips, err = excludeIPv4NetFromIPv6Net(anet6, dnet4)
+			if anet4.String() != dnet4.String() {
+				allowednew = append(allowednew, anet4.String())
 			}
-
-			if err != nil {
-				return allowedips, err
-			}
-
-			for i, n := range allowedips {
-				_, ok := allowednew[i]
-
-				if !ok {
-					allowednew[i] = n
-
-				}
-			}
-
 		}
 	}
-	allowedips = make([]string, len(allowednew))
-
-	for _, value := range allowednew {
-		allowedips = append(allowedips, value)
-	}
-
-	return allowedips, nil
+	return allowednew, nil
 
 }
 
