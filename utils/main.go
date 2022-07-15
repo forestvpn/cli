@@ -88,15 +88,13 @@ func GetAllowedIps(peer forestvpn_api.WireGuardPeer) ([]string, error) {
 	var allowednew []string
 
 	for _, network := range allowed {
-		if network != "::/0" {
-			_, net, err := iplib.ParseCIDR(network)
+		_, net, err := iplib.ParseCIDR(network)
 
-			if err != nil {
-				return allowed, err
-			}
-
-			parsednets = append(parsednets, net)
+		if err != nil {
+			return allowed, err
 		}
+
+		parsednets = append(parsednets, net)
 
 	}
 
