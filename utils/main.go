@@ -16,7 +16,9 @@ func ip2Net(ip string) string {
 }
 
 func getExistingRoutes() ([]string, error) {
+	var existingRoutesMap = make(map[string]bool)
 	var existingRoutes []string
+
 	stdout, _ := exec.Command("ip", "route").Output()
 
 	for _, record := range strings.Split(string(stdout), "\n") {
@@ -29,30 +31,36 @@ func getExistingRoutes() ([]string, error) {
 				ip := net.ParseIP(target)
 
 				if ip == nil {
-					return existingRoutes, fmt.Errorf("error parsing routing table network: %s", ip)
+					return nil, fmt.Errorf("error parsing routing table network: %s", ip)
 				}
 
 				_, network, err = net.ParseCIDR(ip2Net(ip.String()))
 
 				if err != nil {
-					return existingRoutes, err
+					return nil, err
 				}
 			}
 
-			existingRoutes = append(existingRoutes, network.String())
+			_, ok := existingRoutesMap[network.String()]
 
+			if !ok {
+				existingRoutesMap[network.String()] = true
+			}
 		}
 	}
 
 	hostip, err := getHostIP()
 
 	if err != nil {
-		return existingRoutes, err
+		return nil, err
 	}
 
 	ipnet := ip2Net(hostip.String())
-	existingRoutes = append(existingRoutes, ipnet)
+	existingRoutesMap[ipnet] = true
 
+	for k := range existingRoutesMap {
+		existingRoutes = append(existingRoutes, k)
+	}
 	return existingRoutes, nil
 }
 
@@ -80,6 +88,10 @@ func GetAllowedIps(peer forestvpn_api.WireGuardPeer) ([]string, error) {
 	var allowednew []string
 
 	for _, network := range allowed {
+		if network == "::/0" {
+			break
+		}
+
 		_, net, err := iplib.ParseCIDR(network)
 
 		if err != nil {
