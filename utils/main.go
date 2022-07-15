@@ -91,15 +91,19 @@ func GetAllowedIpsLocal(peer forestvpn_api.WireGuardPeer) ([]string, error) {
 				break
 			}
 
-			allowednew = append(allowednew, dnet)
-			break
+			// allowednew = append(allowednew, dnet)
+			// break
 		}
 
 		for _, anet := range allowed {
 			anet4 := iplib.Net4FromStr(anet)
 
 			if anet4.Count() == 1 {
-				break
+				anet6 := iplib.Net6FromStr(anet)
+
+				if anet6.Count() == big.NewInt(1) {
+					break
+				}
 			}
 
 			for anet4.String() != dnet4.String() {
