@@ -134,7 +134,7 @@ func GetAllowedIpsLocal(peer forestvpn_api.WireGuardPeer) ([]string, error) {
 
 	disallowed := append(existingRoutes, activeSShClientIps...)
 	allowed := peer.GetAllowedIps()
-	var allowednew []string
+	var allowednew = make(map[int]string)
 	var allowedips []string
 	var anet6 iplib.Net6
 
@@ -159,14 +159,27 @@ func GetAllowedIpsLocal(peer forestvpn_api.WireGuardPeer) ([]string, error) {
 			}
 
 			if err != nil {
-				return allowednew, err
+				return allowedips, err
 			}
 
-			allowednew = append(allowednew, allowedips...)
+			for i, n := range allowedips {
+				_, ok := allowednew[i]
+
+				if !ok {
+					allowednew[i] = n
+
+				}
+			}
 
 		}
 	}
-	return allowednew, nil
+	allowedips = make([]string, len(allowednew))
+
+	for _, value := range allowednew {
+		allowedips = append(allowedips, value)
+	}
+
+	return allowedips, nil
 
 }
 
