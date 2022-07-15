@@ -2,16 +2,13 @@ package utils
 
 import (
 	"fmt"
-	"math/big"
 	"net"
 	"os/exec"
 	"strings"
 
 	"github.com/c-robinson/iplib"
 	forestvpn_api "github.com/forestvpn/api-client-go"
-	"github.com/forestvpn/cli/auth"
 	externalip "github.com/glendc/go-external-ip"
-	"github.com/go-resty/resty/v2"
 )
 
 func ip2Net(ip string) string {
@@ -63,7 +60,7 @@ func getHostIP() (net.IP, error) {
 	return externalip.DefaultConsensus(nil, nil).ExternalIP()
 }
 
-func GetAllowedIpsLocal(peer forestvpn_api.WireGuardPeer) ([]string, error) {
+func GetAllowedIps(peer forestvpn_api.WireGuardPeer) ([]string, error) {
 	existingRoutes, err := getExistingRoutes()
 
 	if err != nil {
@@ -79,79 +76,60 @@ func GetAllowedIpsLocal(peer forestvpn_api.WireGuardPeer) ([]string, error) {
 	disallowed := append(existingRoutes, activeSShClientIps...)
 	allowed := peer.GetAllowedIps()
 	var allowednew []string
+	var parsednets []iplib.Net
 
-	for _, dnet := range disallowed {
+	for _, network := range allowed {
+		_, net, err := iplib.ParseCIDR(network)
 
-		dnet4 := iplib.Net4FromStr(dnet)
-
-		if dnet4.Count() == 0 {
-			dnet6 := iplib.Net6FromStr(dnet)
-
-			if dnet6.Count() == big.NewInt(0) {
-				break
-			}
-
-			allowednew = append(allowednew, dnet)
-			break
+		if err != nil {
+			return allowed, err
 		}
 
-		for _, anet := range allowed {
-			anet4 := iplib.Net4FromStr(anet)
+		parsednets = append(parsednets, net)
 
-			if anet4.Count() == 0 {
+	}
+
+	for _, net := range parsednets {
+		for _, d := range disallowed {
+			_, network, err := iplib.ParseCIDR(d)
+
+			if err != nil {
 				break
 			}
 
-			for anet4.String() != dnet4.String() {
-				if !anet4.ContainsNet(dnet4) {
-					allowednew = append(allowednew, anet4.String())
-					break
-				}
+			if !net.ContainsNet(network) {
+				allowednew = append(allowednew, net.String())
+			} else {
+				ipv4net := iplib.Net4FromStr(net.String())
 
-				asubnets, err := anet4.Subnet(0)
+				if ipv4net.Count() == 1 {
+					allowednew = append(allowednew, ipv4net.String())
+				} else {
+					for ipv4net.String() != network.String() {
 
-				if err != nil {
-					return nil, err
-				}
+						subnets, err := ipv4net.Subnet(0)
 
-				for _, asubnet := range asubnets {
-					if !asubnet.ContainsNet(dnet4) {
-						allowednew = append(allowednew, asubnet.String())
-					} else {
-						anet4 = asubnet
+						if err != nil {
+							break
+						}
+
+						for _, subnet := range subnets {
+							if subnet.ContainsNet(network) {
+								ipv4net = subnet
+							} else {
+								allowednew = append(allowednew, subnet.String())
+							}
+						}
+
 					}
 				}
 			}
+
+			// out := fmt.Sprintf("%s: %t %s", net.String(), net.ContainsNet(network), network.String())
+			// fmt.Println(out)
 		}
 	}
 	return allowednew, nil
-
-}
-
-func GetAllowedIps(peer forestvpn_api.WireGuardPeer) (*resty.Response, error) {
-	url := "https://hooks.arcemtene.com/wireguard/allowedips"
-	existingRoutes, err := getExistingRoutes()
-
-	if err != nil {
-		return nil, err
-	}
-
-	activeSShClientIps, err := getActiveSshClientIps()
-
-	if err != nil {
-		return nil, err
-	}
-
-	disallowed := strings.Join(append(existingRoutes, activeSShClientIps...), ",")
-	allowed := strings.Join(peer.GetAllowedIps(), ",")
-
-	return auth.Client.R().
-		SetHeader("Content-Type", "application/json").
-		SetQueryParams(map[string]string{
-			"allowed":    allowed,
-			"disallowed": disallowed,
-		}).
-		Get(url)
 
 }
 
