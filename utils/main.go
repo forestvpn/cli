@@ -108,7 +108,6 @@ func GetAllowedIps(peer forestvpn_api.WireGuardPeer) ([]string, error) {
 					containsDisallowedNetwork = true
 				}
 
-				fmt.Printf("%s contains %s", allowedNetwork, disallowedNetwork)
 				ipv4net := iplib.Net4FromStr(allowedNetwork.String())
 
 				if ipv4net.Count() > 1 {
