@@ -84,46 +84,40 @@ func GetAllowedIps(peer forestvpn_api.WireGuardPeer) ([]string, error) {
 	disallowed := append(existingRoutes, activeSShClientIps...)
 	allowed := peer.GetAllowedIps()
 	var netmap = make(map[string]bool)
-	var parsednets []iplib.Net
 	var allowednew []string
 
-	for _, network := range allowed {
-		_, net, err := iplib.ParseCIDR(network)
+	for _, net := range allowed {
+		containsCount := 0
+		_, allowedNetwork, err := iplib.ParseCIDR(net)
 
 		if err != nil {
-			return allowed, err
+			return nil, err
 		}
 
-		parsednets = append(parsednets, net)
-
-	}
-
-	for _, net := range parsednets {
-		for _, d := range disallowed {
-			_, network, err := iplib.ParseCIDR(d)
+		for _, net := range disallowed {
+			_, disallowedNetwork, err := iplib.ParseCIDR(net)
 
 			if err != nil {
-				break
+				return nil, err
 			}
 
-			contains := net.ContainsNet(network)
+			contains := allowedNetwork.ContainsNet(disallowedNetwork)
 
-			if !contains {
-				netmap[net.String()] = contains
-			} else {
-				ipv4net := iplib.Net4FromStr(net.String())
+			if contains {
+				containsCount += 1
+				ipv4net := iplib.Net4FromStr(allowedNetwork.String())
 
 				if ipv4net.Count() > 1 {
-					for ipv4net.String() != network.String() {
+					for ipv4net.String() != disallowedNetwork.String() {
 
 						subnets, err := ipv4net.Subnet(0)
 
 						if err != nil {
-							break
+							return nil, err
 						}
 
 						for _, subnet := range subnets {
-							if subnet.ContainsNet(network) {
+							if subnet.ContainsNet(disallowedNetwork) {
 								ipv4net = subnet
 							} else {
 								netmap[subnet.String()] = contains
@@ -133,12 +127,17 @@ func GetAllowedIps(peer forestvpn_api.WireGuardPeer) ([]string, error) {
 					}
 				}
 			}
+		}
 
+		if containsCount == 0 {
+			netmap[net] = true
 		}
 	}
+
 	for k := range netmap {
 		allowednew = append(allowednew, k)
 	}
+
 	return allowednew, nil
 
 }
