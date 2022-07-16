@@ -113,9 +113,7 @@ func GetAllowedIps(peer forestvpn_api.WireGuardPeer) ([]string, error) {
 			} else {
 				ipv4net := iplib.Net4FromStr(net.String())
 
-				if ipv4net.Count() == 1 {
-					netmap[ipv4net.String()] = contains
-				} else {
+				if ipv4net.Count() > 1 {
 					for ipv4net.String() != network.String() {
 
 						subnets, err := ipv4net.Subnet(0)
