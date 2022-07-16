@@ -132,9 +132,26 @@ func SetLocation(location forestvpn_api.Location, includeHostIP bool) error {
 			return err
 		}
 
-		allowedIps, err := utils.GetAllowedIps(peer)
+		existingRoutes, err := utils.GetExistingRoutes()
 
 		if err != nil {
+			sentry.CaptureException(err)
+			return err
+		}
+
+		activeSShClientIps, err := utils.GetActiveSshClientIps()
+
+		if err != nil {
+			sentry.CaptureException(err)
+			return err
+		}
+
+		disallowed := append(existingRoutes, activeSShClientIps...)
+		allowed := peer.GetAllowedIps()
+		allowedIps, err := utils.ExcludeDisallowedIpds(allowed, disallowed)
+
+		if err != nil {
+			sentry.CaptureException(err)
 			return err
 		}
 

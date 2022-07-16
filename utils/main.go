@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/c-robinson/iplib"
-	forestvpn_api "github.com/forestvpn/api-client-go"
 	externalip "github.com/glendc/go-external-ip"
 )
 
@@ -15,7 +14,7 @@ func ip2Net(ip string) string {
 	return strings.Join(strings.Split(ip, ".")[:3], ".") + ".0/24"
 }
 
-func getExistingRoutes() ([]string, error) {
+func GetExistingRoutes() ([]string, error) {
 	var existingRoutesMap = make(map[string]bool)
 	var existingRoutes []string
 
@@ -68,21 +67,7 @@ func getHostIP() (net.IP, error) {
 	return externalip.DefaultConsensus(nil, nil).ExternalIP()
 }
 
-func GetAllowedIps(peer forestvpn_api.WireGuardPeer) ([]string, error) {
-	existingRoutes, err := getExistingRoutes()
-
-	if err != nil {
-		return nil, err
-	}
-
-	activeSShClientIps, err := getActiveSshClientIps()
-
-	if err != nil {
-		return nil, err
-	}
-
-	disallowed := append(existingRoutes, activeSShClientIps...)
-	allowed := peer.GetAllowedIps()
+func ExcludeDisallowedIpds(allowed []string, disallowed []string) ([]string, error) {
 	var netmap = make(map[string]bool)
 	var allowednew []string
 
@@ -145,7 +130,7 @@ func GetAllowedIps(peer forestvpn_api.WireGuardPeer) ([]string, error) {
 
 }
 
-func getActiveSshClientIps() ([]string, error) {
+func GetActiveSshClientIps() ([]string, error) {
 	out, err := exec.Command("who").Output()
 
 	if err != nil {
