@@ -284,11 +284,11 @@ func main() {
 									return err
 								}
 
-								var location *forestvpn_api.Location
+								var location forestvpn_api.Location
 
 								for _, loc := range locations {
-									if loc.Id == id {
-										location = &loc
+									if loc.GetId() == id {
+										location = loc
 									}
 								}
 
