@@ -71,16 +71,16 @@ func ExcludeDisallowedIpds(allowed []string, disallowed []string) ([]string, err
 	var netmap = make(map[string]bool)
 	var allowednew []string
 
-	for _, net := range allowed {
+	for _, a := range allowed {
 		containsDisallowedNetwork := false
-		_, allowedNetwork, err := iplib.ParseCIDR(net)
+		_, allowedNetwork, err := iplib.ParseCIDR(a)
 
 		if err != nil {
 			return nil, err
 		}
 
-		for _, net := range disallowed {
-			_, disallowedNetwork, err := iplib.ParseCIDR(net)
+		for _, d := range disallowed {
+			_, disallowedNetwork, err := iplib.ParseCIDR(d)
 
 			if err != nil {
 				return nil, err
@@ -118,7 +118,41 @@ func ExcludeDisallowedIpds(allowed []string, disallowed []string) ([]string, err
 		}
 
 		if !containsDisallowedNetwork {
-			netmap[net] = containsDisallowedNetwork
+			netmap[a] = containsDisallowedNetwork
+		}
+
+		for k := range netmap {
+			_, net, err := iplib.ParseCIDR(k)
+
+			if err != nil {
+				return nil, err
+			}
+
+			resultingNetwork := iplib.Net4FromStr(net.String())
+
+			if resultingNetwork.Count() == 1 {
+				_, bits := resultingNetwork.Mask().Size()
+
+				if bits < 32 {
+					return nil, fmt.Errorf("error parsing ipv4 network: %s", resultingNetwork.String())
+				}
+			}
+
+			for _, d := range disallowed {
+				disallowedNetwork := iplib.Net4FromStr(d)
+
+				if resultingNetwork.Count() == 1 {
+					_, bits := resultingNetwork.Mask().Size()
+
+					if bits < 32 {
+						return nil, fmt.Errorf("error parsing ipv4 network: %s", resultingNetwork.String())
+					}
+				}
+
+				if resultingNetwork.ContainsNet(disallowedNetwork) {
+					delete(netmap, resultingNetwork.String())
+				}
+			}
 		}
 	}
 
