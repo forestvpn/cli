@@ -144,7 +144,6 @@ func ExcludeDisallowedIpds(allowed []string, disallowed []string) ([]string, err
 	for k := range netmap {
 		allowednew = append(allowednew, k)
 	}
-	fmt.Println(allowednew)
 
 	return allowednew, nil
 
