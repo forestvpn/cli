@@ -42,24 +42,8 @@ func TestExcludeDisallowedIpdsExclude(t *testing.T) {
 	for _, n := range disallowed {
 		disallowedv4net := iplib.Net4FromStr(n)
 
-		if disallowedv4net.Count() == 1 {
-			_, bits := disallowedv4net.Mask().Size()
-
-			if bits < 32 {
-				t.Errorf("error parsing ipv4 network: %s", disallowedv4net.String())
-			}
-		}
-
 		for _, r := range result {
 			resultingv4net := iplib.Net4FromStr(r)
-
-			if resultingv4net.Count() == 1 {
-				_, bits := disallowedv4net.Mask().Size()
-
-				if bits < 32 {
-					t.Errorf("error parsing ipv4 network: %s", resultingv4net.String())
-				}
-			}
 
 			if resultingv4net.ContainsNet(disallowedv4net) {
 				t.Errorf("%s contains %s", resultingv4net.String(), disallowedv4net.String())
