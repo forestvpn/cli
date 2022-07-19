@@ -6,6 +6,7 @@ require (
 	github.com/fatih/color v1.13.0
 	github.com/forestvpn/api-client-go v0.0.0-20220620154406-df8d11e880c3
 	github.com/getsentry/sentry-go v0.13.0
+	github.com/glendc/go-external-ip v0.1.0
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/google/uuid v1.3.0
 	github.com/olekukonko/tablewriter v0.0.5
@@ -17,7 +18,6 @@ require (
 require (
 	github.com/c-robinson/iplib v1.0.3 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
-	github.com/glendc/go-external-ip v0.1.0 // indirect
 	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/mattn/go-colorable v0.1.11 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect

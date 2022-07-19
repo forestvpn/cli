@@ -2,6 +2,7 @@ package actions
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 
@@ -63,6 +64,13 @@ func Login(email string, password string) error {
 
 		if err != nil {
 			return err
+		}
+
+		if response.StatusCode() != 200 {
+			var data map[string]map[string]string
+			json.Unmarshal(response.Body(), &data)
+			err := data["error"]
+			return errors.New(err["message"])
 		}
 
 		err = auth.HandleFirebaseSignInResponse(response)

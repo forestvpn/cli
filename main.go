@@ -18,6 +18,8 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+var Dsn = os.Getenv("SENTRY_DSN")
+
 func main() {
 	var email string
 	var password string
@@ -39,7 +41,7 @@ func main() {
 	}
 
 	err = sentry.Init(sentry.ClientOptions{
-		Dsn:              os.Getenv("SENTRY_DSN"),
+		Dsn:              Dsn,
 		TracesSampleRate: 1.0,
 	})
 
@@ -192,7 +194,7 @@ func main() {
 							for _, loc := range locations {
 								id = loc.GetId()
 
-								if id == session["id"] {
+								if id == session["location"] {
 									city = loc.GetName()
 									country = loc.Country.GetName()
 								}
@@ -204,7 +206,7 @@ func main() {
 								return err
 							}
 
-							color.New(color.FgGreen).Printf("Connected to %s, %s", city, country)
+							color.New(color.FgGreen).Printf("Connected to %s, %s\n", city, country)
 							session["status"] = "up"
 							data, err := json.MarshalIndent(session, "", "    ")
 
@@ -282,11 +284,11 @@ func main() {
 									return err
 								}
 
-								var location *forestvpn_api.Location
+								var location forestvpn_api.Location
 
 								for _, loc := range locations {
-									if loc.Id == id {
-										location = &loc
+									if loc.GetId() == id {
+										location = loc
 									}
 								}
 
@@ -366,7 +368,7 @@ func main() {
 								return err
 							}
 
-							session := map[string]string{"location": location.GetId(), "status": "up"}
+							session := map[string]string{"location": location.GetId(), "status": "down"}
 							data, err := json.MarshalIndent(session, "", "    ")
 
 							if err != nil {

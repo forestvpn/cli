@@ -124,30 +124,6 @@ func SetLocation(location forestvpn_api.Location, includeHostIP bool) error {
 		return err
 	}
 
-	if !includeHostIP {
-
-		defaultGateway := utils.GetDefaultGateway()
-
-		if err != nil {
-			return err
-		}
-
-		_, err = interfaceSection.NewKey("PreUp", fmt.Sprintf("ip route add %s", defaultGateway))
-
-		if err != nil {
-			sentry.CaptureException(err)
-			return err
-		}
-
-		_, err = interfaceSection.NewKey("PostDown", fmt.Sprintf("ip route del %s", defaultGateway))
-
-		if err != nil {
-			sentry.CaptureException(err)
-			return err
-		}
-
-	}
-
 	for _, peer := range device.Wireguard.GetPeers() {
 		peerSection, err := config.NewSection("Peer")
 
@@ -156,9 +132,30 @@ func SetLocation(location forestvpn_api.Location, includeHostIP bool) error {
 			return err
 		}
 
-		allowedIPs := peer.GetAllowedIps()
+		existingRoutes, err := utils.GetExistingRoutes()
 
-		_, err = peerSection.NewKey("AllowedIPs", strings.Join(allowedIPs[:], ","))
+		if err != nil {
+			sentry.CaptureException(err)
+			return err
+		}
+
+		activeSShClientIps, err := utils.GetActiveSshClientIps()
+
+		if err != nil {
+			sentry.CaptureException(err)
+			return err
+		}
+
+		disallowed := append(existingRoutes, activeSShClientIps...)
+		allowed := peer.GetAllowedIps()
+		allowedIps, err := utils.ExcludeDisallowedIpds(allowed, disallowed)
+
+		if err != nil {
+			sentry.CaptureException(err)
+			return err
+		}
+
+		_, err = peerSection.NewKey("AllowedIPs", strings.Join(allowedIps, ","))
 
 		if err != nil {
 			sentry.CaptureException(err)
