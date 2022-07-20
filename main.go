@@ -18,7 +18,12 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-var Dsn = os.Getenv("SENTRY_DSN")
+var (
+	DSN            string
+	appVersion     string
+	firebaseApiKey string
+	apiHost        string
+)
 
 func main() {
 	var email string
@@ -32,16 +37,23 @@ func main() {
 		panic(err)
 	}
 
+	authClient := auth.AuthClient{ApiKey: firebaseApiKey}
+
 	if auth.IsRefreshTokenExists() {
-		response, err := auth.GetAccessToken()
+		response, err := authClient.GetAccessToken()
 
 		if err == nil {
 			auth.JsonDump(response.Body(), auth.FirebaseAuthFile)
 		}
 	}
 
+	accessToken, _ := auth.LoadAccessToken()
+
+	wrapper := api.GetApiClient(firebaseApiKey, accessToken, apiHost)
+	apiClient := actions.AuthClientWrapper{AuthClient: authClient, ApiClient: wrapper}
+
 	err = sentry.Init(sentry.ClientOptions{
-		Dsn:              Dsn,
+		Dsn:              DSN,
 		TracesSampleRate: 1.0,
 	})
 
@@ -78,7 +90,7 @@ func main() {
 							},
 						},
 						Action: func(c *cli.Context) error {
-							return actions.Register(email, password)
+							return apiClient.Register(email, password)
 						},
 					},
 					{
@@ -101,14 +113,14 @@ func main() {
 							},
 						},
 						Action: func(c *cli.Context) error {
-							return actions.Login(email, password)
+							return apiClient.Login(email, password)
 						},
 					},
 					{
 						Name:  "logout",
 						Usage: "Log out from your ForestVPN account on this device",
 						Action: func(c *cli.Context) error {
-							return actions.Logout()
+							return apiClient.Logout()
 						},
 					},
 					// {
@@ -175,7 +187,7 @@ func main() {
 								sentry.CaptureException(err)
 							}
 
-							locations, err := api.GetLocations()
+							locations, err := wrapper.GetLocations()
 
 							if err != nil {
 								sentry.CaptureException(err)
@@ -277,7 +289,7 @@ func main() {
 
 							if state.GetStatus() && session["status"] == "up" {
 								id := session["location"]
-								locations, err := api.GetLocations()
+								locations, err := wrapper.GetLocations()
 
 								if err != nil {
 									sentry.CaptureException(err)
@@ -335,7 +347,7 @@ func main() {
 								return errors.New("UUID or name required")
 							}
 
-							locations, err := api.GetLocations()
+							locations, err := wrapper.GetLocations()
 
 							if err != nil {
 								return err
@@ -362,7 +374,7 @@ func main() {
 								}
 							}
 
-							err = actions.SetLocation(location, includeRoutes)
+							err = apiClient.SetLocation(location, includeRoutes)
 
 							if err != nil {
 								return err
@@ -395,22 +407,16 @@ func main() {
 							},
 						},
 						Action: func(c *cli.Context) error {
-							locations, err := api.GetLocations()
-
-							if err != nil {
-								return err
-							}
-
-							return actions.ListLocations(locations, country)
+							return apiClient.ListLocations(country)
 						},
 					},
 				},
 			},
 			{
 				Name:  "version",
-				Usage: "Shows the version of Forest CLI",
+				Usage: "Show the version of ForestVPN CLI",
 				Action: func(ctx *cli.Context) error {
-					// fmt.Println(VERSION)
+					fmt.Printf("ForestVPN CLI %s\n", appVersion)
 					return nil
 				},
 			},

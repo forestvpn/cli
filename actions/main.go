@@ -1,6 +1,8 @@
 package actions
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"sort"
@@ -8,17 +10,150 @@ import (
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/getsentry/sentry-go"
+	"github.com/olekukonko/tablewriter"
+	"golang.org/x/term"
+	"gopkg.in/ini.v1"
+
 	forestvpn_api "github.com/forestvpn/api-client-go"
 	"github.com/forestvpn/cli/api"
 	"github.com/forestvpn/cli/auth"
 	"github.com/forestvpn/cli/utils"
-	"github.com/getsentry/sentry-go"
-	"github.com/olekukonko/tablewriter"
-	"gopkg.in/ini.v1"
 )
 
-func ListLocations(locations []forestvpn_api.Location, country string) error {
+type AuthClientWrapper struct {
+	AuthClient auth.AuthClient
+	ApiClient  api.ApiClientWrapper
+}
+
+func (w AuthClientWrapper) Register(email string, password string) error {
+	signinform, err := auth.GetSignInForm(email, []byte(password))
+
+	if err != nil {
+		return err
+	}
+
+	signupform := auth.SignUpForm{}
+	fmt.Print("Confirm password: ")
+	passwordConfirmation, err := term.ReadPassword(0)
+	fmt.Println()
+
+	if err != nil {
+		return err
+	}
+
+	signupform.PasswordConfirmationField.Value = passwordConfirmation
+	signupform.SignInForm = signinform
+	err = signupform.ValidatePasswordConfirmation()
+
+	if err != nil {
+		return err
+	}
+
+	response, err := w.AuthClient.SignUp(signupform)
+
+	if err != nil {
+		return err
+	}
+
+	err = auth.HandleFirebaseAuthResponse(response)
+
+	if err == nil {
+		color.Green("Signed up")
+	}
+
+	return err
+}
+
+func (w AuthClientWrapper) Login(email string, password string) error {
+	if !auth.IsRefreshTokenExists() {
+		signinform, err := auth.GetSignInForm(email, []byte(password))
+
+		if err != nil {
+			return err
+		}
+
+		response, err := w.AuthClient.SignIn(signinform)
+
+		if err != nil {
+			return err
+		}
+
+		if response.StatusCode() != 200 {
+			var data map[string]map[string]string
+			json.Unmarshal(response.Body(), &data)
+			err := data["error"]
+			return errors.New(err["message"])
+		}
+
+		err = auth.HandleFirebaseSignInResponse(response)
+
+		if err != nil {
+			return err
+		}
+
+		err = auth.JsonDump(response.Body(), auth.FirebaseAuthFile)
+
+		if err != nil {
+			return err
+		}
+
+		response, err = w.AuthClient.GetAccessToken()
+
+		if err != nil {
+			return err
+		}
+
+		err = auth.JsonDump(response.Body(), auth.FirebaseAuthFile)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	if !auth.IsDeviceCreated() {
+		resp, err := w.ApiClient.CreateDevice()
+
+		if err != nil {
+			return err
+		}
+
+		b, err := json.MarshalIndent(resp, "", "    ")
+
+		if err != nil {
+			return err
+		}
+
+		err = auth.JsonDump(b, auth.DeviceFile)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	color.Green("Signed in")
+
+	return nil
+}
+
+func (w AuthClientWrapper) Logout() error {
+	err := os.Remove(auth.FirebaseAuthFile)
+
+	if err == nil {
+		color.Red("Signed out")
+	}
+
+	return err
+}
+
+func (w AuthClientWrapper) ListLocations(country string) error {
 	var data [][]string
+	locations, err := w.ApiClient.GetLocations()
+
+	if err != nil {
+		sentry.CaptureException(err)
+		return err
+	}
 
 	if len(country) > 0 {
 		var locationsByCountry []forestvpn_api.Location
@@ -50,16 +185,8 @@ func ListLocations(locations []forestvpn_api.Location, country string) error {
 	return nil
 }
 
-func SetLocation(location forestvpn_api.Location, includeHostIP bool) error {
-
-	accessToken, err := auth.LoadAccessToken()
-
-	if err != nil {
-		sentry.CaptureException(err)
-		return err
-	}
-
-	resp, err := api.GetBillingFeatures(accessToken)
+func (w AuthClientWrapper) SetLocation(location forestvpn_api.Location, includeHostIP bool) error {
+	resp, err := w.ApiClient.GetBillingFeatures()
 
 	if err != nil {
 		sentry.CaptureException(err)
@@ -88,7 +215,7 @@ func SetLocation(location forestvpn_api.Location, includeHostIP bool) error {
 		return err
 	}
 
-	device, err := api.UpdateDevice(accessToken, deviceID, location.GetId())
+	device, err := w.ApiClient.UpdateDevice(deviceID, location.GetId())
 
 	if err != nil {
 		sentry.CaptureException(err)

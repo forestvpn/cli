@@ -2,4 +2,7 @@ Dockerfile*
 .devcontainer
 .vscode
 *env
-spec.yaml
+*.yaml
+dist
+.cache
+entrypoint-ci.sh

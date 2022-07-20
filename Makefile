@@ -1,64 +1,27 @@
-GOPATH := $(shell go env GOPATH)
-GODEP_BIN := $(GOPATH)/bin/dep
-GOLINT := $(GOPATH)/bin/golint
-VERSION := $(shell cat VERSION)-$(shell git rev-parse --short HEAD)
+BUILDDIR ?= dist
+OSS ?= linux darwin freebsd windows
+ARCHS ?= amd64 arm64
+VERSION ?= $(shell git describe --tags `git rev-list -1 HEAD`)
 
-packages = $$(go list ./... | egrep -v '/vendor/')
-files = $$(find . -name '*.go' | egrep -v '/vendor/')
-
-ifeq "$(HOST_BUILD)" "yes"
-	# Use host system for building
-	BUILD_SCRIPT =./build-deb-host.sh
-else
-	# Use docker for building
-	BUILD_SCRIPT = ./build-deb-docker.sh
-endif
-
-
-.PHONY: all
-all: lint vet test build 
-
-$(GODEP):
-	go get -u github.com/golang/dep/cmd/dep
-
-Gopkg.toml: $(GODEP)
-	$(GODEP_BIN) init
-
-vendor:         # Vendor the packages using dep
-vendor: $(GODEP) Gopkg.toml Gopkg.lock
-	@ echo "No vendor dir found. Fetching dependencies now..."
-	GOPATH=$(GOPATH):. $(GODEP_BIN) ensure
-
-version:
-	@ echo $(VERSION)
-
-build:          # Build the binary
-build: vendor
-	test $(BINARY_NAME)
-	go build -o $(BINARY_NAME) -ldflags "-X main.Version=$(VERSION)" 
-
-build-deb:      # Build DEB package (needs other tools)
-	test $(BINARY_NAME)
-	test $(DEB_PACKAGE_NAME)
-	test "$(DEB_PACKAGE_DESCRIPTION)"
-	exec ${BUILD_SCRIPT}
-	
-test: vendor
-	go test -race $(packages)
-
-vet:            # Run go vet
-vet: vendor
-	go tool vet -printfuncs=Debug,Debugf,Debugln,Info,Infof,Infoln,Error,Errorf,Errorln $(files)
-
-lint:           # Run go lint
-lint: vendor $(GOLINT)
-	$(GOLINT) -set_exit_status $(packages)
-$(GOLINT):
-	go get -u github.com/golang/lint/golint
+build: $(BUILDDIR)/fvpn
 
 clean:
-	test $(BINARY_NAME)
-	rm -f $(BINARY_NAME) 
+	rm -rf "$(BUILDDIR)"
 
-help:           # Show this help
-	@fgrep -h "#" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/#//'
+install: build
+
+define fvpn
+$(BUILDDIR)/fvpn-$(1)-$(2): export CGO_ENABLED := 0
+$(BUILDDIR)/fvpn-$(1)-$(2): export GOOS := $(1)
+$(BUILDDIR)/fvpn-$(1)-$(2): export GOARCH := $(2)
+$(BUILDDIR)/fvpn-$(1)-$(2):
+	go build \
+	-ldflags="-s -w -X main.appVersion=$(VERSION) -X main.DSN=$(SENTRY_DSN) -X main.firebaseApiKey=$(PRODUCTION_FIREBASE_API_KEY) -X main.apiHost=$(PRODUCTION_API_URL)" \
+	-trimpath -v -o "$(BUILDDIR)/fvpn-$(1)-$(2)"
+endef
+$(foreach OS,$(OSS),$(foreach ARCH,$(ARCHS),$(eval $(call fvpn,$(OS),$(ARCH)))))
+
+$(BUILDDIR)/fvpn: $(foreach OS,$(OSS),$(foreach ARCH,$(ARCHS),$(BUILDDIR)/fvpn-$(OS)-$(ARCH)))
+	@mkdir -vp "$(BUILDDIR)"
+
+.PHONY: clean build install
