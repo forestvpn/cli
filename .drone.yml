@@ -51,6 +51,11 @@ steps:
 
   - name: test
     image: golang:1.18.4-alpine3.15
+    environment:
+      STAGING_EMAIL:
+        from_secret: STAGING_EMAIL
+      STAGING_PASSWORD:
+        from_secret: STAGIN_PASSWORD
     volumes:
       - name: cache
         path: /cache
