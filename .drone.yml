@@ -91,8 +91,8 @@ steps:
     commands:
       - export VERSION=${DRONE_TAG:-${DRONE_COMMIT:0:7}}
       - apk --no-cache add nfpm
-      - nfpm package -f /root/packaging/nfpm-amd64.yaml -p deb -t dist/fvpn-amd64.deb
-      - nfpm package -f /root/packaging/nfpm-arm64.yaml -p deb -t dist/fvpn-arm64.deb
+      - nfpm package -f /packaging/nfpm-amd64.yaml -p deb -t dist/fvpn-amd64.deb
+      - nfpm package -f /packaging/nfpm-arm64.yaml -p deb -t dist/fvpn-arm64.deb
     depends_on:
       - build
 
