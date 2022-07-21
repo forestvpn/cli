@@ -5,12 +5,17 @@ import (
 	"encoding/json"
 	"os"
 	"testing"
-	// "github.com/forestvpn/cli/auth"
+
+	"github.com/forestvpn/cli/actions"
+	"github.com/forestvpn/cli/api"
+	"github.com/forestvpn/cli/auth"
 )
 
 const filepath = "/tmp/test.json"
 
 var data = make(map[string]string)
+var email = os.Getenv("STAGING_EMAIL")
+var password = os.Getenv("STAGING_PASSWORD")
 
 func TestInit(t *testing.T) {
 	err := os.RemoveAll(auth.AppDir)
@@ -25,10 +30,8 @@ func TestInit(t *testing.T) {
 		t.Error(err)
 	}
 
-	for _, path := range []string{auth.AppDir, auth.AuthDir, auth.DeviceDir, auth.WireguardDir} {
-		if _, err := os.Stat(path); os.IsNotExist(err) {
-			t.Error(err)
-		}
+	if _, err := os.Stat(auth.AppDir); os.IsNotExist(err) {
+		t.Error(err)
 	}
 
 	err = auth.Init()
@@ -122,9 +125,6 @@ func TestLoadAccessToken(t *testing.T) {
 }
 
 func TestHandleFirebaseAuthResponse(t *testing.T) {
-	var email = "nikiforova693@gmail.com"
-	var password = "ad.5319.93A"
-
 	for i := 0; i < 2; i++ {
 
 		if i > 0 {
@@ -135,7 +135,11 @@ func TestHandleFirebaseAuthResponse(t *testing.T) {
 		emailfield := auth.EmailField{Value: email}
 		passwordfield := auth.PasswordField{Value: []byte(password)}
 		signinform := auth.SignInForm{EmailField: emailfield, PasswordField: passwordfield}
-		response, err := auth.SignIn(signinform)
+		authClient := auth.AuthClient{ApiKey: os.Getenv("STAGING_FIREBASE_API_KEY")}
+		accessToken, _ := auth.LoadAccessToken()
+		wrapper := api.GetApiClient(accessToken, os.Getenv("STAGING_API_URL"))
+		apiClient := actions.AuthClientWrapper{AuthClient: authClient, ApiClient: wrapper}
+		response, err := apiClient.AuthClient.SignIn(signinform)
 
 		if err != nil {
 			t.Error(err)
@@ -152,9 +156,6 @@ func TestHandleFirebaseAuthResponse(t *testing.T) {
 }
 
 func TestHandleFirebaseSignInResponse(t *testing.T) {
-	var email = "nikiforova693@gmail.com"
-	var password = "ad.5319.93A"
-
 	for i := 0; i < 2; i++ {
 
 		if i > 0 {
@@ -165,7 +166,15 @@ func TestHandleFirebaseSignInResponse(t *testing.T) {
 		emailfield := auth.EmailField{Value: email}
 		passwordfield := auth.PasswordField{Value: []byte(password)}
 		signinform := auth.SignInForm{EmailField: emailfield, PasswordField: passwordfield}
-		response, err := auth.SignIn(signinform)
+		authClient := auth.AuthClient{ApiKey: os.Getenv("STAGING_FIREBASE_API_KEY")}
+		accessToken, _ := auth.LoadAccessToken()
+		wrapper := api.GetApiClient(accessToken, os.Getenv("STAGING_API_URL"))
+		apiClient := actions.AuthClientWrapper{AuthClient: authClient, ApiClient: wrapper}
+		response, err := apiClient.AuthClient.SignIn(signinform)
+
+		if err != nil {
+			t.Error(err)
+		}
 
 		if i < 1 {
 			if err != nil {

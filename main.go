@@ -22,7 +22,7 @@ var (
 	DSN            string
 	appVersion     string
 	firebaseApiKey string
-	apiHost        string
+	ApiHost        string
 )
 
 func main() {
@@ -49,7 +49,7 @@ func main() {
 
 	accessToken, _ := auth.LoadAccessToken()
 
-	wrapper := api.GetApiClient(firebaseApiKey, accessToken, apiHost)
+	wrapper := api.GetApiClient(accessToken, ApiHost)
 	apiClient := actions.AuthClientWrapper{AuthClient: authClient, ApiClient: wrapper}
 
 	err = sentry.Init(sentry.ClientOptions{

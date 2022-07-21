@@ -48,7 +48,7 @@ func (w ApiClientWrapper) GetBillingFeatures() ([]forestvpn_api.BillingFeature, 
 	return resp, err
 }
 
-func GetApiClient(apiKey string, accessToken string, apiHost string) ApiClientWrapper {
+func GetApiClient(accessToken string, apiHost string) ApiClientWrapper {
 	configuration := forestvpn_api.NewConfiguration()
 	configuration.Host = apiHost
 	client := forestvpn_api.NewAPIClient(configuration)
