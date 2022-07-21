@@ -103,7 +103,7 @@ steps:
         path: /drone/src/dist
     settings:
       api_key:
-        from_secret: github_token
+        from_secret: GITHUB_TOKEN
       files: dist/*
       checksum:
         - md5
