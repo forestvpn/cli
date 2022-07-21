@@ -36,7 +36,7 @@ steps:
         from_secret: PRODUCTION_API_URL
       SENTRY_DSN:
        from_secret: SENTRY_DSN
-    privileged: true
+    privileged: false
     volumes:
       - name: cache
         path: /cache
