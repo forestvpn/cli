@@ -1,0 +1,10 @@
+name: "fvpn"
+arch: "arm64"
+platform: "linux"
+version: "${VERSION}"
+maintainer: ForestVPN.com
+depends:
+  - wireguard
+contents:
+  - src: dist/fvpn-linux-arm64
+    dst: /usr/local/bin/fvpn
