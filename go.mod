@@ -3,6 +3,7 @@ module github.com/forestvpn/cli
 go 1.18
 
 require (
+	github.com/c-robinson/iplib v1.0.3
 	github.com/fatih/color v1.13.0
 	github.com/forestvpn/api-client-go v0.0.0-20220620154406-df8d11e880c3
 	github.com/getsentry/sentry-go v0.13.0
@@ -16,7 +17,6 @@ require (
 )
 
 require (
-	github.com/c-robinson/iplib v1.0.3 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/mattn/go-colorable v0.1.11 // indirect

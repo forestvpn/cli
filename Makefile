@@ -1,4 +1,4 @@
-BUILDDIR ?= dist
+BUILDDIR ?= build
 OSS ?= linux darwin freebsd windows
 ARCHS ?= amd64 arm64
 VERSION ?= $(shell git describe --tags `git rev-list -1 HEAD`)
