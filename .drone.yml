@@ -123,6 +123,9 @@ steps:
         - tag
   - name: homebrew release
     image: goreleaser/goreleaser
+    environment:
+      GITHUB_TOKEN:
+        from_secret: GITHUB_TOKEN
     volumes:
       - name: build
         path: /drone/src/build
