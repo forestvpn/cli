@@ -26,7 +26,38 @@ steps:
       - apk --no-cache add git
       - go get -t -d -v ./...
       - go build all
-
+  - name: test
+    image: golang:1.18.4-alpine3.15
+    environment:
+      STAGING_EMAIL:
+        from_secret: STAGING_EMAIL
+      STAGING_PASSWORD:
+        from_secret: STAGING_PASSWORD
+    volumes:
+      - name: cache
+        path: /cache
+      - name: build
+        path: /drone/src/build
+    commands:
+      - apk --no-cache add build-base
+      - go test -race -coverprofile=/cache/coverage.txt -covermode=atomic ./...
+    depends_on:
+      - deps
+  - name: coverage
+    image: alpine:3.15
+    volumes:
+      - name: cache
+        path: /cache
+    environment:
+      CODECOV_TOKEN:
+        from_secret: CODECOV_TOKEN
+    commands:
+      - apk --no-cache add bash curl
+      - curl -L https://codecov.io/bash -o /usr/local/bin/codecov
+      - chmod +x /usr/local/bin/codecov
+      - /usr/local/bin/codecov -f /cache/coverage.txt
+    depends_on:
+      - test
   - name: build
     image: golang:1.18.4-alpine3.15
     environment:
@@ -43,56 +74,24 @@ steps:
       - name: build
         path: /drone/src/build
     commands:
-      - export VERSION=${DRONE_TAG:-${DRONE_COMMIT:0:7}}
+      - export VERSION=${DRONE_TAG}
       - apk --no-cache add build-base
-      - make build
+      - apk add wget
+      - wget https://github.com/goreleaser/goreleaser/releases/download/v1.10.2/goreleaser_1.10.2_x86_64.apk
+      - apk add --allow-untrusted goreleaser_1.10.2_x86_64.apk
+      - goreleaser build
     depends_on:
-      - deps
+      - test
     when:
       event:
         - tag
-
-  - name: test
-    image: golang:1.18.4-alpine3.15
-    environment:
-      STAGING_EMAIL:
-        from_secret: STAGING_EMAIL
-      STAGING_PASSWORD:
-        from_secret: STAGIN_PASSWORD
-    volumes:
-      - name: cache
-        path: /cache
-      - name: build
-        path: /drone/src/build
-    commands:
-      - apk --no-cache add build-base
-      - go test -race -coverprofile=/cache/coverage.txt -covermode=atomic ./...
-    depends_on:
-      - deps
-
-  - name: coverage
-    image: alpine:3.15
-    volumes:
-      - name: cache
-        path: /cache
-    environment:
-      CODECOV_TOKEN:
-        from_secret: CODECOV_TOKEN
-    commands:
-      - apk --no-cache add bash curl
-      - curl -L https://codecov.io/bash -o /usr/local/bin/codecov
-      - chmod +x /usr/local/bin/codecov
-      - /usr/local/bin/codecov -f /cache/coverage.txt
-    depends_on:
-      - test
-
   - name: build packages
     image: alpine:3.15
     volumes:
       - name: build
         path: /drone/src/build
     commands:
-      - export VERSION=${DRONE_TAG:-${DRONE_COMMIT:0:7}}
+      - export VERSION=${DRONE_TAG}
       - apk --no-cache add nfpm
       - nfpm package -f packaging/nfpm-amd64.yaml -p deb -t build/fvpn-amd64.deb
       - nfpm package -f packaging/nfpm-arm64.yaml -p deb -t build/fvpn-arm64.deb
@@ -101,7 +100,6 @@ steps:
     when:
       event:
         - tag
-
   - name: github release
     image: plugins/github-release
     volumes:
@@ -119,22 +117,15 @@ steps:
     when:
       event:
         - tag
-  
   - name: homebrew release
     image: goreleaser/goreleaser
-    environment:
-      PRODUCTION_FIREBASE_API_KEY:
-        from_secret: PRODUCTION_FIREBASE_API_KEY
-      PRODUCTION_API_URL:
-        from_secret: PRODUCTION_API_URL
-      SENTRY_DSN:
-       from_secret: SENTRY_DSN
-      GITHUB_TOKEN:
-        from_secret: GITHUB_TOKEN
+    volumes:
+      - name: build
+        path: /drone/src/build
     commands:
       - goreleaser release
     depends_on:
-      - github release
+      - build
     when:
       event:
         - tag
