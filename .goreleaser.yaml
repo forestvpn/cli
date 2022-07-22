@@ -49,4 +49,4 @@ brews:
   homepage: https://github.com/forestvpn/cli 
   tap:
     owner: forestvpn
-    name: cli
+    name: homebrew-cli
