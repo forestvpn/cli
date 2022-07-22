@@ -25,27 +25,38 @@ changelog:
 project_name: fvpn
 nfpms:
   -
-    vendor: ForestVPN.com
-    homepage: https://forestvpn.com/
-    maintainer: Anatolio Nikiforidis <nikiforova693@gmail.com>
-    description: |-
-      Fast, secure, and modern VPN.
-    license: MIT
-    formats:
-      - apk
-      - deb
-      - rpm
-    dependencies:
+    name: "fvpn"
+    arch: "amd64"
+    platform: "linux"
+    version: "${VERSION}"
+    maintainer: ForestVPN.com
+    depends:
       - wireguard
-      - iproute2
-    bindir: /usr/local/bin
-    # Version Release.
-    release: 1
-    # Section.
-    section: default
-    # Priority.
-    priority: extra
-    # Makes a meta package - an empty package that contains only supporting files and dependencies.
-    # When set to `true`, the `builds` option is ignored.
-    # Defaults to false.
-    # meta: true
+    contents:
+      - src: build/fvpn_linux_amd64_v1/fvpn
+        dst: /usr/local/bin/fvpn
+
+    # vendor: ForestVPN.com
+    # homepage: https://forestvpn.com/
+    # maintainer: Anatolio Nikiforidis <nikiforova693@gmail.com>
+    # description: |-
+    #   Fast, secure, and modern VPN.
+    # license: MIT
+    # formats:
+    #   - apk
+    #   - deb
+    #   - rpm
+    # dependencies:
+    #   - wireguard
+    #   - iproute2
+    # bindir: /usr/local/bin
+    # # Version Release.
+    # release: 1
+    # # Section.
+    # section: default
+    # # Priority.
+    # priority: extra
+    # # Makes a meta package - an empty package that contains only supporting files and dependencies.
+    # # When set to `true`, the `builds` option is ignored.
+    # # Defaults to false.
+    # # meta: true
