@@ -23,7 +23,6 @@ changelog:
       - '^test:'
 dist: build
 project_name: fvpn
-# .goreleaser.yaml
 nfpms:
   -
     vendor: ForestVPN.com
