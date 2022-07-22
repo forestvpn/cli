@@ -21,7 +21,6 @@ changelog:
     exclude:
       - '^docs:'
       - '^test:'
-# dist: build
 project_name: fvpn
 nfpms:
   -

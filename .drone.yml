@@ -5,17 +5,12 @@ name: default
 
 workspace:
   path: /drone/src
-
 volumes:
   - name: cache
     temp: { }
-  - name: dist
-    temp: { }
-
 environment:
   GOCACHE: /cache/go/build
   GOMODCACHE: /cache/go/download
-
 steps:
   - name: deps
     image: golang:1.18.4-alpine3.15
@@ -36,10 +31,7 @@ steps:
     volumes:
       - name: cache
         path: /cache
-      - name: dist
-        path: /drone/src/dist
     commands:
-      - apk --no-cache add build-base
       - go test -race -coverprofile=/cache/coverage.txt -covermode=atomic ./...
     depends_on:
       - deps
@@ -65,7 +57,7 @@ steps:
     when:
       event:
         - tag
-  - name: build
+  - name: release
     image: golang:1.18.4-alpine3.15
     environment:
       PRODUCTION_FIREBASE_API_KEY:
@@ -74,39 +66,23 @@ steps:
         from_secret: PRODUCTION_API_URL
       SENTRY_DSN:
        from_secret: SENTRY_DSN
+      GITHUB_TOKEN:
+        from_secret: GITHUB_TOKEN
     privileged: false
     volumes:
       - name: cache
         path: /cache
-      - name: dist
-        path: /drone/src/dist
     commands:
       - export VERSION=${DRONE_TAG}
       - apk add wget
       - wget -q  -P /tmp https://github.com/goreleaser/goreleaser/releases/download/v1.10.2/goreleaser_1.10.2_x86_64.apk
       - apk add --allow-untrusted /tmp/goreleaser_1.10.2_x86_64.apk
-      - goreleaser build
+      - goreleaser release
     depends_on:
       - test
     when:
       event:
         - tag
-  - name: release
-    image: goreleaser/goreleaser
-    environment:
-      GITHUB_TOKEN:
-        from_secret: GITHUB_TOKEN
-    volumes:
-      - name: dist
-        path: /drone/src/dist
-    commands:
-      - goreleaser release
-    depends_on:
-      - build
-    when:
-      event:
-        - tag
-
 trigger:
   event:
     - push
