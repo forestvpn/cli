@@ -48,6 +48,9 @@ steps:
       - make build
     depends_on:
       - deps
+    when:
+      event:
+        - tag
 
   - name: test
     image: golang:1.18.4-alpine3.15
@@ -110,9 +113,6 @@ steps:
         - sha1
     depends_on:
       - build packages
-    when:
-      event:
-        - tag
   
   - name: homebrew release
     image: goreleaser/goreleaser
@@ -121,8 +121,8 @@ steps:
         from_secret: GITHUB_TOKEN
     commands:
       - goreleaser release
-    when:
-      event: tag
+    depends_on:
+      - github release
 
 trigger:
   event:
