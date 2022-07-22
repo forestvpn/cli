@@ -49,3 +49,6 @@ nfpms:
     # When set to `true`, the `builds` option is ignored.
     # Defaults to false.
     # meta: true
+archives:
+- files:
+  - none*
