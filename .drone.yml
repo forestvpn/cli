@@ -80,7 +80,7 @@ steps:
     commands:
       - export VERSION=${DRONE_TAG}
       - apk --no-cache add build-base
-      - apk add wget
+      - apk add curl
       - curl https://github.com/goreleaser/goreleaser/releases/download/v1.10.2/goreleaser_1.10.2_x86_64.apk -o /tmp/goreleaser_1.10.2_x86_64.apk
       - apk add --allow-untrusted /tmp/goreleaser_1.10.2_x86_64.apk
       - goreleaser build
