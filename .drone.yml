@@ -113,6 +113,16 @@ steps:
     when:
       event:
         - tag
+  
+  - name: homebrew release
+    image: goreleaser/goreleaser
+    environment:
+      GITHUB_TOKEN:
+        from_secret: GITHUB_TOKEN
+    commands:
+      - goreleaser release
+    when:
+      event: tag
 
 trigger:
   event:
