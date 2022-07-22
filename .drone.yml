@@ -5,12 +5,15 @@ name: default
 
 workspace:
   path: /drone/src
+
 volumes:
   - name: cache
     temp: { }
+
 environment:
   GOCACHE: /cache/go/build
   GOMODCACHE: /cache/go/download
+
 steps:
   - name: deps
     image: golang:1.18.4-alpine3.15
@@ -32,6 +35,7 @@ steps:
       - name: cache
         path: /cache
     commands:
+      - apk --no-cache add build-base
       - go test -race -coverprofile=/cache/coverage.txt -covermode=atomic ./...
     depends_on:
       - deps
