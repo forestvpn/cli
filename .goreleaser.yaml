@@ -1,28 +1,28 @@
-builds:
-  - env:
-      - CGO_ENABLED=0
-    goos:
-      - linux
-      - freebsd
-      - darwin
-    goarch:
-      - amd64
-      - arm64
-    binary: fvpn
-    ldflags:
-      - "-s -w -X main.appVersion={{.Env.VERSION}} -X main.DSN={{.Env.SENTRY_DSN}} -X main.firebaseApiKey={{.Env.PRODUCTION_FIREBASE_API_KEY}} -X main.apiHost={{.Env.PRODUCTION_API_URL}}"
-checksum:
-  name_template: 'checksums.txt'
-snapshot:
-  name_template: "{{ incpatch .Version }}-next"
-changelog:
-  sort: asc
-  filters:
-    exclude:
-      - '^docs:'
-      - '^test:'
-dist: build
-project_name: fvpn
+# builds:
+#   - env:
+#       - CGO_ENABLED=0
+#     goos:
+#       - linux
+#       - freebsd
+#       - darwin
+#     goarch:
+#       - amd64
+#       - arm64
+#     binary: fvpn
+#     ldflags:
+#       - "-s -w -X main.appVersion={{.Env.VERSION}} -X main.DSN={{.Env.SENTRY_DSN}} -X main.firebaseApiKey={{.Env.PRODUCTION_FIREBASE_API_KEY}} -X main.apiHost={{.Env.PRODUCTION_API_URL}}"
+# checksum:
+#   name_template: 'checksums.txt'
+# snapshot:
+#   name_template: "{{ incpatch .Version }}-next"
+# changelog:
+#   sort: asc
+#   filters:
+#     exclude:
+#       - '^docs:'
+#       - '^test:'
+# dist: build
+# project_name: fvpn
 nfpms:
   -
     vendor: ForestVPN.com
