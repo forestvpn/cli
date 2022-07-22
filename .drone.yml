@@ -98,6 +98,9 @@ steps:
       - nfpm package -f packaging/nfpm-arm64.yaml -p deb -t dist/fvpn-arm64.deb
     depends_on:
       - build
+    when:
+      event:
+        - tag
 
   - name: github release
     image: plugins/github-release
@@ -113,6 +116,9 @@ steps:
         - sha1
     depends_on:
       - build packages
+    when:
+      event:
+        - tag
   
   - name: homebrew release
     image: goreleaser/goreleaser
@@ -123,6 +129,9 @@ steps:
       - goreleaser release
     depends_on:
       - github release
+    when:
+      event:
+        - tag
 
 trigger:
   event:
