@@ -82,7 +82,6 @@ steps:
         path: /drone/src/build
     commands:
       - export VERSION=${DRONE_TAG}
-      - apk --no-cache add build-base
       - apk add wget
       - wget -q  -P /tmp https://github.com/goreleaser/goreleaser/releases/download/v1.10.2/goreleaser_1.10.2_x86_64.apk
       - apk add --allow-untrusted /tmp/goreleaser_1.10.2_x86_64.apk

@@ -23,3 +23,30 @@ changelog:
       - '^test:'
 dist: build
 project_name: fvpn
+# .goreleaser.yaml
+nfpms:
+  -
+    vendor: ForestVPN.com
+    homepage: https://forestvpn.com/
+    maintainer: Anatolio Nikiforidis <nikiforova693@gmail.com>
+    description: |-
+      Fast, secure, and modern VPN.
+    license: MIT
+    formats:
+      - apk
+      - deb
+      - rpm
+    dependencies:
+      - wireguard
+      - iproute2
+    bindir: /usr/local/bin
+    # Version Release.
+    release: 1
+    # Section.
+    section: default
+    # Priority.
+    priority: extra
+    # Makes a meta package - an empty package that contains only supporting files and dependencies.
+    # When set to `true`, the `builds` option is ignored.
+    # Defaults to false.
+    meta: true
