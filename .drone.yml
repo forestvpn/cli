@@ -104,24 +104,7 @@ steps:
     when:
       event:
         - tag
-  - name: github release
-    image: plugins/github-release
-    volumes:
-      - name: build
-        path: /drone/src/build
-    settings:
-      api_key:
-        from_secret: GITHUB_TOKEN
-      files: build/*
-      checksum:
-        - md5
-        - sha1
-    depends_on:
-      - build packages
-    when:
-      event:
-        - tag
-  - name: homebrew release
+  - name: release
     image: goreleaser/goreleaser
     environment:
       GITHUB_TOKEN:
