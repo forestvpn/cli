@@ -21,9 +21,10 @@ changelog:
     exclude:
       - '^docs:'
       - '^test:'
-dist: build
+# dist: build
 project_name: fvpn
 nfpms:
+  -
     vendor: ForestVPN.com
     homepage: https://forestvpn.com/
     maintainer: Anatolio Nikiforidis <nikiforova693@gmail.com>

@@ -9,7 +9,7 @@ workspace:
 volumes:
   - name: cache
     temp: { }
-  - name: build
+  - name: dist
     temp: { }
 
 environment:
@@ -36,8 +36,8 @@ steps:
     volumes:
       - name: cache
         path: /cache
-      - name: build
-        path: /drone/src/build
+      - name: dist
+        path: /drone/src/dist
     commands:
       - apk --no-cache add build-base
       - go test -race -coverprofile=/cache/coverage.txt -covermode=atomic ./...
@@ -78,8 +78,8 @@ steps:
     volumes:
       - name: cache
         path: /cache
-      - name: build
-        path: /drone/src/build
+      - name: dist
+        path: /drone/src/dist
     commands:
       - export VERSION=${DRONE_TAG}
       - apk add wget
@@ -91,29 +91,29 @@ steps:
     when:
       event:
         - tag
-  - name: build packages
-    image: alpine:3.15
-    volumes:
-      - name: build
-        path: /drone/src/build
-    commands:
-      - export VERSION=${DRONE_TAG}
-      - apk --no-cache add nfpm
-      - nfpm package -f packaging/nfpm-amd64.yaml -p deb -t build/fvpn-amd64.deb
-      - nfpm package -f packaging/nfpm-arm64.yaml -p deb -t build/fvpn-arm64.deb
-    depends_on:
-      - build
-    when:
-      event:
-        - tag
+  # - name: build packages
+  #   image: alpine:3.15
+  #   volumes:
+  #     - name: build
+  #       path: /drone/src/build
+  #   commands:
+  #     - export VERSION=${DRONE_TAG}
+  #     - apk --no-cache add nfpm
+  #     - nfpm package -f packaging/nfpm-amd64.yaml -p deb -t build/fvpn-amd64.deb
+  #     - nfpm package -f packaging/nfpm-arm64.yaml -p deb -t build/fvpn-arm64.deb
+  #   depends_on:
+  #     - build
+  #   when:
+  #     event:
+  #       - tag
   - name: release
     image: goreleaser/goreleaser
     environment:
       GITHUB_TOKEN:
         from_secret: GITHUB_TOKEN
     volumes:
-      - name: build
-        path: /drone/src/build
+      - name: dist
+        path: /drone/src/dist
     commands:
       - goreleaser release
     depends_on:
