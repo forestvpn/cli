@@ -6,5 +6,5 @@ maintainer: ForestVPN.com
 depends:
   - wireguard
 contents:
-  - src: dist/fvpn-linux-amd64
+  - src: build/fvpn-linux-amd64_v1/fvpn
     dst: /usr/local/bin/fvpn

@@ -11,13 +11,6 @@ builds:
     binary: fvpn
     ldflags:
       - "-s -w -X main.appVersion={{.Env.VERSION}} -X main.DSN={{.Env.SENTRY_DSN}} -X main.firebaseApiKey={{.Env.PRODUCTION_FIREBASE_API_KEY}} -X main.apiHost={{.Env.PRODUCTION_API_URL}}"
-    targets:
-      - linux_amd64
-      - linux_arm64
-      - freebsd_amd64
-      - freebsd_arm64
-      - darwin_amd64
-      - darwin_arm64
 checksum:
   name_template: 'checksums.txt'
 snapshot:
