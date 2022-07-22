@@ -44,3 +44,9 @@ nfpms:
     section: default
     # Priority.
     priority: extra
+brews:
+- name: fvpn
+  homepage: https://github.com/forestvpn/cli 
+  tap:
+    owner: forestvpn
+    name: cli
