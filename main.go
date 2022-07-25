@@ -48,7 +48,6 @@ func main() {
 	}
 
 	accessToken, _ := auth.LoadAccessToken()
-
 	wrapper := api.GetApiClient(accessToken, ApiHost)
 	apiClient := actions.AuthClientWrapper{AuthClient: authClient, ApiClient: wrapper}
 
@@ -362,13 +361,13 @@ func main() {
 									if strings.EqualFold(loc.GetName(), arg) {
 										location = loc
 										break
-									} else if i == len(locations) {
-										return fmt.Errorf("no such location: %s", arg)
 									}
 								} else if strings.EqualFold(location.GetId(), id.String()) {
 									location = loc
 									break
-								} else if i == len(locations) {
+								}
+
+								if i == len(locations) {
 									return fmt.Errorf("no such location: %s", arg)
 								}
 							}
