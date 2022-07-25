@@ -58,7 +58,7 @@ func main() {
 	})
 
 	if err != nil {
-		sentry.Logger.Panicf("sentry.Init: %s", err)
+		sentry.Logger.Panic(err, DSN)
 	}
 
 	app := &cli.App{
