@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"fmt"
 	"net"
 	"os/exec"
 	"strings"
@@ -18,34 +17,26 @@ func GetExistingRoutes() ([]string, error) {
 	var existingRoutesMap = make(map[string]bool)
 	var existingRoutes []string
 
-	stdout, _ := exec.Command("ip", "route").Output()
+	stdout, _ := exec.Command("netstat", "-n", "-r", "-f", "inet").Output()
 
 	for _, record := range strings.Split(string(stdout), "\n") {
-		if !strings.Contains(record, "default") && len(record) > 0 {
-			target := strings.Split(record, " ")[0]
+		dest := strings.Split(record, " ")[0]
 
-			_, network, err := net.ParseCIDR(target)
+		_, network, err := net.ParseCIDR(dest)
 
-			if err != nil {
-				ip := net.ParseIP(target)
+		if err != nil {
+			ip := net.ParseIP(dest)
 
-				if ip == nil {
-					return nil, fmt.Errorf("error parsing routing table network: %s", ip)
-				}
-
+			if ip != nil {
 				_, network, err = net.ParseCIDR(ip2Net(ip.String()))
-
-				if err != nil {
-					return nil, err
-				}
 			}
 
-			_, ok := existingRoutesMap[network.String()]
-
-			if !ok {
-				existingRoutesMap[network.String()] = true
-			}
 		}
+
+		if err == nil {
+			existingRoutesMap[network.String()] = true
+		}
+
 	}
 
 	hostip, err := getHostIP()
@@ -160,7 +151,7 @@ func GetActiveSshClientIps() ([]string, error) {
 	var ips []string
 
 	for _, record := range records {
-		if len(record) > 1 {
+		if strings.Count(record, "(")+strings.Count(record, ")") > 0 {
 			ip := record[strings.Index(record, "(")+1 : strings.Index(record, ")")]
 
 			if net.ParseIP(ip) != nil {

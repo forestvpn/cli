@@ -62,7 +62,7 @@ func main() {
 	}
 
 	app := &cli.App{
-		Name:  "forest",
+		Name:  "ForestVPN",
 		Usage: "Fast, secure, and modern VPN",
 		Commands: []*cli.Command{
 			{
