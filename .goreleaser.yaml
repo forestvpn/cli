@@ -35,8 +35,7 @@ nfpms:
       - deb
       - rpm
     dependencies:
-      - wireguard
-      - iproute2
+      - wireguard-tools
       - net-tools
     bindir: /usr/local/bin
     # Version Release.
