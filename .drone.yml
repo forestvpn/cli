@@ -83,7 +83,7 @@ steps:
       - apk add --allow-untrusted /tmp/goreleaser_1.10.2_x86_64.apk
       - goreleaser release
     depends_on:
-      - test
+      - fetch
     when:
       event:
         - tag
