@@ -45,7 +45,7 @@ nfpms:
     section: default
     # Priority.
     priority: extra
-    file_name_template: "{{ .PackageName }}_{{ .Os }}_{{ .Arch }}{{ end }}"
+    file_name_template: "{{ .PackageName }}_{{ .Os }}_{{ .Arch }}"
 brews:
 - name: fvpn
   homepage: https://github.com/forestvpn/cli 
