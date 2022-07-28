@@ -37,6 +37,7 @@ nfpms:
     dependencies:
       - wireguard
       - iproute2
+      - net-tools
     bindir: /usr/local/bin
     # Version Release.
     release: 1
@@ -44,9 +45,12 @@ nfpms:
     section: default
     # Priority.
     priority: extra
+    file_name_template: "{{ .PackageName }}_{{ .Os }}_{{ .Arch }}{{ end }}"
 brews:
 - name: fvpn
   homepage: https://github.com/forestvpn/cli 
   tap:
     owner: forestvpn
     name: homebrew-cli
+archives:
+  name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"

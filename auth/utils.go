@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	forestvpn_api "github.com/forestvpn/api-client-go"
-	"github.com/getsentry/sentry-go"
 	"github.com/go-resty/resty/v2"
 )
 
@@ -94,12 +93,11 @@ func LoadAccessToken() (string, error) {
 }
 
 func HandleFirebaseAuthResponse(response *resty.Response) error {
-	var body map[string]map[string]string
-	json.Unmarshal(response.Body(), &body)
-
-	if body["error"] != nil {
-		respError := body["error"]
-		return errors.New(respError["message"])
+	if response.IsError() {
+		var body map[string]map[string]string
+		json.Unmarshal(response.Body(), &body)
+		msg := body["error"]
+		return errors.New(msg["message"])
 	}
 	return nil
 }
@@ -112,15 +110,6 @@ func HandleFirebaseSignInResponse(response *resty.Response) error {
 	}
 
 	return JsonDump(response.Body(), FirebaseAuthFile)
-}
-
-func HandleApiResponse(response *resty.Response) error {
-	if response.IsError() {
-		var body map[string]string
-		json.Unmarshal(response.Body(), &body)
-		return errors.New(body["message"])
-	}
-	return nil
 }
 
 func LoadRefreshToken() (string, error) {
@@ -177,7 +166,6 @@ func BuyPremiumDialog() error {
 		err := exec.Command("xdg-open", "https://forestvpn.com/pricing/").Run()
 
 		if err != nil {
-			sentry.CaptureException(err)
 			return err
 		}
 	}

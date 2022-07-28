@@ -57,12 +57,14 @@ func main() {
 	})
 
 	if err != nil {
-		sentry.Logger.Panic(err, DSN)
+		sentry.Logger.Panicf("%s: %s", err, DSN)
 	}
 
 	app := &cli.App{
-		Name:  "ForestVPN",
-		Usage: "Fast, secure, and modern VPN",
+		EnableBashCompletion: true,
+		Suggest:              true,
+		Name:                 "fvpn",
+		Usage:                "fast, secure, and modern VPN",
 		Commands: []*cli.Command{
 			{
 				Name:  "account",
@@ -182,20 +184,18 @@ func main() {
 							err := state.SetUp(auth.WireguardConfig)
 
 							if err != nil {
-								sentry.CaptureException(err)
+								return err
 							}
 
 							locations, err := wrapper.GetLocations()
 
 							if err != nil {
-								sentry.CaptureException(err)
 								return err
 							}
 
 							session, err := auth.JsonLoad(auth.SessionFile)
 
 							if err != nil {
-								sentry.CaptureException(err)
 								return err
 							}
 
@@ -212,7 +212,6 @@ func main() {
 
 							if len(city)+len(country) < 0 {
 								err := fmt.Errorf("no such location: %s", id)
-								sentry.CaptureException(err)
 								return err
 							}
 
@@ -221,7 +220,6 @@ func main() {
 							data, err := json.MarshalIndent(session, "", "    ")
 
 							if err != nil {
-								sentry.CaptureException(err)
 								return err
 							}
 
@@ -243,12 +241,11 @@ func main() {
 
 							err := state.SetDown(auth.WireguardConfig)
 
-							if err == nil {
-								color.Red("Disconnected")
-							} else {
-								sentry.CaptureException(err)
+							if err != nil {
+								return err
 							}
 
+							color.Red("Disconnected")
 							session, err := auth.JsonLoad(auth.SessionFile)
 
 							if err != nil {
@@ -281,7 +278,6 @@ func main() {
 							session, err := auth.JsonLoad(auth.SessionFile)
 
 							if err != nil {
-								sentry.CaptureException(err)
 								return err
 							}
 
@@ -290,7 +286,6 @@ func main() {
 								locations, err := wrapper.GetLocations()
 
 								if err != nil {
-									sentry.CaptureException(err)
 									return err
 								}
 
@@ -422,6 +417,7 @@ func main() {
 	}
 	err = app.Run(os.Args)
 	if err != nil {
+		sentry.CaptureException(err)
 		color.Red(err.Error())
 	}
 

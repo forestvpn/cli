@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/forestvpn/cli/actions"
@@ -16,6 +17,8 @@ const filepath = "/tmp/test.json"
 var data = make(map[string]string)
 var email = os.Getenv("STAGING_EMAIL")
 var password = os.Getenv("STAGING_PASSWORD")
+var apiKey = os.Getenv("STAGING_FIREBASE_API_KEY")
+var apiHost = os.Getenv("STAGING_API_URL")
 
 func TestInit(t *testing.T) {
 	err := os.RemoveAll(auth.AppDir)
@@ -94,102 +97,186 @@ func TestJsonLoad(t *testing.T) {
 	}
 }
 
-func TestLoadAccessToken(t *testing.T) {
-	auth.FirebaseAuthFile = "/tmp/data.json"
-	fakeData := make(map[string]string)
-	fakeData["access_token"] = "0123456789"
-	jsonData, err := json.Marshal(fakeData)
+func TestLoadAccessTokenWhileLoggedIn(t *testing.T) {
+	emailfield := auth.EmailField{Value: email}
+	passwordfield := auth.PasswordField{Value: []byte(password)}
+	signinform := auth.SignInForm{EmailField: emailfield, PasswordField: passwordfield}
+	authClient := auth.AuthClient{ApiKey: apiKey}
+	response, err := authClient.SignIn(signinform)
 
 	if err != nil {
 		t.Error(err)
 	}
 
-	err = auth.JsonDump(jsonData, auth.FirebaseAuthFile)
+	err = auth.HandleFirebaseSignInResponse(response)
 
 	if err != nil {
 		t.Error(err)
 	}
 
-	token, err := auth.LoadAccessToken()
+	response, err = authClient.GetAccessToken()
 
 	if err != nil {
 		t.Error(err)
 	}
 
-	token2 := fakeData["access_token"]
+	err = auth.JsonDump(response.Body(), auth.FirebaseAuthFile)
 
-	if token != token2 {
-		t.Errorf("%s != %s; want ==", token, token2)
+	if err != nil {
+		t.Error(err)
+	}
+
+	accessToken, err := auth.LoadAccessToken()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	var body map[string]string
+	json.Unmarshal(response.Body(), &body)
+	accessToken1 := body["access_token"]
+
+	if !strings.EqualFold(accessToken, accessToken1) {
+		t.Errorf("%s != %s; want ==", accessToken, accessToken1)
+	}
+}
+
+func TestLoadAccessTokenWhileLoggedOut(t *testing.T) {
+	authClient := auth.AuthClient{ApiKey: apiKey}
+	accessToken, _ := auth.LoadAccessToken()
+	wrapper := api.GetApiClient(accessToken, apiHost)
+	apiClient := actions.AuthClientWrapper{AuthClient: authClient, ApiClient: wrapper}
+	err := apiClient.Logout()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	accessToken, err = auth.LoadAccessToken()
+
+	if err == nil {
+		t.Error(err)
+	}
+
+	tokenLength := len(accessToken)
+
+	if tokenLength > 0 {
+		t.Errorf("%d > 0; want <=", tokenLength)
+	}
+}
+
+func TestHandleFirebaseSignInResponseWithNormalParams(t *testing.T) {
+	emailfield := auth.EmailField{Value: email}
+	passwordfield := auth.PasswordField{Value: []byte(password)}
+	signinform := auth.SignInForm{EmailField: emailfield, PasswordField: passwordfield}
+	authClient := auth.AuthClient{ApiKey: os.Getenv("STAGING_FIREBASE_API_KEY")}
+	accessToken, _ := auth.LoadAccessToken()
+	wrapper := api.GetApiClient(accessToken, apiHost)
+	apiClient := actions.AuthClientWrapper{AuthClient: authClient, ApiClient: wrapper}
+	response, err := apiClient.AuthClient.SignIn(signinform)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = auth.HandleFirebaseSignInResponse(response)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if _, err := os.Stat(auth.FirebaseAuthFile); os.IsNotExist(err) {
+		t.Error(err)
+	}
+}
+
+func TestHandleFirebaseSignInResponseWithBlankParams(t *testing.T) {
+	email := ""
+	password := ""
+	emailfield := auth.EmailField{Value: email}
+	passwordfield := auth.PasswordField{Value: []byte(password)}
+	signinform := auth.SignInForm{EmailField: emailfield, PasswordField: passwordfield}
+	authClient := auth.AuthClient{ApiKey: apiKey}
+	accessToken, _ := auth.LoadAccessToken()
+	wrapper := api.GetApiClient(accessToken, apiHost)
+	apiClient := actions.AuthClientWrapper{AuthClient: authClient, ApiClient: wrapper}
+	response, err := apiClient.AuthClient.SignIn(signinform)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if err != nil {
+		t.Error(err)
+	} else if _, err := os.Stat(auth.FirebaseAuthFile); os.IsNotExist(err) {
+		t.Error(err)
+	}
+
+	err = auth.HandleFirebaseSignInResponse(response)
+
+	if err == nil {
+		t.Errorf("sign in: %s == nil; want !=", err)
 	}
 
 }
 
-func TestHandleFirebaseAuthResponse(t *testing.T) {
-	for i := 0; i < 2; i++ {
+func TestLoadRefreshTokenWhileLoggedIn(t *testing.T) {
+	authClient := auth.AuthClient{ApiKey: apiKey}
+	accessToken, err := auth.LoadAccessToken()
 
-		if i > 0 {
-			email = ""
-			password = ""
-		}
-
-		emailfield := auth.EmailField{Value: email}
-		passwordfield := auth.PasswordField{Value: []byte(password)}
-		signinform := auth.SignInForm{EmailField: emailfield, PasswordField: passwordfield}
-		authClient := auth.AuthClient{ApiKey: os.Getenv("STAGING_FIREBASE_API_KEY")}
-		accessToken, _ := auth.LoadAccessToken()
-		wrapper := api.GetApiClient(accessToken, os.Getenv("STAGING_API_URL"))
-		apiClient := actions.AuthClientWrapper{AuthClient: authClient, ApiClient: wrapper}
-		response, err := apiClient.AuthClient.SignIn(signinform)
-
-		if err != nil {
-			t.Error(err)
-		}
-
-		err = auth.HandleFirebaseAuthResponse(response)
-
-		if i > 0 && err == nil {
-			t.Errorf("sign in: %s == nil; want !=", err)
-		}
-
+	if err != nil {
+		t.Error(err)
 	}
 
+	tokenLength := len(accessToken)
+
+	if tokenLength == 0 {
+		t.Errorf("%d == 0; want >", tokenLength)
+	}
+
+	wrapper := api.GetApiClient(accessToken, apiHost)
+	apiClient := actions.AuthClientWrapper{AuthClient: authClient, ApiClient: wrapper}
+	err = apiClient.Login(email, password)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if _, err := os.Stat(auth.FirebaseAuthFile); os.IsNotExist(err) {
+		t.Error(err)
+	}
+
+	refreshToken, err := auth.LoadRefreshToken()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(refreshToken) == 0 {
+		t.Error("failed to load refresh token")
+	}
 }
 
-func TestHandleFirebaseSignInResponse(t *testing.T) {
-	for i := 0; i < 2; i++ {
+func TestLoadRefreshTokenWhileLoggedOut(t *testing.T) {
+	authClient := auth.AuthClient{ApiKey: apiKey}
+	accessToken, _ := auth.LoadAccessToken()
+	wrapper := api.GetApiClient(accessToken, apiHost)
+	apiClient := actions.AuthClientWrapper{AuthClient: authClient, ApiClient: wrapper}
+	err := apiClient.Logout()
 
-		if i > 0 {
-			email = ""
-			password = ""
-		}
-
-		emailfield := auth.EmailField{Value: email}
-		passwordfield := auth.PasswordField{Value: []byte(password)}
-		signinform := auth.SignInForm{EmailField: emailfield, PasswordField: passwordfield}
-		authClient := auth.AuthClient{ApiKey: os.Getenv("STAGING_FIREBASE_API_KEY")}
-		accessToken, _ := auth.LoadAccessToken()
-		wrapper := api.GetApiClient(accessToken, os.Getenv("STAGING_API_URL"))
-		apiClient := actions.AuthClientWrapper{AuthClient: authClient, ApiClient: wrapper}
-		response, err := apiClient.AuthClient.SignIn(signinform)
-
-		if err != nil {
-			t.Error(err)
-		}
-
-		if i < 1 {
-			if err != nil {
-				t.Error(err)
-			} else if _, err := os.Stat(auth.FirebaseAuthFile); os.IsNotExist(err) {
-				t.Error(err)
-			}
-		}
-
-		err = auth.HandleFirebaseSignInResponse(response)
-
-		if i > 0 && err == nil {
-			t.Errorf("sign in: %s == nil; want !=", err)
-		}
-
+	if err != nil {
+		t.Error(err)
 	}
 
+	refreshToken, err := auth.LoadRefreshToken()
+
+	if err == nil {
+		t.Error(err)
+	}
+
+	tokenLength := len(refreshToken)
+
+	if tokenLength > 0 {
+		t.Errorf("%d > 0; want ==", tokenLength)
+	}
 }
