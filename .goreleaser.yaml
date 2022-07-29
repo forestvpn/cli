@@ -51,9 +51,9 @@ brews:
   tap:
     owner: forestvpn
     name: homebrew-cli
-- dependencies:
-  - name: net-tools
-  - name: wireguard-tools
-    type: recommended
+  dependencies:
+    - name: net-tools
+    - name: wireguard-tools
+      type: recommended
 archives:
 - name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
