@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 
 	forestvpn_api "github.com/forestvpn/api-client-go"
@@ -159,11 +160,21 @@ type LocationWrapper struct {
 
 func BuyPremiumDialog() error {
 	var answer string
+	var openCommand string
+	os := runtime.GOOS
+	switch os {
+	case "windows":
+		openCommand = "start"
+	case "darwin":
+		openCommand = "open"
+	case "linux":
+		openCommand = "xdg-open"
+	}
 	fmt.Println("Buy Premium? ([Y]es/[N]o)")
 	fmt.Scanln(&answer)
 
 	if strings.Contains("YESyesYesYEsyEsyeSyES", answer) {
-		err := exec.Command("xdg-open", "https://forestvpn.com/pricing/").Run()
+		err := exec.Command(openCommand, "https://forestvpn.com/pricing/").Run()
 
 		if err != nil {
 			return err
