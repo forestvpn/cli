@@ -27,7 +27,7 @@ GLOBAL OPTIONS:
 ## macOS
 
 ```
-brew install forestvpn/cli/fvpn
+brew install forestvpn/core/fvpn
 ```
 
 ## Debian/Ubuntu
