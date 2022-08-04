@@ -1,6 +1,6 @@
 # fvpn
 
-fvpn - is a Forest VPN CLI client for Linux distributions.
+fvpn - is a Forest VPN CLI client for macOS, Linux, and Windows.
 
 # How-to
 
@@ -62,3 +62,8 @@ tar -xf fvpn_linux_amd64.tar.gz -C /usr/local/bin/
 
 - net-tools
 - wireguard-tools
+
+# Credits:
+
+- ForestVPN.com [Free VPN](https://forestvpn.com) for all
+- SpaceV.net [VPN for teams](https://spacev.net)
