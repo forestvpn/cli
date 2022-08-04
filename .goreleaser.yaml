@@ -47,11 +47,14 @@ nfpms:
     file_name_template: "{{ .PackageName }}_{{ .Os }}_{{ .Arch }}"
 brews:
 - name: fvpn
-  homepage: https://github.com/forestvpn/cli 
-  tap:
-    owner: forestvpn
-    name: homebrew-cli
+  description: "Forest VPN CLI client for macOS, Linux, and Windows"
+  homepage: https://github.com/forestvpn/cli
   dependencies:
     - name: wireguard-tools
+  tap:
+    owner: forestvpn
+    name: homebrew-core
+  test: |
+    system "#{bin}/fvpn version"
 archives:
 - name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
