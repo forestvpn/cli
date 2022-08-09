@@ -58,7 +58,7 @@ func getHostIP() (net.IP, error) {
 	return externalip.DefaultConsensus(nil, nil).ExternalIP()
 }
 
-func ExcludeDisallowedIpds(allowed []string, disallowed []string) ([]string, error) {
+func ExcludeDisallowedIps(allowed []string, disallowed []string) ([]string, error) {
 	var netmap = make(map[string]bool)
 	var allowednew []string
 

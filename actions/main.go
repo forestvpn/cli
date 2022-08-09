@@ -74,6 +74,8 @@ func (w AuthClientWrapper) Login(email string, password string) error {
 
 		response, err := w.AuthClient.SignIn(signinform)
 
+		// return errors.New(response.String())
+
 		if err != nil {
 			return err
 		}
@@ -258,7 +260,7 @@ func (w AuthClientWrapper) SetLocation(location forestvpn_api.Location, includeH
 
 		disallowed := append(existingRoutes, activeSShClientIps...)
 		allowed := peer.GetAllowedIps()
-		allowedIps, err := utils.ExcludeDisallowedIpds(allowed, disallowed)
+		allowedIps, err := utils.ExcludeDisallowedIps(allowed, disallowed)
 
 		if err != nil {
 			return err

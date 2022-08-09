@@ -131,7 +131,7 @@ func LoadRefreshToken() (string, error) {
 	if len(token) > 0 {
 		return token, err
 	}
-	return "", errors.New("access token not found")
+	return "", errors.New("refresh token not found")
 }
 
 func IsRefreshTokenExists() bool {
