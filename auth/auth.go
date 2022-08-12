@@ -1,3 +1,5 @@
+// auth is a package containing an authentication client built around Firebase REST API.
+// See https://firebase.google.com/docs/reference/rest for more information.
 package auth
 
 import (
@@ -8,18 +10,24 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
+// CLient is a REST client for Go.
+// See https://github.com/go-resty/resty for more information.
 var Client = resty.New()
 
+// AuthClient is a structure used as a Firebase REST client.
 type AuthClient struct {
 	ApiKey string
 }
 
+// signInUpRequestBody is a structure that is used as a data holder for both SignIn and SignUp requests.
 type signInUpRequestBody struct {
 	Email             string
 	Password          string
 	ReturnSecureToken bool
 }
 
+// SignUp performs a Firebase sign up request.
+// See https://firebase.google.com/docs/reference/rest/auth#section-create-email-password for more information.
 func (c AuthClient) SignUp(form SignUpForm) (*resty.Response, error) {
 	url := "https://identitytoolkit.googleapis.com/v1/accounts:signUp"
 	body := signInUpRequestBody{Email: form.EmailField.Value, Password: string(form.PasswordField.Value), ReturnSecureToken: true}
@@ -42,6 +50,8 @@ func (c AuthClient) SignUp(form SignUpForm) (*resty.Response, error) {
 		Post(url)
 }
 
+// SignIn performs a Firebase sign in request.
+// See https://firebase.google.com/docs/reference/rest/auth#section-sign-in-email-password for more information.
 func (c AuthClient) SignIn(form SignInForm) (*resty.Response, error) {
 	url := "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword"
 	body := signInUpRequestBody{Email: form.EmailField.Value, Password: string(form.PasswordField.Value), ReturnSecureToken: true}
@@ -64,6 +74,7 @@ func (c AuthClient) SignIn(form SignInForm) (*resty.Response, error) {
 		Post(url)
 }
 
+// See https://firebase.google.com/docs/reference/rest/auth#section-refresh-token for more information.
 func (c AuthClient) ExchangeRefreshForIdToken() (*resty.Response, error) {
 	url := "https://securetoken.googleapis.com/v1/token"
 	refreshToken, err := LoadRefreshToken()
@@ -83,6 +94,7 @@ func (c AuthClient) ExchangeRefreshForIdToken() (*resty.Response, error) {
 		Post(url)
 }
 
+// GetAccessToken calls ExchangeRefreshForIdToken and dumps the response into FirebaseAuthFile.
 func (c AuthClient) GetAccessToken() (*resty.Response, error) {
 	response, err := c.ExchangeRefreshForIdToken()
 

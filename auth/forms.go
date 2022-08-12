@@ -1,3 +1,4 @@
+// forms is package contaning structures to work with user input during Firebase authentication process.
 package auth
 
 import (
@@ -10,13 +11,13 @@ import (
 	"golang.org/x/term"
 )
 
-var reader = bufio.NewReader(os.Stdin)
-
+// SignInForm is used to store user's email and password.
 type SignInForm struct {
 	EmailField
 	PasswordField
 }
 
+// SignUpForm is carries the SignInForm and the password confirmation
 type SignUpForm struct {
 	SignInForm
 	PasswordConfirmationField
@@ -31,7 +32,7 @@ type InfoForm struct {
 	Info Info
 }
 
-// Compares *forest.auth.forms.SignUpForm.SignInForm.PasswordField and *forest.auth.forms.SignUpForm.PasswordConfirmationField
+// ValidatePasswordConfirmation compares password and the password confirmation values.
 func (s SignUpForm) ValidatePasswordConfirmation() error {
 	if !bytes.Equal(s.PasswordField.Value, s.PasswordConfirmationField.Value) {
 		return errors.New("password confirmation doesn't match")
@@ -39,6 +40,7 @@ func (s SignUpForm) ValidatePasswordConfirmation() error {
 	return nil
 }
 
+// getPasswordField prompts the user a password and then validates it.
 func getPasswordField(password []byte) (PasswordField, error) {
 	passwordfield := PasswordField{Value: password}
 
@@ -62,7 +64,9 @@ func getPasswordField(password []byte) (PasswordField, error) {
 	return passwordfield, nil
 }
 
+// GetEmailField prompts a user an email and then validates it.
 func GetEmailField(email string) (EmailField, error) {
+	var reader = bufio.NewReader(os.Stdin)
 	emailfield := EmailField{Value: email}
 
 	for !(len(emailfield.Value) > 0) {
@@ -80,7 +84,7 @@ func GetEmailField(email string) (EmailField, error) {
 	return emailfield, err
 }
 
-// Prompts user and fills the *forest.auth.forms.SignInForm with *forest.auth.forms.fields.EmailField and *forest.auth.forms.fields.PasswordField
+// Prompts user both email and password and returns the SignInForm.
 func GetSignInForm(email string, password []byte) (SignInForm, error) {
 	signinform := SignInForm{}
 	emailfield, err := GetEmailField(email)

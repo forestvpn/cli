@@ -21,8 +21,8 @@ import (
 var (
 	DSN            string
 	appVersion     string
-	firebaseApiKey string
-	ApiHost        string
+	firebaseApiKey = os.Getenv("STAGING_FIREBASE_API_KEY")
+	ApiHost        = os.Getenv("STAGING_API_URL")
 )
 
 func main() {
