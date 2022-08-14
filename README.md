@@ -63,6 +63,16 @@ tar -xf fvpn_linux_amd64.tar.gz -C /usr/local/bin/
 - net-tools
 - wireguard-tools
 
+# Docs
+
+fvpn consists of various pacakges:
+
+- [actions](https://github.com/forestvpn/cli/tree/main/src/actions#readme) is a high-level package that implements Actions according to https://cli.urfave.org/v2
+- [api](https://github.com/forestvpn/cli/tree/main/src/api#readme) is a package that uses [api-client-go](https://github.com/forestvpn/api-client-go) to query [wgrest API](https://github.com/suquant/wgrest)
+- [auth](https://github.com/forestvpn/cli/tree/main/src/auth#readme) is a package containing authentication logic built around [Firebase REST API](https://firebase.google.com/docs/reference/rest)
+- [cmd](https://github.com/forestvpn/cli/tree/main/src/cmd#readme) is fvpn's entry point followed by https://cli.urfave.org/v2 pattern
+- [utils](https://github.com/forestvpn/cli/tree/main/src/utils#readme) is a package that provides helper functions to  work with local filesystem, networking, etc
+
 # Credits:
 
 - ForestVPN.com [Free VPN](https://forestvpn.com) for all
