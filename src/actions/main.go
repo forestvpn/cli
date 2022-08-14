@@ -25,7 +25,7 @@ import (
 )
 
 // AuthClientWrapper is a structure that is used as a high-level wrapper for both AuthClient and ApiClient.
-// It is used as main wgrest and [Firebase REST] client as both of wrapped structures share the same AccessToken for authentication purposes.
+// It is used as main wgrest and Firebase REST API client as both of wrapped structures share the same AccessToken for authentication purposes.
 type AuthClientWrapper struct {
 	AuthClient auth.AuthClient
 	ApiClient  api.ApiClientWrapper
