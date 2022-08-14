@@ -1,4 +1,4 @@
-// Network related utility functions
+// utils is a package with network related utility functions.
 
 package utils
 
@@ -11,15 +11,15 @@ import (
 	externalip "github.com/glendc/go-external-ip"
 )
 
-// ip2Net converts an IP address value, e.g. 127.0.0.1, into a network with mask of 24 bits, e.g. 127.0.0.0/24
+// ip2Net is a function for converting an IP address value, e.g. 127.0.0.1, into a network with mask of 24 bits, e.g. 127.0.0.0/24.
 func ip2Net(ip string) string {
 	return strings.Join(strings.Split(ip, ".")[:3], ".") + ".0/24"
 }
 
-// GetExistingRoutes calls a 'netstat' shell command to get system routing table.
-// It then extracts all the IP addresses from the shell command's output.
-// Each of an IP addresses is converted into related network using ip2Net function for compability with Wireguard's configuration format.
-// Returns a slice of a network values (as a strings) representing system routing table.
+// GetExistingRoutes  is a function taht calls a netstat shell command to get system routing table.
+// Then it extracts all the IP addresses from the shell command's output.
+// Each of an IP addresses is converted into related network using ip2Net in order to be compitable with Wireguard configuration format.
+// Returns a slice of a networks (as a strings) representing system routing table.
 func GetExistingRoutes() ([]string, error) {
 	var existingRoutesMap = make(map[string]bool)
 	var existingRoutes []string
@@ -62,13 +62,14 @@ func GetExistingRoutes() ([]string, error) {
 }
 
 // getHostIP returns the host's public IP address.
+//
 // See https://github.com/glendc/go-external-ip for more information.
 func getHostIP() (net.IP, error) {
 	return externalip.DefaultConsensus(nil, nil).ExternalIP()
 }
 
-// ExcludeDisallowedIps Accepts two slices of a network values, e.g. 127.0.0.0/8, where disallowed - is a slice of a networks to exclude from the allowed slice.
-// Returns a new slice of networks from the allowed slice with their subnetworks without networks of disallowed slice.
+// ExcludeDisallowedIps is a function that expects two slices of a network values, e.g. [127.0.0.0/8,], where disallowed is a slice of networks to be excluded from the allowed slice.
+// Returns a new slice of networks formed out of the allowed slice without networks of disallowed slice.
 func ExcludeDisallowedIps(allowed []string, disallowed []string) ([]string, error) {
 	var netmap = make(map[string]bool)
 	var allowednew []string
@@ -151,9 +152,9 @@ func ExcludeDisallowedIps(allowed []string, disallowed []string) ([]string, erro
 
 }
 
-// GetActiveSshClientIps calls the 'who' shell command to get active ssh sessions.
-// It then extracts all the IP addresses of the command output and converts them into networks using 'ip2Net' function for a compability with Wiregaurd configuration format.
-// Returns a slice of a network values representing the public networks of currently connected ssh clients.
+// GetActiveSshClientIps is a function that calls the "who" shell command to get active ssh sessions.
+// Then it extracts all the IP addresses from the command output and converts them into networks using ip2Net for a compability with Wiregaurd configuration format.
+// Returns a slice of networks representing the public networks of active ssh clients.
 func GetActiveSshClientIps() ([]string, error) {
 	out, err := exec.Command("who").Output()
 

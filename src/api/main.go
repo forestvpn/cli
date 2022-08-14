@@ -1,4 +1,5 @@
 // api is package containg the ApiClientWrapper wich is used as wgrest client.
+//
 // See https://github.com/suquant/wgrest for more information.
 package api
 
@@ -9,14 +10,16 @@ import (
 	forestvpn_api "github.com/forestvpn/api-client-go"
 )
 
-// ApiClientWrapper is a astructure that wraps forestvpn_api.APIClient to extend it.
+// ApiClientWrapper is a structure that wraps forestvpn_api.APIClient to extend it.
+//
 // See https://github.com/forestvpn/api-client-go for more information.
 type ApiClientWrapper struct {
 	APIClient   *forestvpn_api.APIClient
 	AccessToken string
 }
 
-// CreateDevice sends a POST request to create a new device on the back-end for the user being logged in.
+// CreateDevice sends a POST request to create a new device on the back-end after the user successfully logged in.
+//
 // See https://github.com/forestvpn/api-client-go/blob/main/docs/DeviceApi.md#createdevice for more information.
 func (w ApiClientWrapper) CreateDevice() (*forestvpn_api.Device, error) {
 	auth := context.WithValue(context.Background(), forestvpn_api.ContextAccessToken, w.AccessToken)
@@ -29,6 +32,7 @@ func (w ApiClientWrapper) CreateDevice() (*forestvpn_api.Device, error) {
 }
 
 // UpdateDevice updates an existing device for the user on the back-end.
+//
 // See https://github.com/forestvpn/api-client-go/blob/main/docs/DeviceApi.md#updatedevice for more information.
 func (w ApiClientWrapper) UpdateDevice(deviceID string, locationID string) (*forestvpn_api.Device, error) {
 	auth := context.WithValue(context.Background(), forestvpn_api.ContextAccessToken, w.AccessToken)
@@ -38,14 +42,16 @@ func (w ApiClientWrapper) UpdateDevice(deviceID string, locationID string) (*for
 	return resp, err
 }
 
-// GetLocations gets the locations available for the user.
+// GetLocations is a method for getting all the locations available at back-end.
+//
 // See https://github.com/forestvpn/api-client-go/blob/main/docs/GeoApi.md#listlocations for more information.
 func (w ApiClientWrapper) GetLocations() ([]forestvpn_api.Location, error) {
 	resp, _, err := w.APIClient.GeoApi.ListLocations(context.Background()).Execute()
 	return resp, err
 }
 
-// GetBillingFeatures gets the servers available for the user.
+// GetBillingFeatures is a method for getting locations available to the user.
+//
 // See https://github.com/forestvpn/api-client-go/blob/main/docs/BillingApi.md#listbillingfeatures for more information.
 func (w ApiClientWrapper) GetBillingFeatures() ([]forestvpn_api.BillingFeature, error) {
 	auth := context.WithValue(context.Background(), forestvpn_api.ContextAccessToken, w.AccessToken)
@@ -53,7 +59,10 @@ func (w ApiClientWrapper) GetBillingFeatures() ([]forestvpn_api.BillingFeature, 
 	return resp, err
 }
 
-// GetApiClient is a fabric function that returns the ApiClientWrapper structure.
+// GetApiClient is a factory function that returns the ApiClientWrapper structure.
+// It configures and wraps an instance of forestvpn_api.APIClient.
+//
+// See https://github.com/forestvpn/api-client-go for more information.
 func GetApiClient(accessToken string, apiHost string) ApiClientWrapper {
 	configuration := forestvpn_api.NewConfiguration()
 	configuration.Host = apiHost

@@ -6,10 +6,12 @@ import (
 	"strings"
 )
 
+// EmailField is a structure that holds an email value that could be validated.
 type EmailField struct {
 	Value string
 }
 
+// PasswordField is a structure that holds a password value that could be validated.
 type PasswordField struct {
 	Value []byte
 }
@@ -19,7 +21,7 @@ type PasswordConfirmationField struct {
 	Value []byte
 }
 
-// Validate checks if the EmailField.Value is a valid email address.
+// Validate is a method to check user's email address.
 func (f EmailField) Validate() error {
 	if len(f.Value) < 5 || !strings.Contains(f.Value, "@") || !strings.Contains(f.Value, ".") {
 		return errors.New("invalid email address")
@@ -27,7 +29,7 @@ func (f EmailField) Validate() error {
 	return nil
 }
 
-// Validate checks if the PasswordField.Value is a valid password.
+// Validate is a method to check password's strength.
 func (p PasswordField) Validate() error {
 	if len(p.Value) < 8 {
 		return errors.New("password must be at least 8 characters long")

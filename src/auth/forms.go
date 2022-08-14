@@ -11,13 +11,13 @@ import (
 	"golang.org/x/term"
 )
 
-// SignInForm is used to store user's email and password.
+// SignInForm is a structure to store user's email and password.
 type SignInForm struct {
 	EmailField
 	PasswordField
 }
 
-// SignUpForm is carries the SignInForm and the password confirmation
+// SignUpForm is a structure that holds the SignInForm and the password confirmation.
 type SignUpForm struct {
 	SignInForm
 	PasswordConfirmationField
@@ -32,7 +32,7 @@ type InfoForm struct {
 	Info Info
 }
 
-// ValidatePasswordConfirmation compares password and the password confirmation values.
+// ValidatePasswordConfirmation is a method that compares password and the password confirmation values.
 func (s SignUpForm) ValidatePasswordConfirmation() error {
 	if !bytes.Equal(s.PasswordField.Value, s.PasswordConfirmationField.Value) {
 		return errors.New("password confirmation doesn't match")
@@ -40,7 +40,7 @@ func (s SignUpForm) ValidatePasswordConfirmation() error {
 	return nil
 }
 
-// getPasswordField prompts the user a password and then validates it.
+// getPasswordField is a method that prompts the user a password and then validates it.
 func getPasswordField(password []byte) (PasswordField, error) {
 	passwordfield := PasswordField{Value: password}
 
@@ -64,7 +64,7 @@ func getPasswordField(password []byte) (PasswordField, error) {
 	return passwordfield, nil
 }
 
-// GetEmailField prompts a user an email and then validates it.
+// GetEmailField is a method that prompts a user an email and then validates it.
 func GetEmailField(email string) (EmailField, error) {
 	var reader = bufio.NewReader(os.Stdin)
 	emailfield := EmailField{Value: email}
@@ -84,7 +84,7 @@ func GetEmailField(email string) (EmailField, error) {
 	return emailfield, err
 }
 
-// Prompts user both email and password and returns the SignInForm.
+// GetSignInForm is a factory function that prompts user both email and password and returns the SignInForm.
 func GetSignInForm(email string, password []byte) (SignInForm, error) {
 	signinform := SignInForm{}
 	emailfield, err := GetEmailField(email)

@@ -24,18 +24,21 @@ var AppDir = home + "/.forestvpn/"
 var FirebaseAuthFile = AppDir + "firebase.json"
 
 // The DeviceFile represents the device created for the user.
+//
 // Read more: https://github.com/forestvpn/api-client-go.
 var DeviceFile = AppDir + "device.json"
 
 // WireguardConfig is a Wireguard configuration file.
+//
 // It's being rewrittten per location change.
 var WireguardConfig = AppDir + "fvpn0.conf"
 
 // The SessionFile is a file for storing the last session information.
+//
 // It's used to track down the status of connection.
 var SessionFile = AppDir + "session.json"
 
-// Init creates directories structure for Forest CLI
+// Init is a function that creates directories structure for Forest CLI.
 func Init() error {
 	if _, err := os.Stat(AppDir); os.IsNotExist(err) {
 		os.Mkdir(AppDir, 0755)
@@ -43,7 +46,7 @@ func Init() error {
 	return nil
 }
 
-// JsonDump dumps the json data into the file at filepath
+// JsonDump is a function that dumps the json data into the file at filepath.
 func JsonDump(data []byte, filepath string) error {
 	file, err := os.Create(filepath)
 
@@ -64,7 +67,7 @@ func JsonDump(data []byte, filepath string) error {
 	return err
 }
 
-// readFile reads the content of a file at filepath
+// readFile is a function that reads the content of a file at filepath
 func readFile(filepath string) ([]byte, error) {
 	file, err := os.Open(filepath)
 
@@ -77,7 +80,7 @@ func readFile(filepath string) ([]byte, error) {
 
 }
 
-// JsonLoad calls the readFile function to read the content of a file and unmarshals it into the map.
+// JsonLoad  is a function that reads the content of a file and unmarshals it into the map.
 func JsonLoad(filepath string) (map[string]string, error) {
 	var data map[string]string
 	byteStream, err := readFile(filepath)
@@ -89,20 +92,18 @@ func JsonLoad(filepath string) (map[string]string, error) {
 	return data, err
 }
 
-// loadKey calls JsonLoad function to get the map
-// It accepts the key to search in this map and the file to read the json data from.
-// Returns the value of a key if it exist in the map loaded.
+// loadKey is a function to quickly find some key in the json encoded file.
 func loadKey(key string, file string) (string, error) {
 	data, err := JsonLoad(file)
 	return data[key], err
 }
 
-// LoadAccessToken calls loadKey function to find the access token in the FirebaseAuthFile.
+// LoadAccessToken is a function to quickly get the local access token from FirebaseAuthFile.
 func LoadAccessToken() (string, error) {
 	return loadKey("access_token", FirebaseAuthFile)
 }
 
-// HandleFirebaseAuthResponse extracts the error message from Firebase response when the status is ok.
+// HandleFirebaseAuthResponse is a function to extracts the error message from the Firebase REST API response when the status is ok.
 func HandleFirebaseAuthResponse(response *resty.Response) error {
 	if response.IsError() {
 		var body map[string]map[string]string
@@ -113,7 +114,7 @@ func HandleFirebaseAuthResponse(response *resty.Response) error {
 	return nil
 }
 
-// HandleFirebaseSignInResponse calls HandleFirebaseAuthResponse and, if there's no any error, dumps the response body into FirebaseAuthFile calling JsonDump.
+// HandleFirebaseSignInResponse is a function that dumps the Firebase REST API response into FirebaseAuthFile.
 func HandleFirebaseSignInResponse(response *resty.Response) error {
 	err := HandleFirebaseAuthResponse(response)
 
@@ -124,7 +125,7 @@ func HandleFirebaseSignInResponse(response *resty.Response) error {
 	return JsonDump(response.Body(), FirebaseAuthFile)
 }
 
-// LoadRefreshToken loads and returns refresh token from FirebaseAuthFile using JsonLoad.
+// LoadRefreshToken is a function to quickly get the local refresh token from FirebaseAuthFile.
 func LoadRefreshToken() (string, error) {
 	data, err := JsonLoad(FirebaseAuthFile)
 
@@ -146,19 +147,19 @@ func LoadRefreshToken() (string, error) {
 	return "", errors.New("refresh token not found")
 }
 
-// IsRefreshTokenExists returns true if LoadRefreshToken is called without errors, i.e. refresh token is found.
+// IsRefreshTokenExists is a function to quickly check refresh token exists locally.
 func IsRefreshTokenExists() bool {
 	_, err := LoadRefreshToken()
 	return err == nil
 }
 
-// IsDeviceCreated checks if the DeviceFile exist using the readFile.
+// IsDeviceCreated is a function that checks if the DeviceFile exist, i.e device is created.
 func IsDeviceCreated() bool {
 	_, err := readFile(DeviceFile)
 	return err == nil
 }
 
-// LoadDeviceID calls a loadKey to find the device ID in the DeviceFile.
+// LoadDeviceID is a function to quickly get the device ID from the DeviceFile.
 func LoadDeviceID() (string, error) {
 	key, err := loadKey("id", DeviceFile)
 
@@ -168,8 +169,8 @@ func LoadDeviceID() (string, error) {
 	return key, nil
 }
 
-// BuyPremiumDialog prompts the user if he or she want to by premium subscrition on Forest VPN.
-// If user prompts 'yes', then it opens https://forestvpn.com/pricing/ page in the default browser.
+// BuyPremiumDialog is a function that prompts the user to by premium subscrition on Forest VPN.
+// If the user prompts 'yes', then it opens https://forestvpn.com/pricing/ page in the default browser.
 func BuyPremiumDialog() error {
 	var answer string
 	var openCommand string
@@ -195,8 +196,7 @@ func BuyPremiumDialog() error {
 	return nil
 }
 
-// IsAuthenticated is a helper function to quickly check wether user is authenticated.
-// It calls the LoadAccessToken to check if an access token exist.
+// IsAuthenticated is a helper function to quickly check wether user is authenticated by checking existance of an access token.
 func IsAuthenticated() bool {
 	accessToken, err := LoadAccessToken()
 

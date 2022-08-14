@@ -1,4 +1,4 @@
-// state is a containing a structure to control Wireguard connection.
+// state is a package containing a structure to control Wireguard connection.
 
 package actions
 
@@ -6,6 +6,7 @@ import (
 	"os/exec"
 )
 
+// State is a structure representing Wireguard connection state.
 type State struct {
 	status bool
 }
@@ -21,14 +22,14 @@ func (s *State) setStatus() {
 	}
 }
 
-// GetStatus is a public function to get the status of a Wireguard connection.
+// GetStatus is a method to get the status of a Wireguard connection.
 func (s *State) GetStatus() bool {
 	s.setStatus()
 	return s.status
 }
 
-// SetUp is used to establish a Wireguard connection.
-// It executes 'wg-quick'shell command.
+// SetUp is a method used to establish a Wireguard connection.
+// It executes 'wg-quick' shell command.
 func (s *State) SetUp(config string) error {
 	return exec.Command("wg-quick", "up", config).Run()
 }

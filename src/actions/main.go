@@ -1,4 +1,5 @@
 // actions is a package containing a high-level structure that implements the functions to use as CLI Actions.
+//
 // See https://cli.urfave.org/v2/ for more information.
 
 package actions
@@ -23,13 +24,16 @@ import (
 	"github.com/forestvpn/cli/utils"
 )
 
-// AuthClientWrapper is a structure that wraps AuthClient and ApiClientWrapper.
+// AuthClientWrapper is a structure that is used as a high-level wrapper for both AuthClient and ApiClient.
+// It is used as main wgrest and [Firebase REST] client as both of wrapped structures share the same AccessToken for authentication purposes.
 type AuthClientWrapper struct {
 	AuthClient auth.AuthClient
 	ApiClient  api.ApiClientWrapper
 }
 
-// Register is a function to perform a user registration on Firebase.
+// Register is a method to perform a user registration on Firebase.
+//
+// See https://firebase.google.com/docs/reference/rest/auth#section-create-email-password for more information.
 func (w AuthClientWrapper) Register(email string, password string) error {
 	signinform, err := auth.GetSignInForm(email, []byte(password))
 
@@ -69,7 +73,9 @@ func (w AuthClientWrapper) Register(email string, password string) error {
 	return err
 }
 
-// Login is a function for logging in a user on the Firebase.
+// Login is a method for logging in a user on the Firebase.
+//
+// See https://firebase.google.com/docs/reference/rest/auth#section-sign-in-email-password for more information.
 func (w AuthClientWrapper) Login(email string, password string) error {
 	if !auth.IsRefreshTokenExists() {
 		signinform, err := auth.GetSignInForm(email, []byte(password))
@@ -135,7 +141,7 @@ func (w AuthClientWrapper) Login(email string, password string) error {
 	return nil
 }
 
-// Logout is a function that removes FirebaseAuthFile, i.e. logs the user out.
+// Logout is a method that removes FirebaseAuthFile, i.e. logs out the user.
 func (w AuthClientWrapper) Logout() error {
 	if _, err := os.Stat(auth.FirebaseAuthFile); !os.IsNotExist(err) {
 		err = os.Remove(auth.FirebaseAuthFile)
@@ -148,6 +154,7 @@ func (w AuthClientWrapper) Logout() error {
 }
 
 // ListLocations is a function to get the list of locations available for user.
+//
 // See https://github.com/forestvpn/api-client-go/blob/main/docs/GeoApi.md#listlocations for more information.
 func (w AuthClientWrapper) ListLocations(country string) error {
 	var data [][]string
@@ -190,6 +197,7 @@ func (w AuthClientWrapper) ListLocations(country string) error {
 // SetLocation is a function that writes the location data into the Wireguard configuration file.
 // It uses gopkg.in/ini.v1 package to form Woreguard compatible configuration file from the location data.
 // If the user subscrition on the Forest VPN services is out of date, it calls BuyPremiumDialog.
+//
 // See https://github.com/forestvpn/api-client-go/blob/main/docs/BillingFeature.md for more information.
 func (w AuthClientWrapper) SetLocation(location forestvpn_api.Location, includeHostIP bool) error {
 	resp, err := w.ApiClient.GetBillingFeatures()
