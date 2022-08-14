@@ -37,7 +37,7 @@ GetActiveSshClientIps is a function that calls the "who" shell command to get ac
 func GetExistingRoutes() ([]string, error)
 ```
 
-GetExistingRoutes  is a function taht calls a netstat shell command to get system routing table. Then it extracts all the IP addresses from the shell command's output. Each of an IP addresses is converted into related network using ip2Net in order to be compitable with Wireguard configuration format. Returns a slice of a networks \(as a strings\) representing system routing table.
+GetExistingRoutes is a function that calls a netstat shell command to get system routing table. Then it extracts all the IP addresses from the shell command's output. Each of an IP addresses is converted into related network using ip2Net in order to be compitable with Wireguard configuration format. Returns a slice of a networks \(as a strings\) representing system routing table.
 
 ## func [getHostIP](<https://github.com/forestvpn/cli/blob/main/src/utils/main.go#L67>)
 
