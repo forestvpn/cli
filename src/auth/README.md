@@ -31,6 +31,8 @@ Authentication related utilities around firebase REST authentication workflow. S
 - [func LoadAccessToken() (string, error)](<#func-loadaccesstoken>)
 - [func LoadDeviceID() (string, error)](<#func-loaddeviceid>)
 - [func LoadRefreshToken() (string, error)](<#func-loadrefreshtoken>)
+- [func loadKey(key string, file string) (string, error)](<#func-loadkey>)
+- [func readFile(filepath string) ([]byte, error)](<#func-readfile>)
 - [type AuthClient](<#type-authclient>)
   - [func (c AuthClient) ExchangeRefreshForIdToken() (*resty.Response, error)](<#func-authclient-exchangerefreshforidtoken>)
   - [func (c AuthClient) GetAccessToken() (*resty.Response, error)](<#func-authclient-getaccesstoken>)
@@ -43,11 +45,13 @@ Authentication related utilities around firebase REST authentication workflow. S
 - [type InfoForm](<#type-infoform>)
 - [type PasswordConfirmationField](<#type-passwordconfirmationfield>)
 - [type PasswordField](<#type-passwordfield>)
+  - [func getPasswordField(password []byte) (PasswordField, error)](<#func-getpasswordfield>)
   - [func (p PasswordField) Validate() error](<#func-passwordfield-validate>)
 - [type SignInForm](<#type-signinform>)
   - [func GetSignInForm(email string, password []byte) (SignInForm, error)](<#func-getsigninform>)
 - [type SignUpForm](<#type-signupform>)
   - [func (s SignUpForm) ValidatePasswordConfirmation() error](<#func-signupform-validatepasswordconfirmation>)
+- [type signInUpRequestBody](<#type-signinuprequestbody>)
 
 
 ## Variables
@@ -94,6 +98,10 @@ It's being rewrittten per location change.
 
 ```go
 var WireguardConfig = AppDir + "fvpn0.conf"
+```
+
+```go
+var home, _ = os.UserHomeDir()
 ```
 
 ## func [BuyPremiumDialog](<https://github.com/forestvpn/cli/blob/main/src/auth/utils.go#L174>)
@@ -191,6 +199,22 @@ func LoadRefreshToken() (string, error)
 ```
 
 LoadRefreshToken is a function to quickly get the local refresh token from FirebaseAuthFile.
+
+## func [loadKey](<https://github.com/forestvpn/cli/blob/main/src/auth/utils.go#L96>)
+
+```go
+func loadKey(key string, file string) (string, error)
+```
+
+loadKey is a function to quickly find some key in the json encoded file.
+
+## func [readFile](<https://github.com/forestvpn/cli/blob/main/src/auth/utils.go#L71>)
+
+```go
+func readFile(filepath string) ([]byte, error)
+```
+
+readFile is a function that reads the content of a file at filepath
 
 ## type [AuthClient](<https://github.com/forestvpn/cli/blob/main/src/auth/auth.go#L22-L24>)
 
@@ -303,6 +327,14 @@ type PasswordField struct {
 }
 ```
 
+### func [getPasswordField](<https://github.com/forestvpn/cli/blob/main/src/auth/forms.go#L44>)
+
+```go
+func getPasswordField(password []byte) (PasswordField, error)
+```
+
+getPasswordField is a method that prompts the user a password and then validates it.
+
 ### func \(PasswordField\) [Validate](<https://github.com/forestvpn/cli/blob/main/src/auth/fields.go#L33>)
 
 ```go
@@ -348,6 +380,18 @@ func (s SignUpForm) ValidatePasswordConfirmation() error
 ```
 
 ValidatePasswordConfirmation is a method that compares password and the password confirmation values.
+
+## type [signInUpRequestBody](<https://github.com/forestvpn/cli/blob/main/src/auth/auth.go#L27-L31>)
+
+signInUpRequestBody is a structure that is used as a data holder for both Firebase sign in and sign up requests.
+
+```go
+type signInUpRequestBody struct {
+    Email             string
+    Password          string
+    ReturnSecureToken bool
+}
+```
 
 
 

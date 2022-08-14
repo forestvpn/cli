@@ -18,11 +18,12 @@ import "github.com/forestvpn/cli/actions"
   - [func (s *State) GetStatus() bool](<#func-state-getstatus>)
   - [func (s *State) SetDown(config string) error](<#func-state-setdown>)
   - [func (s *State) SetUp(config string) error](<#func-state-setup>)
+  - [func (s *State) setStatus()](<#func-state-setstatus>)
 
 
 ## type [AuthClientWrapper](<https://github.com/forestvpn/cli/blob/main/src/actions/main.go#L29-L32>)
 
-AuthClientWrapper is a structure that is used as a high\-level wrapper for both AuthClient and ApiClient. It is used as main wgrest and \[Firebase REST\] client as both of wrapped structures share the same AccessToken for authentication purposes.
+AuthClientWrapper is a structure that is used as a high\-level wrapper for both AuthClient and ApiClient. It is used as main wgrest and Firebase REST API client as both of wrapped structures share the same AccessToken for authentication purposes.
 
 ```go
 type AuthClientWrapper struct {
@@ -85,7 +86,7 @@ State is a structure representing Wireguard connection state.
 
 ```go
 type State struct {
-    // contains filtered or unexported fields
+    status bool
 }
 ```
 
@@ -112,6 +113,14 @@ func (s *State) SetUp(config string) error
 ```
 
 SetUp is a method used to establish a Wireguard connection. It executes 'wg\-quick' shell command.
+
+### func \(\*State\) [setStatus](<https://github.com/forestvpn/cli/blob/main/src/actions/state.go#L16>)
+
+```go
+func (s *State) setStatus()
+```
+
+setStatus is used to set a status of Wireguard connection on the State structure. It calls a 'wg show' shell command and analyzes it's output.
 
 
 
