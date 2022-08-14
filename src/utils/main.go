@@ -16,7 +16,7 @@ func ip2Net(ip string) string {
 	return strings.Join(strings.Split(ip, ".")[:3], ".") + ".0/24"
 }
 
-// GetExistingRoutes  is a function taht calls a netstat shell command to get system routing table.
+// GetExistingRoutes  is a function that calls a netstat shell command to get system routing table.
 // Then it extracts all the IP addresses from the shell command's output.
 // Each of an IP addresses is converted into related network using ip2Net in order to be compitable with Wireguard configuration format.
 // Returns a slice of a networks (as a strings) representing system routing table.
