@@ -76,7 +76,7 @@ See https://firebase.google.com/docs/reference/rest/auth#section-create-email-pa
 func (w AuthClientWrapper) SetLocation(location forestvpn_api.Location, includeHostIP bool) error
 ```
 
-SetLocation is a function that writes the location data into the Wireguard configuration file. It uses gopkg.in/ini.v1 package to form Woreguard compatible configuration file from the location data. If the user subscrition on the Forest VPN services is out of date, it calls BuyPremiumDialog.
+SetLocation is a function that writes the location data into the Wireguard configuration file. It uses http://gopkg.in/ini.v1 package to form Wireguard compatible configuration file from the location data. If the user subscrition on the Forest VPN services is out of date, it calls BuyPremiumDialog.
 
 See https://github.com/forestvpn/api-client-go/blob/main/docs/BillingFeature.md for more information.
 
