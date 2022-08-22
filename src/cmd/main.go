@@ -22,20 +22,20 @@ var (
 	// DSN is a Data Source Name for Sentry. It is stored in an environment variable and assigned during the build with ldflags.
 	//
 	// See https://docs.sentry.io/product/sentry-basics/dsn-explainer/ for more information.
-	DSN = os.Getenv("SENTRY_DSN")
+	DSN string
 	// appVersion value is stored in an environment variable and assigned during the build with ldflags.
 	appVersion string
 	// firebaseApiKey is stored in an environment variable and assigned during the build with ldflags.
-	firebaseApiKey = os.Getenv("STAGING_FIREBASE_API_KEY")
+	firebaseApiKey string
 	// ApiHost is a hostname of Forest VPN back-end API that is stored in an environment variable and assigned during the build with ldflags.
-	ApiHost string = os.Getenv("STAGING_API_URL")
+	ApiHost string
 )
 
 func main() {
 	// email is user's email address used to sign in or sign up on the Firebase.
-	var email = os.Getenv("STAGING_EMAIL")
+	var email string
 	// password is user's password used during sign in or sign up on the Firebase.
-	var password = os.Getenv("STAGING_PASSWORD")
+	var password string
 	// country is stores prompted country name to filter locations by country.
 	var country string
 	// includeRoutes is a flag that indicates wether to route networks from system routing table into Wireguard tunnel interface.
