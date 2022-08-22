@@ -81,6 +81,7 @@ func readFile(filepath string) ([]byte, error) {
 }
 
 // JsonLoad  is a function that reads the content of a file and unmarshals it into the map.
+// If there's no file or it is empty, returns an empty map.
 func JsonLoad(filepath string) (map[string]string, error) {
 	var data map[string]string
 	byteStream, err := readFile(filepath)
@@ -153,7 +154,7 @@ func IsRefreshTokenExists() bool {
 	return err == nil
 }
 
-// IsDeviceCreated is a function that checks if the DeviceFile exist, i.e device is created.
+// Deprecated: IsDeviceCreated is a function that checks if the DeviceFile exist, i.e device is created.
 func IsDeviceCreated() bool {
 	_, err := readFile(DeviceFile)
 	return err == nil

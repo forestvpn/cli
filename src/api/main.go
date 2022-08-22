@@ -5,7 +5,6 @@ package api
 
 import (
 	"context"
-	"fmt"
 
 	forestvpn_api "github.com/forestvpn/api-client-go"
 )
@@ -24,10 +23,8 @@ type ApiClientWrapper struct {
 func (w ApiClientWrapper) CreateDevice() (*forestvpn_api.Device, error) {
 	auth := context.WithValue(context.Background(), forestvpn_api.ContextAccessToken, w.AccessToken)
 	request := *forestvpn_api.NewCreateOrUpdateDeviceRequest()
-	j, _ := request.MarshalJSON()
-	fmt.Println(string(j))
-	resp, _, err := w.APIClient.DeviceApi.CreateDevice(auth).CreateOrUpdateDeviceRequest(request).Execute()
-	return resp, err
+	dev, _, err := w.APIClient.DeviceApi.CreateDevice(auth).CreateOrUpdateDeviceRequest(request).Execute()
+	return dev, err
 
 }
 
@@ -69,4 +66,13 @@ func GetApiClient(accessToken string, apiHost string) ApiClientWrapper {
 	client := forestvpn_api.NewAPIClient(configuration)
 	wrapper := ApiClientWrapper{APIClient: client, AccessToken: accessToken}
 	return wrapper
+}
+
+// GetDevice is a method to get the device created on the registraton of the user.
+//
+// See https://github.com/forestvpn/api-client-go/blob/main/docs/DeviceApi.md#getdevice for more information.
+func (w ApiClientWrapper) GetDevice(id string) (*forestvpn_api.Device, error) {
+	auth := context.WithValue(context.Background(), forestvpn_api.ContextAccessToken, w.AccessToken)
+	resp, _, err := w.APIClient.DeviceApi.GetDevice(auth, id).Execute()
+	return resp, err
 }

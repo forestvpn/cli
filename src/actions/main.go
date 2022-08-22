@@ -66,6 +66,37 @@ func (w AuthClientWrapper) Register(email string, password string) error {
 
 	err = auth.HandleFirebaseAuthResponse(response)
 
+	if err != nil {
+		return err
+	}
+
+	jsonresponse := make(map[string]string)
+	json.Unmarshal(response.Body(), &jsonresponse)
+	refreshToken := jsonresponse["refreshToken"]
+	response, err = w.AuthClient.ExchangeRefreshForIdToken(refreshToken)
+
+	if err != nil {
+		return err
+	}
+
+	jsonresponse = make(map[string]string)
+	json.Unmarshal(response.Body(), &jsonresponse)
+	accessToken := jsonresponse["access_token"]
+	w.ApiClient.AccessToken = accessToken
+	resp, err := w.ApiClient.CreateDevice()
+
+	if err != nil {
+		return err
+	}
+
+	b, err := json.MarshalIndent(resp, "", "    ")
+
+	if err != nil {
+		return err
+	}
+
+	err = auth.JsonDump(b, auth.DeviceFile)
+
 	if err == nil {
 		color.Green("Signed up")
 	}
@@ -76,7 +107,7 @@ func (w AuthClientWrapper) Register(email string, password string) error {
 // Login is a method for logging in a user on the Firebase.
 //
 // See https://firebase.google.com/docs/reference/rest/auth#section-sign-in-email-password for more information.
-func (w AuthClientWrapper) Login(email string, password string) error {
+func (w AuthClientWrapper) Login(email string, password string, deviceID string) error {
 	if !auth.IsRefreshTokenExists() {
 		signinform, err := auth.GetSignInForm(email, []byte(password))
 
@@ -116,28 +147,21 @@ func (w AuthClientWrapper) Login(email string, password string) error {
 		}
 	}
 
-	if !auth.IsDeviceCreated() {
-		resp, err := w.ApiClient.CreateDevice()
+	if len(deviceID) > 0 {
+		resp, err := w.ApiClient.GetDevice(deviceID)
 
 		if err != nil {
 			return err
 		}
 
-		b, err := json.MarshalIndent(resp, "", "    ")
+		id := resp.GetId()
 
-		if err != nil {
-			return err
-		}
-
-		err = auth.JsonDump(b, auth.DeviceFile)
-
-		if err != nil {
-			return err
+		if id != deviceID {
+			return fmt.Errorf("%s != %s; want ==", id, deviceID)
 		}
 	}
 
 	color.Green("Signed in")
-
 	return nil
 }
 
