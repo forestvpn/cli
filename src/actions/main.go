@@ -105,6 +105,8 @@ func (w AuthClientWrapper) Register(email string, password string) error {
 }
 
 // Login is a method for logging in a user on the Firebase.
+// Accepts the deviceID (coming from local file) which indicates wether the device was created on previous login.
+// If the deviceID is empty, then should create a new device on login.
 //
 // See https://firebase.google.com/docs/reference/rest/auth#section-sign-in-email-password for more information.
 func (w AuthClientWrapper) Login(email string, password string, deviceID string) error {
@@ -147,18 +149,32 @@ func (w AuthClientWrapper) Login(email string, password string, deviceID string)
 		}
 	}
 
-	if len(deviceID) > 0 {
-		resp, err := w.ApiClient.GetDevice(deviceID)
+	if len(deviceID) == 0 {
+		accessToken, err := auth.LoadAccessToken()
 
 		if err != nil {
 			return err
 		}
 
-		id := resp.GetId()
+		w.ApiClient.AccessToken = accessToken
+		response, err := w.ApiClient.CreateDevice()
 
-		if id != deviceID {
-			return fmt.Errorf("%s != %s; want ==", id, deviceID)
+		if err != nil {
+			return err
 		}
+
+		b, err := json.MarshalIndent(response, "", "    ")
+
+		if err != nil {
+			return err
+		}
+
+		err = auth.JsonDump(b, auth.DeviceFile)
+
+		if err != nil {
+			return err
+		}
+
 	}
 
 	color.Green("Signed in")
