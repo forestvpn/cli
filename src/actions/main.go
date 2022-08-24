@@ -79,9 +79,18 @@ func (w AuthClientWrapper) Register(email string, password string) error {
 		return err
 	}
 
-	jsonresponse = make(map[string]string)
-	json.Unmarshal(response.Body(), &jsonresponse)
-	accessToken := jsonresponse["access_token"]
+	err = auth.JsonDump(response.Body(), auth.FirebaseAuthFile)
+
+	if err != nil {
+		return err
+	}
+
+	accessToken, err := auth.LoadAccessToken()
+
+	if err != nil {
+		return err
+	}
+
 	w.ApiClient.AccessToken = accessToken
 	resp, err := w.ApiClient.CreateDevice()
 
