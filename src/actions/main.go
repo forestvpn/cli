@@ -217,8 +217,8 @@ func (w AuthClientWrapper) ListLocations(country string) error {
 	}
 
 	billingFeature := resp[0]
-	constraint := billingFeature.GetConstraints()[0]
-	subject := constraint.GetSubject()
+	// constraint := billingFeature.GetConstraints()[0]
+	// subject := constraint.GetSubject()
 	locations, err := w.ApiClient.GetLocations()
 
 	if err != nil {
@@ -243,7 +243,7 @@ func (w AuthClientWrapper) ListLocations(country string) error {
 		return locations[i].GetName() < locations[j].GetName() && locations[i].Country.GetName() < locations[j].Country.GetName()
 	})
 
-	wrappedLocations := GetWrappedLocations(subject, locations)
+	wrappedLocations := GetWrappedLocations(billingFeature, locations)
 
 	for _, loc := range wrappedLocations {
 		premiumMark := ""
