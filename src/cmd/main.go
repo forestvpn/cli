@@ -194,53 +194,58 @@ func main() {
 								fmt.Println("Are you logged in?")
 								color := color.New(color.Faint)
 								color.Println("Try 'forest account login'")
-								return nil
-							}
+							} else if !auth.IsLocationSet() {
+								fmt.Println("Please, choose the location to connect.")
+								color := color.New(color.Faint)
+								color.Println("Use 'fvpn location ls' to see availabe locations.")
+							} else {
+								state := actions.State{}
+								err := state.SetUp(auth.WireguardConfig)
 
-							state := actions.State{}
-							err := state.SetUp(auth.WireguardConfig)
-
-							if err != nil {
-								return err
-							}
-
-							locations, err := wrapper.GetLocations()
-
-							if err != nil {
-								return err
-							}
-
-							session, err := auth.JsonLoad(auth.SessionFile)
-
-							if err != nil {
-								return err
-							}
-
-							var id, city, country string
-
-							for _, loc := range locations {
-								id = loc.GetId()
-
-								if id == session["location"] {
-									city = loc.GetName()
-									country = loc.Country.GetName()
+								if err != nil {
+									return err
 								}
+
+								locations, err := wrapper.GetLocations()
+
+								if err != nil {
+									return err
+								}
+
+								session, err := auth.JsonLoad(auth.SessionFile)
+
+								if err != nil {
+									return err
+								}
+
+								var id, city, country string
+
+								for _, loc := range locations {
+									id = loc.GetId()
+
+									if id == session["location"] {
+										city = loc.GetName()
+										country = loc.Country.GetName()
+									}
+								}
+
+								if len(city)+len(country) < 0 {
+									err := fmt.Errorf("no such location: %s", id)
+									return err
+								}
+
+								color.New(color.FgGreen).Printf("Connected to %s, %s\n", city, country)
+								session["status"] = "up"
+								data, err := json.MarshalIndent(session, "", "    ")
+
+								if err != nil {
+									return err
+								}
+
+								return auth.JsonDump(data, auth.SessionFile)
+
 							}
-
-							if len(city)+len(country) < 0 {
-								err := fmt.Errorf("no such location: %s", id)
-								return err
-							}
-
-							color.New(color.FgGreen).Printf("Connected to %s, %s\n", city, country)
-							session["status"] = "up"
-							data, err := json.MarshalIndent(session, "", "    ")
-
-							if err != nil {
-								return err
-							}
-
-							return auth.JsonDump(data, auth.SessionFile)
+							return nil
 						},
 					},
 					{
