@@ -22,13 +22,39 @@ GLOBAL OPTIONS:
    --help, -h  show help (default: false)
 ```
 
+## Usage example
+Register an account:
+```
+fvpn account register
+```
+Or login into existing one:
+```
+fvpn account login
+```
+See available locations:
+```
+fvpn location ls
+```
+Choose or change the location: 
+```
+fvpn location set ${CITY}
+```
+Connect to the chosen location:
+```
+fvpn state up
+```
+Disconnect from the chosen location:
+```
+fvpn state down
+```
+
 # Installation
 
 ## macOS
-
 ```
 brew install forestvpn/core/fvpn
 ```
+Make sure you have [Homebrew installed](https://docs.brew.sh/Installation) on your Mac.
 
 ## Debian/Ubuntu
 
