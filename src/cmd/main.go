@@ -197,7 +197,7 @@ func main() {
 							} else if !auth.IsLocationSet() {
 								fmt.Println("Please, choose the location to connect.")
 								color := color.New(color.Faint)
-								color.Println("Use 'fvpn location ls' to see availabe locations.")
+								color.Println("Use 'fvpn location ls' to see available locations.")
 							} else {
 								state := actions.State{}
 								err := state.SetUp(auth.WireguardConfig)
