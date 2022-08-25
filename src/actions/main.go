@@ -186,7 +186,7 @@ func (w AuthClientWrapper) Login(email string, password string, deviceID string)
 
 	}
 
-	color.Green("Signed in")
+	color.Green("Logged in")
 	return nil
 }
 
@@ -199,6 +199,7 @@ func (w AuthClientWrapper) Logout() error {
 			return err
 		}
 	}
+	color.Green("Logged out")
 	return nil
 }
 
