@@ -33,9 +33,9 @@ var (
 
 func main() {
 	// email is user's email address used to sign in or sign up on the Firebase.
-	var email = os.Getenv("STAGING_EMAIL")
+	var email string
 	// password is user's password used during sign in or sign up on the Firebase.
-	var password = os.Getenv("STAGING_PASSWORD")
+	var password string
 	// country is stores prompted country name to filter locations by country.
 	var country string
 	// includeRoutes is a flag that indicates wether to route networks from system routing table into Wireguard tunnel interface.
@@ -362,24 +362,34 @@ func main() {
 								return errors.New("UUID or name required")
 							}
 
+							resp, err := wrapper.GetBillingFeatures()
+
+							if err != nil {
+								return err
+							}
+
+							billingFeature := resp[0]
+							constraint := billingFeature.GetConstraints()[0]
+							subject := constraint.GetSubject()
 							locations, err := wrapper.GetLocations()
 
 							if err != nil {
 								return err
 							}
 
-							var location forestvpn_api.Location
+							wrappedLocations := actions.GetWrappedLocations(subject, locations)
+
+							var location actions.LocationWrapper
 
 							id, err := uuid.Parse(arg)
 
-							for i, loc := range locations {
-
+							for i, loc := range wrappedLocations {
 								if err != nil {
-									if strings.EqualFold(loc.GetName(), arg) {
+									if strings.EqualFold(loc.Location.GetName(), arg) {
 										location = loc
 										break
 									}
-								} else if strings.EqualFold(location.GetId(), id.String()) {
+								} else if strings.EqualFold(location.Location.GetId(), id.String()) {
 									location = loc
 									break
 								}
@@ -389,13 +399,13 @@ func main() {
 								}
 							}
 
-							err = apiClient.SetLocation(location, includeRoutes)
+							err = apiClient.SetLocation(billingFeature, location, includeRoutes)
 
 							if err != nil {
 								return err
 							}
 
-							session := map[string]string{"location": location.GetId(), "status": "down"}
+							session := map[string]string{"location": location.Location.GetId(), "status": "down"}
 							data, err := json.MarshalIndent(session, "", "    ")
 
 							if err != nil {

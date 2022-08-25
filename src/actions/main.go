@@ -210,6 +210,15 @@ func (w AuthClientWrapper) Logout() error {
 // See https://github.com/forestvpn/api-client-go/blob/main/docs/GeoApi.md#listlocations for more information.
 func (w AuthClientWrapper) ListLocations(country string) error {
 	var data [][]string
+	resp, err := w.ApiClient.GetBillingFeatures()
+
+	if err != nil {
+		return err
+	}
+
+	billingFeature := resp[0]
+	constraint := billingFeature.GetConstraints()[0]
+	subject := constraint.GetSubject()
 	locations, err := w.ApiClient.GetLocations()
 
 	if err != nil {
@@ -234,12 +243,19 @@ func (w AuthClientWrapper) ListLocations(country string) error {
 		return locations[i].GetName() < locations[j].GetName() && locations[i].Country.GetName() < locations[j].Country.GetName()
 	})
 
-	for _, loc := range locations {
-		data = append(data, []string{loc.GetName(), loc.Country.GetName(), loc.GetId()})
+	wrappedLocations := GetWrappedLocations(subject, locations)
+
+	for _, loc := range wrappedLocations {
+		premiumMark := ""
+
+		if loc.Premium {
+			premiumMark = "*"
+		}
+		data = append(data, []string{loc.Location.GetName(), loc.Location.Country.GetName(), loc.Location.GetId(), premiumMark})
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"City", "Country", "UUID"})
+	table.SetHeader([]string{"City", "Country", "UUID", "Premium"})
 	table.SetBorder(false)
 	table.AppendBulk(data)
 	table.Render()
@@ -251,26 +267,12 @@ func (w AuthClientWrapper) ListLocations(country string) error {
 // If the user subscrition on the Forest VPN services is out of date, it calls BuyPremiumDialog.
 //
 // See https://github.com/forestvpn/api-client-go/blob/main/docs/BillingFeature.md for more information.
-func (w AuthClientWrapper) SetLocation(location forestvpn_api.Location, includeHostIP bool) error {
-	resp, err := w.ApiClient.GetBillingFeatures()
-
-	if err != nil {
-		return err
-	}
-
-	billingFeature := resp[0]
-	constraint := billingFeature.GetConstraints()[0]
-	subject := constraint.GetSubject()
+func (w AuthClientWrapper) SetLocation(billingFeature forestvpn_api.BillingFeature, location LocationWrapper, includeHostIP bool) error {
 	expireDate := billingFeature.GetExpiryDate()
 	now := time.Now()
 
-	if !expireDate.After(now) {
+	if !expireDate.After(now) && location.Premium {
 		return auth.BuyPremiumDialog()
-	}
-
-	if !strings.Contains(strings.Join(subject[:], " "), location.GetId()) {
-		return auth.BuyPremiumDialog()
-
 	}
 
 	deviceID, err := auth.LoadDeviceID()
@@ -279,7 +281,7 @@ func (w AuthClientWrapper) SetLocation(location forestvpn_api.Location, includeH
 		return err
 	}
 
-	device, err := w.ApiClient.UpdateDevice(deviceID, location.GetId())
+	device, err := w.ApiClient.UpdateDevice(deviceID, location.Location.GetId())
 
 	if err != nil {
 		return err
@@ -372,7 +374,7 @@ func (w AuthClientWrapper) SetLocation(location forestvpn_api.Location, includeH
 		return err
 	}
 
-	color.New(color.FgGreen).Println(fmt.Sprintf("Default location is set to %s", location.GetId()))
+	color.New(color.FgGreen).Println(fmt.Sprintf("Default location is set to %s", location.Location.GetId()))
 
 	return nil
 }
