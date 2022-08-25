@@ -261,10 +261,12 @@ func main() {
 
 							state := actions.State{}
 
-							err := state.SetDown(auth.WireguardConfig)
+							if state.GetStatus() {
+								err := state.SetDown(auth.WireguardConfig)
 
-							if err != nil {
-								return err
+								if err != nil {
+									return err
+								}
 							}
 
 							color.Red("Disconnected")
