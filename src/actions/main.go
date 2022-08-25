@@ -35,7 +35,8 @@ type AuthClientWrapper struct {
 //
 // See https://firebase.google.com/docs/reference/rest/auth#section-create-email-password for more information.
 func (w AuthClientWrapper) Register(email string, password string) error {
-	signinform, err := auth.GetSignInForm(email, []byte(password))
+	passwordValidation := true
+	signinform, err := auth.GetSignInForm(email, []byte(password), passwordValidation)
 
 	if err != nil {
 		return err
@@ -120,7 +121,8 @@ func (w AuthClientWrapper) Register(email string, password string) error {
 // See https://firebase.google.com/docs/reference/rest/auth#section-sign-in-email-password for more information.
 func (w AuthClientWrapper) Login(email string, password string, deviceID string) error {
 	if !auth.IsRefreshTokenExists() {
-		signinform, err := auth.GetSignInForm(email, []byte(password))
+		passwordValidation := false
+		signinform, err := auth.GetSignInForm(email, []byte(password), passwordValidation)
 
 		if err != nil {
 			return err

@@ -31,8 +31,8 @@ func (f EmailField) Validate() error {
 
 // Validate is a method to check password's strength.
 func (p PasswordField) Validate() error {
-	if len(p.Value) < 8 {
-		return errors.New("password must be at least 8 characters long")
+	if len(p.Value) < 6 {
+		return errors.New("password must be at least 6 characters long")
 	}
 	return nil
 }
