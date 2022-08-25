@@ -209,3 +209,9 @@ func IsAuthenticated() bool {
 	return true
 
 }
+
+// IsLocationSet is a function to check wether Wireguard configuration file created after location selection.
+func IsLocationSet() bool {
+	_, err := os.Stat(WireguardConfig)
+	return !os.IsNotExist(err)
+}

@@ -235,19 +235,56 @@ func TestHandleFirebaseSignInResponseWithBlankParams(t *testing.T) {
 
 // func TestLoadRefreshTokenWhileLoggedIn(t *testing.T) {
 // 	authClient := auth.AuthClient{ApiKey: apiKey}
-// 	accessToken, err := auth.LoadAccessToken()
+// 	emailfield := auth.EmailField{Value: email}
+// 	passwordfield := auth.PasswordField{Value: []byte(password)}
+// 	signinform := auth.SignInForm{EmailField: emailfield, PasswordField: passwordfield}
+// 	response, err := authClient.SignIn(signinform)
 
 // 	if err != nil {
 // 		t.Error(err)
 // 	}
 
-// 	// if len(accessToken) == 0 {
-// 	// 	t.Error("Empty access token")
-// 	// }
+// 	jsonresponse := make(map[string]string)
+// 	err = json.Unmarshal(response.Body(), &jsonresponse)
+
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+
+// 	refreshToken := jsonresponse["refresh_token"]
+
+// 	if len(refreshToken) == 0 {
+// 		t.Error("empty refresh token")
+// 	}
+
+// 	response, err = authClient.ExchangeRefreshForIdToken(refreshToken)
+
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+
+// 	jsonresponse = make(map[string]string)
+// 	err = json.Unmarshal(response.Body(), &jsonresponse)
+
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+
+// 	accessToken := jsonresponse["access_token"]
+
+// 	if len(accessToken) == 0 {
+// 		t.Error("empty access token")
+// 	}
+
+// 	deviceID, err := auth.LoadDeviceID()
+
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
 
 // 	wrapper := api.GetApiClient(accessToken, apiHost)
 // 	apiClient := actions.AuthClientWrapper{AuthClient: authClient, ApiClient: wrapper}
-// 	err = apiClient.Login(email, password)
+// 	err = apiClient.Login(email, password, deviceID)
 
 // 	if err != nil {
 // 		t.Error(err)
@@ -257,7 +294,7 @@ func TestHandleFirebaseSignInResponseWithBlankParams(t *testing.T) {
 // 		t.Error(err)
 // 	}
 
-// 	refreshToken, err := auth.LoadRefreshToken()
+// 	refreshToken, err = auth.LoadRefreshToken()
 
 // 	if err != nil {
 // 		t.Error(err)

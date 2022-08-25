@@ -5,6 +5,7 @@ package auth
 
 import (
 	"fmt"
+	"time"
 
 	"encoding/json"
 
@@ -84,6 +85,7 @@ func (c AuthClient) SignIn(form SignInForm) (*resty.Response, error) {
 func (c AuthClient) ExchangeRefreshForIdToken(refreshToken string) (*resty.Response, error) {
 	url := "https://securetoken.googleapis.com/v1/token"
 	body := fmt.Sprintf("grant_type=refresh_token&refresh_token=%s", refreshToken)
+	Client.SetTimeout(time.Duration(1 * time.Second))
 
 	return Client.R().
 		SetHeader("Content-Type", "application/x-www-form-urlencoded").
