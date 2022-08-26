@@ -35,13 +35,45 @@ type AuthClientWrapper struct {
 //
 // See https://firebase.google.com/docs/reference/rest/auth#section-create-email-password for more information.
 func (w AuthClientWrapper) Register(email string, password string) error {
-	passwordValidation := true
-	signinform, err := auth.GetSignInForm(email, []byte(password), passwordValidation)
+	signinform := auth.SignInForm{}
+	emailfield, err := auth.GetEmailField(email)
 
 	if err != nil {
 		return err
 	}
 
+	signinform.EmailField = emailfield
+
+	if err != nil {
+		return err
+	}
+
+	response, err := w.AuthClient.GetUserData(emailfield.Value)
+
+	if err != nil {
+		return err
+	}
+
+	var data map[string]bool
+	json.Unmarshal(response.Body(), &data)
+
+	if data["registered"] {
+		return errors.New("user with this email already exist")
+	}
+
+	passwordfield, err := auth.GetPasswordField([]byte(password))
+
+	if err != nil {
+		return err
+	}
+
+	err = passwordfield.Validate()
+
+	if err != nil {
+		return err
+	}
+
+	signinform.PasswordField = passwordfield
 	signupform := auth.SignUpForm{}
 	fmt.Print("Confirm password: ")
 	passwordConfirmation, err := term.ReadPassword(0)
@@ -59,7 +91,7 @@ func (w AuthClientWrapper) Register(email string, password string) error {
 		return err
 	}
 
-	response, err := w.AuthClient.SignUp(signupform)
+	response, err = w.AuthClient.SignUp(signupform)
 
 	if err != nil {
 		return err
@@ -121,12 +153,20 @@ func (w AuthClientWrapper) Register(email string, password string) error {
 // See https://firebase.google.com/docs/reference/rest/auth#section-sign-in-email-password for more information.
 func (w AuthClientWrapper) Login(email string, password string, deviceID string) error {
 	if !auth.IsRefreshTokenExists() {
-		passwordValidation := false
-		signinform, err := auth.GetSignInForm(email, []byte(password), passwordValidation)
+		signinform := auth.SignInForm{}
+		emailfield, err := auth.GetEmailField(email)
 
 		if err != nil {
 			return err
 		}
+
+		signinform.EmailField = emailfield
+
+		// signinform, err := auth.GetSignInForm(email, []byte(password), passwordValidation)
+
+		// if err != nil {
+		// 	return err
+		// }
 
 		response, err := w.AuthClient.SignIn(signinform)
 
@@ -217,8 +257,6 @@ func (w AuthClientWrapper) ListLocations(country string) error {
 	}
 
 	billingFeature := resp[0]
-	// constraint := billingFeature.GetConstraints()[0]
-	// subject := constraint.GetSubject()
 	locations, err := w.ApiClient.GetLocations()
 
 	if err != nil {
