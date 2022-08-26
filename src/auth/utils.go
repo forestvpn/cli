@@ -83,7 +83,7 @@ func readFile(filepath string) ([]byte, error) {
 // JsonLoad  is a function that reads the content of a file and unmarshals it into the map.
 // If there's no file or it is empty, returns an empty map.
 func JsonLoad(filepath string) (map[string]string, error) {
-	var data map[string]string
+	data := make(map[string]string)
 	byteStream, err := readFile(filepath)
 
 	if err == nil {
