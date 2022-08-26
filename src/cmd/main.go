@@ -447,7 +447,11 @@ func main() {
 								return err
 							}
 
-							session := map[string]string{"location": location.Location.GetId(), "status": "down"}
+							session, _ := auth.JsonLoad(auth.SessionFile)
+							endpoint := session["endpoint"]
+							session["location"] = location.Location.GetId()
+							session["status"] = "down"
+							session["endpoint"] = endpoint
 							data, err := json.MarshalIndent(session, "", "    ")
 
 							if err != nil {
