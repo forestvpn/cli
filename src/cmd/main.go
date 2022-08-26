@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
 	"os"
 	"strings"
 
 	"github.com/forestvpn/cli/actions"
 	"github.com/forestvpn/cli/api"
 	"github.com/forestvpn/cli/auth"
+	"github.com/forestvpn/cli/utils"
 	"github.com/google/uuid"
 
 	"github.com/fatih/color"
@@ -218,6 +220,39 @@ func main() {
 									return err
 								}
 
+								endpoint := session["endpoint"]
+
+								if len(endpoint) == 0 {
+									err := errors.New("no endpoint found in session file")
+									sentry.CaptureException(err)
+									return err
+								}
+
+								endpoints, err := net.LookupIP(endpoint)
+
+								if err != nil {
+									return err
+								}
+
+								hostip, err := utils.GetHostIP()
+
+								if err != nil {
+									return err
+								}
+
+								var matchedIP string
+
+								for _, endpoint := range endpoints {
+									if endpoint.String() == hostip.String() {
+										matchedIP = endpoint.String()
+									}
+								}
+
+								if len(matchedIP) == 0 {
+									sentry.CaptureException(fmt.Errorf("no host ip %s found in endpoints %s", hostip.String(), endpoints))
+									matchedIP = "unknown"
+								}
+
 								var id, city, country string
 
 								for _, loc := range locations {
@@ -231,9 +266,11 @@ func main() {
 
 								if len(city)+len(country) < 0 {
 									err := fmt.Errorf("no such location: %s", id)
+									sentry.CaptureException(err)
 									return err
 								}
 
+								color.New(color.FgGreen).Printf("Your IP address is %s", matchedIP)
 								color.New(color.FgGreen).Printf("Connected to %s, %s\n", city, country)
 								session["status"] = "up"
 								data, err := json.MarshalIndent(session, "", "    ")

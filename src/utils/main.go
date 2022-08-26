@@ -46,7 +46,7 @@ func GetExistingRoutes() ([]string, error) {
 
 	}
 
-	hostip, err := getHostIP()
+	hostip, err := GetHostIP()
 
 	if err != nil {
 		return nil, err
@@ -61,10 +61,10 @@ func GetExistingRoutes() ([]string, error) {
 	return existingRoutes, nil
 }
 
-// getHostIP returns the host's public IP address.
+// GetHostIP returns the host's public IP address.
 //
 // See https://github.com/glendc/go-external-ip for more information.
-func getHostIP() (net.IP, error) {
+func GetHostIP() (net.IP, error) {
 	return externalip.DefaultConsensus(nil, nil).ExternalIP()
 }
 

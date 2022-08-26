@@ -345,7 +345,28 @@ func (w AuthClientWrapper) SetLocation(billingFeature forestvpn_api.BillingFeatu
 			return err
 		}
 
-		_, err = peerSection.NewKey("Endpoint", peer.GetEndpoint())
+		endpoint := peer.GetEndpoint()
+		_, err = peerSection.NewKey("Endpoint", endpoint)
+
+		if err != nil {
+			return err
+		}
+
+		host := strings.Split(endpoint, ":")[0]
+		session, err := auth.JsonLoad(auth.SessionFile)
+
+		if err != nil {
+			return err
+		}
+
+		session["endpoint"] = host
+		data, err := json.MarshalIndent(session, "", "    ")
+
+		if err != nil {
+			return err
+		}
+
+		err = auth.JsonDump(data, auth.SessionFile)
 
 		if err != nil {
 			return err
