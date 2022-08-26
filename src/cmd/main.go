@@ -270,8 +270,8 @@ func main() {
 									return err
 								}
 
-								color.New(color.FgGreen).Printf("Your IP address is %s", matchedIP)
-								color.New(color.FgGreen).Printf("Connected to %s, %s\n", city, country)
+								color.New(color.FgGreen).Println("Your IP address is %s", matchedIP)
+								color.New(color.FgGreen).Println("Connected to %s, %s\n", city, country)
 								session["status"] = "up"
 								data, err := json.MarshalIndent(session, "", "    ")
 
