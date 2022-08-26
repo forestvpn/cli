@@ -26,6 +26,7 @@ func (f EmailField) Validate() error {
 	if len(f.Value) < 5 || !strings.Contains(f.Value, "@") || !strings.Contains(f.Value, ".") {
 		return errors.New("invalid email address")
 	}
+
 	return nil
 }
 
