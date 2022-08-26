@@ -415,25 +415,30 @@ func main() {
 							}
 
 							wrappedLocations := actions.GetWrappedLocations(billingFeature, locations)
-
 							var location actions.LocationWrapper
-
 							id, err := uuid.Parse(arg)
+							found := false
 
-							for i, loc := range wrappedLocations {
-								if err != nil {
+							if err != nil {
+								for _, loc := range wrappedLocations {
 									if strings.EqualFold(loc.Location.GetName(), arg) {
 										location = loc
+										found = true
 										break
 									}
-								} else if strings.EqualFold(location.Location.GetId(), id.String()) {
-									location = loc
-									break
 								}
+							} else {
+								for _, loc := range wrappedLocations {
+									if strings.EqualFold(location.Location.GetId(), id.String()) {
+										location = loc
+										found = false
+										break
+									}
+								}
+							}
 
-								if i == len(locations) {
-									return fmt.Errorf("no such location: %s", arg)
-								}
+							if !found {
+								return fmt.Errorf("no such location: %s", arg)
 							}
 
 							err = apiClient.SetLocation(billingFeature, location, includeRoutes)
