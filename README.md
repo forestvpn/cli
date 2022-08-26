@@ -59,29 +59,25 @@ Make sure you have [Homebrew installed](https://docs.brew.sh/Installation) on yo
 ## Debian/Ubuntu
 
 ```
-curl -L https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_amd64.deb -o fvpn_linux_amd64.deb
-dpkg -i fvpn_linux_amd64.deb
+curl -L https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_amd64.deb -o fvpn_linux_amd64.deb && dpkg -i fvpn_linux_amd64.deb
 ```
 
 ## Fedora
 
 ```
-curl -L https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_amd64.rpm -o fvpn_linux_amd64.rpm
-dnf install fvpn_linux_amd64.rpm
+curl -L https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_amd64.rpm -o fvpn_linux_amd64.rpm && dnf install fvpn_linux_amd64.rpm
 ```
 
 ## Alpine
 
 ```
-curl -L https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_amd64.apk -o fvpn_linux_amd64.apk
-apk add fvpn_linux_amd64.apk --allow-untrusted
+curl -L https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_amd64.apk -o fvpn_linux_amd64.apk && apk add fvpn_linux_amd64.apk --allow-untrusted
 ```
 
 ## Linux
 
 ```
-curl -L https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_amd64.tar.gz -o fvpn_linux_amd64.tar.gz
-tar -xf fvpn_linux_amd64.tar.gz -C /usr/local/bin/
+curl -L https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_amd64.tar.gz -o fvpn_linux_amd64.tar.gz && tar -xf fvpn_linux_amd64.tar.gz -C /usr/local/bin/
 ```
 
 # Dependencies
