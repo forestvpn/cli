@@ -99,6 +99,7 @@ steps:
       - name: cache
         path: /cache
     commands:
+      - apk add git
       - go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
       - cd src
       - gomarkdoc --output '{{.Dir}}/README.md' ./...
