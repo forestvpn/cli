@@ -110,6 +110,9 @@ steps:
       - git push origin main
     depends_on:
       - deps
+    when:
+      branch:
+        - main
 trigger:
   event:
     - push
