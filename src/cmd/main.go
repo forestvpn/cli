@@ -246,15 +246,14 @@ func main() {
 							}
 
 							if !status {
-								color.Red("Disconnected")
+								color.Red("Not connected")
 							} else {
-								location, err := wrapper.GetConnectedLocation()
+								state := actions.State{}
+								err := state.SetDown(auth.WireguardConfig)
 
 								if err != nil {
 									return err
 								}
-
-								color.Green(fmt.Sprintf("Connected to %s, %s", location.Name, location.Country.Name))
 							}
 							return nil
 						},
