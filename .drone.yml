@@ -91,9 +91,9 @@ steps:
         - tag
   - name: docs
     image: golang:1.18.4-alpine3.15
-      environment:
-        GITHUB_TOKEN:
-          from_secret: GITHUB_TOKEN
+    environment:
+      GITHUB_TOKEN:
+        from_secret: GITHUB_TOKEN
     privileged: false
     volumes:
       - name: cache
