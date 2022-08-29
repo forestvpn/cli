@@ -11,8 +11,7 @@ import "github.com/forestvpn/cli/utils"
 - [func ExcludeDisallowedIps(allowed []string, disallowed []string) ([]string, error)](<#func-excludedisallowedips>)
 - [func GetActiveSshClientIps() ([]string, error)](<#func-getactivesshclientips>)
 - [func GetExistingRoutes() ([]string, error)](<#func-getexistingroutes>)
-- [func getHostIP() (net.IP, error)](<#func-gethostip>)
-- [func ip2Net(ip string) string](<#func-ip2net>)
+- [func GetHostIP() (net.IP, error)](<#func-gethostip>)
 
 
 ## func [ExcludeDisallowedIps](<https://github.com/forestvpn/cli/blob/main/src/utils/main.go#L73>)
@@ -39,23 +38,15 @@ func GetExistingRoutes() ([]string, error)
 
 GetExistingRoutes is a function that calls a netstat shell command to get system routing table. Then it extracts all the IP addresses from the shell command's output. Each of an IP addresses is converted into related network using ip2Net in order to be compitable with Wireguard configuration format. Returns a slice of a networks \(as a strings\) representing system routing table.
 
-## func [getHostIP](<https://github.com/forestvpn/cli/blob/main/src/utils/main.go#L67>)
+## func [GetHostIP](<https://github.com/forestvpn/cli/blob/main/src/utils/main.go#L67>)
 
 ```go
-func getHostIP() (net.IP, error)
+func GetHostIP() (net.IP, error)
 ```
 
-getHostIP returns the host's public IP address.
+GetHostIP returns the host's public IP address.
 
 See https://github.com/glendc/go-external-ip for more information.
-
-## func [ip2Net](<https://github.com/forestvpn/cli/blob/main/src/utils/main.go#L15>)
-
-```go
-func ip2Net(ip string) string
-```
-
-ip2Net is a function for converting an IP address value, e.g. 127.0.0.1, into a network with mask of 24 bits, e.g. 127.0.0.0/24.
 
 
 

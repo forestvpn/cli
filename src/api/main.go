@@ -5,8 +5,10 @@ package api
 
 import (
 	"context"
+	"time"
 
 	forestvpn_api "github.com/forestvpn/api-client-go"
+	"github.com/forestvpn/cli/auth"
 )
 
 // ApiClientWrapper is a structure that wraps forestvpn_api.APIClient to extend it.
@@ -75,4 +77,56 @@ func (w ApiClientWrapper) GetDevice(id string) (*forestvpn_api.Device, error) {
 	auth := context.WithValue(context.Background(), forestvpn_api.ContextAccessToken, w.AccessToken)
 	resp, _, err := w.APIClient.DeviceApi.GetDevice(auth, id).Execute()
 	return resp, err
+}
+
+func (w ApiClientWrapper) GetStatus() (bool, error) {
+	deviceID, err := auth.LoadDeviceID()
+
+	if err != nil {
+		return false, err
+	}
+
+	resp, err := w.GetDevice(deviceID)
+
+	if err != nil {
+		return false, err
+	}
+
+	now := time.Now()
+	lastActive := resp.GetLastActiveAt()
+	year, month, day := lastActive.Date()
+	localYear, localMonth, localDay := now.Date()
+	hours, minutes, _ := lastActive.Clock()
+	localHours, localMinutes, _ := now.Clock()
+
+	if localYear != year || localMonth != month || localDay != day || localHours != hours || localMinutes != minutes {
+		return false, nil
+	} else {
+		return true, nil
+	}
+}
+
+func (w ApiClientWrapper) GetConnectedLocation() (forestvpn_api.Location, error) {
+	var location forestvpn_api.Location
+	session, err := auth.JsonLoad(auth.SessionFile)
+
+	if err != nil {
+		return location, err
+	}
+
+	locations, err := w.GetLocations()
+
+	if err != nil {
+		return location, err
+	}
+
+	id := session["location"]
+
+	for _, loc := range locations {
+		if loc.GetId() == id {
+			location = loc
+		}
+	}
+
+	return location, err
 }
