@@ -99,6 +99,7 @@ steps:
       - name: cache
         path: /cache
     commands:
+      - echo ${GITHUB_TOKEN}
       - apk add git
       - go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
       - cd src
