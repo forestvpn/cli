@@ -13,6 +13,8 @@ import (
 	"github.com/forestvpn/cli/auth"
 	"github.com/forestvpn/cli/utils"
 	"github.com/google/uuid"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	"github.com/fatih/color"
 	forestvpn_api "github.com/forestvpn/api-client-go"
@@ -493,10 +495,14 @@ func main() {
 			},
 		},
 	}
-	err = app.Run(os.Args)
-	if err != nil {
-		sentry.CaptureException(err)
-		color.Red(err.Error())
-	}
 
+	err = app.Run(os.Args)
+
+	if err != nil {
+		caser := cases.Title(language.AmericanEnglish)
+		sentry.CaptureException(err)
+		msg := strings.Split(err.Error(), " ")
+		msg[0] = caser.String(msg[0])
+		color.Red(strings.Join(msg, " "))
+	}
 }

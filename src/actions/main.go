@@ -58,7 +58,7 @@ func (w AuthClientWrapper) Register(email string, password string) error {
 	json.Unmarshal(response.Body(), &data)
 
 	if data["registered"] {
-		return errors.New("user with this email already exist")
+		return errors.New("the user already exists")
 	}
 
 	passwordfield, err := auth.GetPasswordField([]byte(password))
@@ -161,14 +161,27 @@ func (w AuthClientWrapper) Login(email string, password string, deviceID string)
 		}
 
 		signinform.EmailField = emailfield
+		response, err := w.AuthClient.GetUserData(emailfield.Value)
 
-		// signinform, err := auth.GetSignInForm(email, []byte(password), passwordValidation)
+		if err != nil {
+			return err
+		}
 
-		// if err != nil {
-		// 	return err
-		// }
+		var data map[string]bool
+		json.Unmarshal(response.Body(), &data)
 
-		response, err := w.AuthClient.SignIn(signinform)
+		if !data["registered"] {
+			return errors.New("the user doesn't exist")
+		}
+
+		passwordfield, err := auth.GetPasswordField([]byte(password))
+
+		if err != nil {
+			return err
+		}
+
+		signinform.PasswordField = passwordfield
+		response, err = w.AuthClient.SignIn(signinform)
 
 		if err != nil {
 			return err
