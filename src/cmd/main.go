@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/forestvpn/cli/actions"
 	"github.com/forestvpn/cli/api"
@@ -17,7 +18,6 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/fatih/color"
-	forestvpn_api "github.com/forestvpn/api-client-go"
 	"github.com/getsentry/sentry-go"
 	"github.com/urfave/cli/v2"
 )
@@ -341,34 +341,30 @@ func main() {
 								return nil
 							}
 
-							state := actions.State{}
-							session, err := auth.JsonLoad(auth.SessionFile)
+							deviceID, err := auth.LoadDeviceID()
 
 							if err != nil {
 								return err
 							}
 
-							if state.GetStatus() && session["status"] == "up" {
-								id := session["location"]
-								locations, err := wrapper.GetLocations()
+							resp, err := wrapper.GetDevice(deviceID)
 
-								if err != nil {
-									return err
-								}
+							if err != nil {
+								return err
+							}
 
-								var location forestvpn_api.Location
+							now := time.Now()
+							lastActive := resp.GetLastActiveAt()
+							year, month, day := lastActive.Date()
+							localYear, localMonth, localDay := now.Date()
+							hours, minutes, _ := lastActive.Clock()
+							localHours, localMinutes, _ := now.Clock()
 
-								for _, loc := range locations {
-									if loc.GetId() == id {
-										location = loc
-									}
-								}
-
-								color.Green(fmt.Sprintf("Connected to %s, %s", location.Name, location.Country.Name))
-
-							} else {
+							if localYear != year || localMonth != month || localDay != day || localHours != hours || localMinutes != minutes {
 								color.Red("Disconnected")
 							}
+
+							color.Green("Connected")
 
 							return nil
 
