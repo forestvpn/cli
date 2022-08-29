@@ -306,9 +306,13 @@ func main() {
 								if err != nil {
 									return err
 								}
+
+								color.Red("Disconnected")
+							} else {
+								color := color.New(color.Faint)
+								color.Println("No active connection to set down")
 							}
 
-							color.Red("Disconnected")
 							session, err := auth.JsonLoad(auth.SessionFile)
 
 							if err != nil {
