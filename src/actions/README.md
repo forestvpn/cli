@@ -10,15 +10,16 @@ import "github.com/forestvpn/cli/actions"
 
 - [type AuthClientWrapper](<#type-authclientwrapper>)
   - [func (w AuthClientWrapper) ListLocations(country string) error](<#func-authclientwrapper-listlocations>)
-  - [func (w AuthClientWrapper) Login(email string, password string) error](<#func-authclientwrapper-login>)
+  - [func (w AuthClientWrapper) Login(email string, password string, deviceID string) error](<#func-authclientwrapper-login>)
   - [func (w AuthClientWrapper) Logout() error](<#func-authclientwrapper-logout>)
   - [func (w AuthClientWrapper) Register(email string, password string) error](<#func-authclientwrapper-register>)
-  - [func (w AuthClientWrapper) SetLocation(location forestvpn_api.Location, includeHostIP bool) error](<#func-authclientwrapper-setlocation>)
+  - [func (w AuthClientWrapper) SetLocation(billingFeature forestvpn_api.BillingFeature, location LocationWrapper, includeHostIP bool) error](<#func-authclientwrapper-setlocation>)
+- [type LocationWrapper](<#type-locationwrapper>)
+  - [func GetWrappedLocations(billingFeature forestvpn_api.BillingFeature, locations []forestvpn_api.Location) []LocationWrapper](<#func-getwrappedlocations>)
 - [type State](<#type-state>)
   - [func (s *State) GetStatus() bool](<#func-state-getstatus>)
   - [func (s *State) SetDown(config string) error](<#func-state-setdown>)
   - [func (s *State) SetUp(config string) error](<#func-state-setup>)
-  - [func (s *State) setStatus()](<#func-state-setstatus>)
 
 
 ## type [AuthClientWrapper](<https://github.com/forestvpn/cli/blob/main/src/actions/main.go#L29-L32>)
@@ -32,7 +33,7 @@ type AuthClientWrapper struct {
 }
 ```
 
-### func \(AuthClientWrapper\) [ListLocations](<https://github.com/forestvpn/cli/blob/main/src/actions/main.go#L159>)
+### func \(AuthClientWrapper\) [ListLocations](<https://github.com/forestvpn/cli/blob/main/src/actions/main.go#L264>)
 
 ```go
 func (w AuthClientWrapper) ListLocations(country string) error
@@ -42,17 +43,17 @@ ListLocations is a function to get the list of locations available for user.
 
 See https://github.com/forestvpn/api-client-go/blob/main/docs/GeoApi.md#listlocations for more information.
 
-### func \(AuthClientWrapper\) [Login](<https://github.com/forestvpn/cli/blob/main/src/actions/main.go#L79>)
+### func \(AuthClientWrapper\) [Login](<https://github.com/forestvpn/cli/blob/main/src/actions/main.go#L154>)
 
 ```go
-func (w AuthClientWrapper) Login(email string, password string) error
+func (w AuthClientWrapper) Login(email string, password string, deviceID string) error
 ```
 
-Login is a method for logging in a user on the Firebase.
+Login is a method for logging in a user on the Firebase. Accepts the deviceID \(coming from local file\) which indicates wether the device was created on previous login. If the deviceID is empty, then should create a new device on login.
 
 See https://firebase.google.com/docs/reference/rest/auth#section-sign-in-email-password for more information.
 
-### func \(AuthClientWrapper\) [Logout](<https://github.com/forestvpn/cli/blob/main/src/actions/main.go#L145>)
+### func \(AuthClientWrapper\) [Logout](<https://github.com/forestvpn/cli/blob/main/src/actions/main.go#L249>)
 
 ```go
 func (w AuthClientWrapper) Logout() error
@@ -70,15 +71,30 @@ Register is a method to perform a user registration on Firebase.
 
 See https://firebase.google.com/docs/reference/rest/auth#section-create-email-password for more information.
 
-### func \(AuthClientWrapper\) [SetLocation](<https://github.com/forestvpn/cli/blob/main/src/actions/main.go#L202>)
+### func \(AuthClientWrapper\) [SetLocation](<https://github.com/forestvpn/cli/blob/main/src/actions/main.go#L321>)
 
 ```go
-func (w AuthClientWrapper) SetLocation(location forestvpn_api.Location, includeHostIP bool) error
+func (w AuthClientWrapper) SetLocation(billingFeature forestvpn_api.BillingFeature, location LocationWrapper, includeHostIP bool) error
 ```
 
-SetLocation is a function that writes the location data into the Wireguard configuration file. It uses http://gopkg.in/ini.v1 package to form Wireguard compatible configuration file from the location data. If the user subscrition on the Forest VPN services is out of date, it calls BuyPremiumDialog.
+SetLocation is a function that writes the location data into the Wireguard configuration file. It uses gopkg.in/ini.v1 package to form Woreguard compatible configuration file from the location data. If the user subscrition on the Forest VPN services is out of date, it calls BuyPremiumDialog.
 
 See https://github.com/forestvpn/api-client-go/blob/main/docs/BillingFeature.md for more information.
+
+## type [LocationWrapper](<https://github.com/forestvpn/cli/blob/main/src/actions/utils.go#L7-L10>)
+
+```go
+type LocationWrapper struct {
+    Location forestvpn_api.Location
+    Premium  bool
+}
+```
+
+### func [GetWrappedLocations](<https://github.com/forestvpn/cli/blob/main/src/actions/utils.go#L12>)
+
+```go
+func GetWrappedLocations(billingFeature forestvpn_api.BillingFeature, locations []forestvpn_api.Location) []LocationWrapper
+```
 
 ## type [State](<https://github.com/forestvpn/cli/blob/main/src/actions/state.go#L10-L12>)
 
@@ -86,19 +102,21 @@ State is a structure representing Wireguard connection state.
 
 ```go
 type State struct {
-    status bool
+    // contains filtered or unexported fields
 }
 ```
 
-### func \(\*State\) [GetStatus](<https://github.com/forestvpn/cli/blob/main/src/actions/state.go#L26>)
+### func \(\*State\) [GetStatus](<https://github.com/forestvpn/cli/blob/main/src/actions/state.go#L30>)
 
 ```go
 func (s *State) GetStatus() bool
 ```
 
-GetStatus is a method to get the status of a Wireguard connection.
+Deprecated: GetStatus is a method to get the status of a Wireguard connection.
 
-### func \(\*State\) [SetDown](<https://github.com/forestvpn/cli/blob/main/src/actions/state.go#L39>)
+Using api.ApiClientWrapper.GetStatus instead
+
+### func \(\*State\) [SetDown](<https://github.com/forestvpn/cli/blob/main/src/actions/state.go#L43>)
 
 ```go
 func (s *State) SetDown(config string) error
@@ -106,21 +124,13 @@ func (s *State) SetDown(config string) error
 
 SetDown is used to terminate a Wireguard connection. It executes 'wg\-quick' shell command.
 
-### func \(\*State\) [SetUp](<https://github.com/forestvpn/cli/blob/main/src/actions/state.go#L33>)
+### func \(\*State\) [SetUp](<https://github.com/forestvpn/cli/blob/main/src/actions/state.go#L37>)
 
 ```go
 func (s *State) SetUp(config string) error
 ```
 
 SetUp is a method used to establish a Wireguard connection. It executes 'wg\-quick' shell command.
-
-### func \(\*State\) [setStatus](<https://github.com/forestvpn/cli/blob/main/src/actions/state.go#L16>)
-
-```go
-func (s *State) setStatus()
-```
-
-setStatus is used to set a status of Wireguard connection on the State structure. It calls a 'wg show' shell command and analyzes it's output.
 
 
 

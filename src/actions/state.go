@@ -11,8 +11,10 @@ type State struct {
 	status bool
 }
 
-// setStatus is used to set a status of Wireguard connection on the State structure.
+// Deprecated: setStatus is used to set a status of Wireguard connection on the State structure.
 // It calls a 'wg show' shell command and analyzes it's output.
+//
+// Using api.ApiClientWrapper.GetStatus instead
 func (s *State) setStatus() {
 	s.status = false
 	stdout, _ := exec.Command("wg", "show").CombinedOutput()
@@ -22,7 +24,9 @@ func (s *State) setStatus() {
 	}
 }
 
-// GetStatus is a method to get the status of a Wireguard connection.
+// Deprecated: GetStatus is a method to get the status of a Wireguard connection.
+//
+// Using api.ApiClientWrapper.GetStatus instead
 func (s *State) GetStatus() bool {
 	s.setStatus()
 	return s.status

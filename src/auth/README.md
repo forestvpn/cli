@@ -25,17 +25,17 @@ Authentication related utilities around firebase REST authentication workflow. S
 - [func Init() error](<#func-init>)
 - [func IsAuthenticated() bool](<#func-isauthenticated>)
 - [func IsDeviceCreated() bool](<#func-isdevicecreated>)
+- [func IsLocationSet() bool](<#func-islocationset>)
 - [func IsRefreshTokenExists() bool](<#func-isrefreshtokenexists>)
 - [func JsonDump(data []byte, filepath string) error](<#func-jsondump>)
 - [func JsonLoad(filepath string) (map[string]string, error)](<#func-jsonload>)
 - [func LoadAccessToken() (string, error)](<#func-loadaccesstoken>)
 - [func LoadDeviceID() (string, error)](<#func-loaddeviceid>)
 - [func LoadRefreshToken() (string, error)](<#func-loadrefreshtoken>)
-- [func loadKey(key string, file string) (string, error)](<#func-loadkey>)
-- [func readFile(filepath string) ([]byte, error)](<#func-readfile>)
 - [type AuthClient](<#type-authclient>)
-  - [func (c AuthClient) ExchangeRefreshForIdToken() (*resty.Response, error)](<#func-authclient-exchangerefreshforidtoken>)
+  - [func (c AuthClient) ExchangeRefreshForIdToken(refreshToken string) (*resty.Response, error)](<#func-authclient-exchangerefreshforidtoken>)
   - [func (c AuthClient) GetAccessToken() (*resty.Response, error)](<#func-authclient-getaccesstoken>)
+  - [func (c AuthClient) GetUserData(email string) (*resty.Response, error)](<#func-authclient-getuserdata>)
   - [func (c AuthClient) SignIn(form SignInForm) (*resty.Response, error)](<#func-authclient-signin>)
   - [func (c AuthClient) SignUp(form SignUpForm) (*resty.Response, error)](<#func-authclient-signup>)
 - [type EmailField](<#type-emailfield>)
@@ -45,13 +45,11 @@ Authentication related utilities around firebase REST authentication workflow. S
 - [type InfoForm](<#type-infoform>)
 - [type PasswordConfirmationField](<#type-passwordconfirmationfield>)
 - [type PasswordField](<#type-passwordfield>)
-  - [func getPasswordField(password []byte) (PasswordField, error)](<#func-getpasswordfield>)
+  - [func GetPasswordField(password []byte) (PasswordField, error)](<#func-getpasswordfield>)
   - [func (p PasswordField) Validate() error](<#func-passwordfield-validate>)
 - [type SignInForm](<#type-signinform>)
-  - [func GetSignInForm(email string, password []byte) (SignInForm, error)](<#func-getsigninform>)
 - [type SignUpForm](<#type-signupform>)
   - [func (s SignUpForm) ValidatePasswordConfirmation() error](<#func-signupform-validatepasswordconfirmation>)
-- [type signInUpRequestBody](<#type-signinuprequestbody>)
 
 
 ## Variables
@@ -100,11 +98,7 @@ It's being rewrittten per location change.
 var WireguardConfig = AppDir + "fvpn0.conf"
 ```
 
-```go
-var home, _ = os.UserHomeDir()
-```
-
-## func [BuyPremiumDialog](<https://github.com/forestvpn/cli/blob/main/src/auth/utils.go#L174>)
+## func [BuyPremiumDialog](<https://github.com/forestvpn/cli/blob/main/src/auth/utils.go#L175>)
 
 ```go
 func BuyPremiumDialog() error
@@ -112,7 +106,7 @@ func BuyPremiumDialog() error
 
 BuyPremiumDialog is a function that prompts the user to by premium subscrition on Forest VPN. If the user prompts 'yes', then it opens https://forestvpn.com/pricing/ page in the default browser.
 
-## func [HandleFirebaseAuthResponse](<https://github.com/forestvpn/cli/blob/main/src/auth/utils.go#L107>)
+## func [HandleFirebaseAuthResponse](<https://github.com/forestvpn/cli/blob/main/src/auth/utils.go#L108>)
 
 ```go
 func HandleFirebaseAuthResponse(response *resty.Response) error
@@ -120,7 +114,7 @@ func HandleFirebaseAuthResponse(response *resty.Response) error
 
 HandleFirebaseAuthResponse is a function to extracts the error message from the Firebase REST API response when the status is ok.
 
-## func [HandleFirebaseSignInResponse](<https://github.com/forestvpn/cli/blob/main/src/auth/utils.go#L118>)
+## func [HandleFirebaseSignInResponse](<https://github.com/forestvpn/cli/blob/main/src/auth/utils.go#L119>)
 
 ```go
 func HandleFirebaseSignInResponse(response *resty.Response) error
@@ -136,7 +130,7 @@ func Init() error
 
 Init is a function that creates directories structure for Forest CLI.
 
-## func [IsAuthenticated](<https://github.com/forestvpn/cli/blob/main/src/auth/utils.go#L200>)
+## func [IsAuthenticated](<https://github.com/forestvpn/cli/blob/main/src/auth/utils.go#L201>)
 
 ```go
 func IsAuthenticated() bool
@@ -144,15 +138,23 @@ func IsAuthenticated() bool
 
 IsAuthenticated is a helper function to quickly check wether user is authenticated by checking existance of an access token.
 
-## func [IsDeviceCreated](<https://github.com/forestvpn/cli/blob/main/src/auth/utils.go#L157>)
+## func [IsDeviceCreated](<https://github.com/forestvpn/cli/blob/main/src/auth/utils.go#L158>)
 
 ```go
 func IsDeviceCreated() bool
 ```
 
-IsDeviceCreated is a function that checks if the DeviceFile exist, i.e device is created.
+Deprecated: IsDeviceCreated is a function that checks if the DeviceFile exist, i.e device is created.
 
-## func [IsRefreshTokenExists](<https://github.com/forestvpn/cli/blob/main/src/auth/utils.go#L151>)
+## func [IsLocationSet](<https://github.com/forestvpn/cli/blob/main/src/auth/utils.go#L214>)
+
+```go
+func IsLocationSet() bool
+```
+
+IsLocationSet is a function to check wether Wireguard configuration file created after location selection.
+
+## func [IsRefreshTokenExists](<https://github.com/forestvpn/cli/blob/main/src/auth/utils.go#L152>)
 
 ```go
 func IsRefreshTokenExists() bool
@@ -168,15 +170,15 @@ func JsonDump(data []byte, filepath string) error
 
 JsonDump is a function that dumps the json data into the file at filepath.
 
-## func [JsonLoad](<https://github.com/forestvpn/cli/blob/main/src/auth/utils.go#L84>)
+## func [JsonLoad](<https://github.com/forestvpn/cli/blob/main/src/auth/utils.go#L85>)
 
 ```go
 func JsonLoad(filepath string) (map[string]string, error)
 ```
 
-JsonLoad  is a function that reads the content of a file and unmarshals it into the map.
+JsonLoad  is a function that reads the content of a file and unmarshals it into the map. If there's no file or it is empty, returns an empty map.
 
-## func [LoadAccessToken](<https://github.com/forestvpn/cli/blob/main/src/auth/utils.go#L102>)
+## func [LoadAccessToken](<https://github.com/forestvpn/cli/blob/main/src/auth/utils.go#L103>)
 
 ```go
 func LoadAccessToken() (string, error)
@@ -184,7 +186,7 @@ func LoadAccessToken() (string, error)
 
 LoadAccessToken is a function to quickly get the local access token from FirebaseAuthFile.
 
-## func [LoadDeviceID](<https://github.com/forestvpn/cli/blob/main/src/auth/utils.go#L163>)
+## func [LoadDeviceID](<https://github.com/forestvpn/cli/blob/main/src/auth/utils.go#L164>)
 
 ```go
 func LoadDeviceID() (string, error)
@@ -192,7 +194,7 @@ func LoadDeviceID() (string, error)
 
 LoadDeviceID is a function to quickly get the device ID from the DeviceFile.
 
-## func [LoadRefreshToken](<https://github.com/forestvpn/cli/blob/main/src/auth/utils.go#L129>)
+## func [LoadRefreshToken](<https://github.com/forestvpn/cli/blob/main/src/auth/utils.go#L130>)
 
 ```go
 func LoadRefreshToken() (string, error)
@@ -200,23 +202,7 @@ func LoadRefreshToken() (string, error)
 
 LoadRefreshToken is a function to quickly get the local refresh token from FirebaseAuthFile.
 
-## func [loadKey](<https://github.com/forestvpn/cli/blob/main/src/auth/utils.go#L96>)
-
-```go
-func loadKey(key string, file string) (string, error)
-```
-
-loadKey is a function to quickly find some key in the json encoded file.
-
-## func [readFile](<https://github.com/forestvpn/cli/blob/main/src/auth/utils.go#L71>)
-
-```go
-func readFile(filepath string) ([]byte, error)
-```
-
-readFile is a function that reads the content of a file at filepath
-
-## type [AuthClient](<https://github.com/forestvpn/cli/blob/main/src/auth/auth.go#L22-L24>)
+## type [AuthClient](<https://github.com/forestvpn/cli/blob/main/src/auth/auth.go#L23-L25>)
 
 AuthClient is a structure used as a Firebase REST client.
 
@@ -228,15 +214,15 @@ type AuthClient struct {
 }
 ```
 
-### func \(AuthClient\) [ExchangeRefreshForIdToken](<https://github.com/forestvpn/cli/blob/main/src/auth/auth.go#L84>)
+### func \(AuthClient\) [ExchangeRefreshForIdToken](<https://github.com/forestvpn/cli/blob/main/src/auth/auth.go#L85>)
 
 ```go
-func (c AuthClient) ExchangeRefreshForIdToken() (*resty.Response, error)
+func (c AuthClient) ExchangeRefreshForIdToken(refreshToken string) (*resty.Response, error)
 ```
 
 See https://firebase.google.com/docs/reference/rest/auth#section-refresh-token for more information.
 
-### func \(AuthClient\) [GetAccessToken](<https://github.com/forestvpn/cli/blob/main/src/auth/auth.go#L104>)
+### func \(AuthClient\) [GetAccessToken](<https://github.com/forestvpn/cli/blob/main/src/auth/auth.go#L100>)
 
 ```go
 func (c AuthClient) GetAccessToken() (*resty.Response, error)
@@ -244,7 +230,17 @@ func (c AuthClient) GetAccessToken() (*resty.Response, error)
 
 GetAccessToken is a method to obtain a new access token from Firebase REST API and dump the response into FirebaseAuthFile.
 
-### func \(AuthClient\) [SignIn](<https://github.com/forestvpn/cli/blob/main/src/auth/auth.go#L61>)
+### func \(AuthClient\) [GetUserData](<https://github.com/forestvpn/cli/blob/main/src/auth/auth.go#L119>)
+
+```go
+func (c AuthClient) GetUserData(email string) (*resty.Response, error)
+```
+
+GetUserInfo is used to check if the user already exists in the Firebase database during the registration.
+
+See https://firebase.google.com/docs/reference/rest/auth#section-get-account-info for more information.
+
+### func \(AuthClient\) [SignIn](<https://github.com/forestvpn/cli/blob/main/src/auth/auth.go#L62>)
 
 ```go
 func (c AuthClient) SignIn(form SignInForm) (*resty.Response, error)
@@ -254,7 +250,7 @@ SignIn is a method to perform a Firebase sign in request. It accepts an instance
 
 See https://firebase.google.com/docs/reference/rest/auth#section-sign-in-email-password for more information.
 
-### func \(AuthClient\) [SignUp](<https://github.com/forestvpn/cli/blob/main/src/auth/auth.go#L36>)
+### func \(AuthClient\) [SignUp](<https://github.com/forestvpn/cli/blob/main/src/auth/auth.go#L37>)
 
 ```go
 func (c AuthClient) SignUp(form SignUpForm) (*resty.Response, error)
@@ -274,7 +270,7 @@ type EmailField struct {
 }
 ```
 
-### func [GetEmailField](<https://github.com/forestvpn/cli/blob/main/src/auth/forms.go#L68>)
+### func [GetEmailField](<https://github.com/forestvpn/cli/blob/main/src/auth/forms.go#L69>)
 
 ```go
 func GetEmailField(email string) (EmailField, error)
@@ -327,15 +323,15 @@ type PasswordField struct {
 }
 ```
 
-### func [getPasswordField](<https://github.com/forestvpn/cli/blob/main/src/auth/forms.go#L44>)
+### func [GetPasswordField](<https://github.com/forestvpn/cli/blob/main/src/auth/forms.go#L44>)
 
 ```go
-func getPasswordField(password []byte) (PasswordField, error)
+func GetPasswordField(password []byte) (PasswordField, error)
 ```
 
 getPasswordField is a method that prompts the user a password and then validates it.
 
-### func \(PasswordField\) [Validate](<https://github.com/forestvpn/cli/blob/main/src/auth/fields.go#L33>)
+### func \(PasswordField\) [Validate](<https://github.com/forestvpn/cli/blob/main/src/auth/fields.go#L34>)
 
 ```go
 func (p PasswordField) Validate() error
@@ -353,14 +349,6 @@ type SignInForm struct {
     PasswordField
 }
 ```
-
-### func [GetSignInForm](<https://github.com/forestvpn/cli/blob/main/src/auth/forms.go#L88>)
-
-```go
-func GetSignInForm(email string, password []byte) (SignInForm, error)
-```
-
-GetSignInForm is a factory function that prompts user both email and password and returns the SignInForm.
 
 ## type [SignUpForm](<https://github.com/forestvpn/cli/blob/main/src/auth/forms.go#L21-L24>)
 
@@ -380,18 +368,6 @@ func (s SignUpForm) ValidatePasswordConfirmation() error
 ```
 
 ValidatePasswordConfirmation is a method that compares password and the password confirmation values.
-
-## type [signInUpRequestBody](<https://github.com/forestvpn/cli/blob/main/src/auth/auth.go#L27-L31>)
-
-signInUpRequestBody is a structure that is used as a data holder for both Firebase sign in and sign up requests.
-
-```go
-type signInUpRequestBody struct {
-    Email             string
-    Password          string
-    ReturnSecureToken bool
-}
-```
 
 
 

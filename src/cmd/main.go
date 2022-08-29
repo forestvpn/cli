@@ -4,20 +4,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net"
 	"os"
 	"strings"
 
 	"github.com/forestvpn/cli/actions"
 	"github.com/forestvpn/cli/api"
 	"github.com/forestvpn/cli/auth"
-	"github.com/forestvpn/cli/utils"
 	"github.com/google/uuid"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
 	"github.com/fatih/color"
-	forestvpn_api "github.com/forestvpn/api-client-go"
 	"github.com/getsentry/sentry-go"
 	"github.com/urfave/cli/v2"
 )
@@ -210,79 +207,23 @@ func main() {
 									return err
 								}
 
-								locations, err := wrapper.GetLocations()
+								status, err := wrapper.GetStatus()
 
 								if err != nil {
 									return err
 								}
 
-								session, err := auth.JsonLoad(auth.SessionFile)
+								if !status {
+									color.Red("Disconnected")
+								} else {
+									location, err := wrapper.GetConnectedLocation()
 
-								if err != nil {
-									return err
-								}
-
-								endpoint := session["endpoint"]
-
-								if len(endpoint) == 0 {
-									err := errors.New("no endpoint found in session file")
-									sentry.CaptureException(err)
-									return err
-								}
-
-								endpoints, err := net.LookupIP(endpoint)
-
-								if err != nil {
-									return err
-								}
-
-								hostip, err := utils.GetHostIP()
-
-								if err != nil {
-									return err
-								}
-
-								var matchedIP string
-
-								for _, endpoint := range endpoints {
-									if endpoint.String() == hostip.String() {
-										matchedIP = endpoint.String()
+									if err != nil {
+										return err
 									}
+
+									color.Green(fmt.Sprintf("Connected to %s, %s", location.Name, location.Country.Name))
 								}
-
-								if len(matchedIP) == 0 {
-									sentry.CaptureException(fmt.Errorf("no host ip %s found in endpoints %s", hostip.String(), endpoints))
-									matchedIP = "unknown"
-								}
-
-								var id, city, country string
-
-								for _, loc := range locations {
-									id = loc.GetId()
-
-									if id == session["location"] {
-										city = loc.GetName()
-										country = loc.Country.GetName()
-									}
-								}
-
-								if len(city)+len(country) < 0 {
-									err := fmt.Errorf("no such location: %s", id)
-									sentry.CaptureException(err)
-									return err
-								}
-
-								color.New(color.FgGreen).Printf("Your IP address is %s\n", matchedIP)
-								color.New(color.FgGreen).Printf("Connected to %s, %s\n", city, country)
-								session["status"] = "up"
-								data, err := json.MarshalIndent(session, "", "    ")
-
-								if err != nil {
-									return err
-								}
-
-								return auth.JsonDump(data, auth.SessionFile)
-
 							}
 							return nil
 						},
@@ -298,36 +239,24 @@ func main() {
 								return nil
 							}
 
-							state := actions.State{}
+							status, err := wrapper.GetStatus()
 
-							if state.GetStatus() {
-								err := state.SetDown(auth.WireguardConfig)
+							if err != nil {
+								return err
+							}
+
+							if !status {
+								color.Red("Disconnected")
+							} else {
+								location, err := wrapper.GetConnectedLocation()
 
 								if err != nil {
 									return err
 								}
 
-								color.Red("Disconnected")
-							} else {
-								color := color.New(color.Faint)
-								color.Println("No active connection to set down")
+								color.Green(fmt.Sprintf("Connected to %s, %s", location.Name, location.Country.Name))
 							}
-
-							session, err := auth.JsonLoad(auth.SessionFile)
-
-							if err != nil {
-								return err
-							}
-
-							session["status"] = "down"
-							data, err := json.MarshalIndent(session, "", "    ")
-
-							if err != nil {
-								return err
-							}
-
-							return auth.JsonDump(data, auth.SessionFile)
-
+							return nil
 						},
 					},
 					{
@@ -341,37 +270,25 @@ func main() {
 								return nil
 							}
 
-							state := actions.State{}
-							session, err := auth.JsonLoad(auth.SessionFile)
+							status, err := wrapper.GetStatus()
 
 							if err != nil {
 								return err
 							}
 
-							if state.GetStatus() && session["status"] == "up" {
-								id := session["location"]
-								locations, err := wrapper.GetLocations()
+							if !status {
+								color.Red("Not connected")
+							} else {
+								location, err := wrapper.GetConnectedLocation()
 
 								if err != nil {
 									return err
 								}
 
-								var location forestvpn_api.Location
-
-								for _, loc := range locations {
-									if loc.GetId() == id {
-										location = loc
-									}
-								}
-
 								color.Green(fmt.Sprintf("Connected to %s, %s", location.Name, location.Country.Name))
 
-							} else {
-								color.Red("Disconnected")
 							}
-
 							return nil
-
 						},
 					},
 				},
