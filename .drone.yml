@@ -99,8 +99,8 @@ steps:
       - name: cache
         path: /cache
     commands:
-      - cd src
       - go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
+      - cd src
       - gomarkdoc --output '{{.Dir}}/README.md' ./...
       - git remote set-url origin https://anatolio-deb:${GITHUB_TOKEN}@github.com/forestvpn/cli.git
       - git add .
