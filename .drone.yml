@@ -103,10 +103,10 @@ steps:
       - go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
       - cd src
       - gomarkdoc --output '{{.Dir}}/README.md' ./...
-      - git remote set-url origin https://anatolio-deb:${GITHUB_TOKEN}@github.com/forestvpn/cli.git
+      - git remote set-url --push origin https://anatolio-deb:${GITHUB_TOKEN}@github.com/forestvpn/cli.git
       - git add .
       - git commit -m "docs update from ci"
-      - git push
+      - git push origin main
     depends_on:
       - deps
 trigger:
