@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -365,27 +364,7 @@ func main() {
 								return fmt.Errorf("no such location: %s", arg)
 							}
 
-							err = apiClient.SetLocation(billingFeature, location, includeRoutes)
-
-							if err != nil {
-								return err
-							}
-
-							session, _ := auth.JsonLoad(auth.SessionFile)
-							endpoint := session["endpoint"]
-							session["location"] = location.Location.GetId()
-							session["status"] = "down"
-							session["endpoint"] = endpoint
-							data, err := json.MarshalIndent(session, "", "    ")
-
-							if err != nil {
-								return err
-							}
-
-							err = auth.JsonDump(data, auth.SessionFile)
-
-							return err
-
+							return apiClient.SetLocation(billingFeature, location, includeRoutes)
 						},
 					},
 					{
