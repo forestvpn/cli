@@ -191,40 +191,46 @@ func main() {
 						Name:  "up",
 						Usage: "Connect to the ForestVPN",
 						Action: func(c *cli.Context) error {
-							// if !auth.IsAuthenticated() {
-							// 	fmt.Println("Are you logged in?")
-							// 	color := color.New(color.Faint)
-							// 	color.Println("Try 'forest account login'")
-							// } else if !auth.IsLocationSet() {
-							// 	fmt.Println("Please, choose the location to connect.")
-							// 	color := color.New(color.Faint)
-							// 	color.Println("Use 'fvpn location ls' to see available locations.")
-							// } else {
-							// state := actions.State{}
-							// err := state.SetUp(auth.WireguardConfig)
+							if !auth.IsAuthenticated() {
+								fmt.Println("Are you logged in?")
+								color := color.New(color.Faint)
+								color.Println("Try 'forest account login'")
+							} else if !auth.IsLocationSet() {
+								fmt.Println("Please, choose the location to connect.")
+								color := color.New(color.Faint)
+								color.Println("Use 'fvpn location ls' to see available locations.")
+							} else {
+								state := actions.State{}
+								err := state.SetUp(auth.WireguardConfig)
 
-							// if err != nil {
-							// 	return err
-							// }
+								if err != nil {
+									return err
+								}
 
-							// status, err := wrapper.GetStatus()
+								deviceID, err := auth.LoadDeviceID()
 
-							// if err != nil {
-							// 	return err
-							// }
+								if err != nil {
+									return err
+								}
 
-							// if !status {
-							// 	color.Red("Disconnected")
-							// } else {
-							// 	location, err := wrapper.GetConnectedLocation()
+								active, err := api.IsActiveDevice(deviceID, ApiHost, wrapper.AccessToken)
 
-							// 	if err != nil {
-							// 		return err
-							// 	}
+								if err != nil {
+									return err
+								}
 
-							// 	color.Green(fmt.Sprintf("Connected to %s, %s", location.Name, location.Country.Name))
-							// }
-							// }
+								if active {
+									state := actions.State{}
+									err := state.SetDown(auth.WireguardConfig)
+
+									if err != nil {
+										return err
+									}
+									color.Red("Disconnected")
+								} else {
+									color.Red("Not connected")
+								}
+							}
 							return nil
 						},
 					},
@@ -239,23 +245,24 @@ func main() {
 								return nil
 							}
 
-							// status, err := wrapper.GetStatus()
+							deviceID, err := auth.LoadDeviceID()
 
-							// if err != nil {
-							// 	return err
-							// }
+							if err != nil {
+								return err
+							}
 
-							// if !status {
-							// 	color.Red("Disconnected")
-							// } else {
-							// 	location, err := wrapper.GetConnectedLocation()
+							active, err := api.IsActiveDevice(deviceID, ApiHost, wrapper.AccessToken)
 
-							// 	if err != nil {
-							// 		return err
-							// 	}
+							if err != nil {
+								return err
+							}
 
-							// 	color.Green(fmt.Sprintf("Connected to %s, %s", location.Name, location.Country.Name))
-							// }
+							if active {
+								color.Green("Connected")
+							} else {
+								color.Red("Not connected")
+							}
+
 							return nil
 						},
 					},
