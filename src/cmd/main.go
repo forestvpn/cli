@@ -201,28 +201,30 @@ func main() {
 								color.Println("Use 'fvpn location ls' to see available locations.")
 							} else {
 								state := actions.State{}
+								status := state.GetStatus()
+
+								if status {
+									err := state.SetDown(auth.WireguardConfig)
+
+									if err != nil {
+										return err
+									}
+								}
+
 								err := state.SetUp(auth.WireguardConfig)
 
 								if err != nil {
 									return err
 								}
 
-								status, err := wrapper.GetStatus()
+								status = state.GetStatus()
 
-								if err != nil {
-									return err
-								}
-
-								if !status {
-									color.Red("Disconnected")
+								if status {
+									color.Green("Connected")
 								} else {
-									location, err := wrapper.GetConnectedLocation()
-
-									if err != nil {
-										return err
-									}
-
-									color.Green(fmt.Sprintf("Connected to %s, %s", location.Name, location.Country.Name))
+									err = errors.New("state set up error")
+									sentry.CaptureException(err)
+									return err
 								}
 							}
 							return nil
@@ -239,22 +241,30 @@ func main() {
 								return nil
 							}
 
-							status, err := wrapper.GetStatus()
+							state := actions.State{}
+							status := state.GetStatus()
 
-							if err != nil {
-								return err
-							}
-
-							if !status {
-								color.Red("Not connected")
-							} else {
-								state := actions.State{}
+							if status {
 								err := state.SetDown(auth.WireguardConfig)
 
 								if err != nil {
 									return err
 								}
+
+								status := state.GetStatus()
+
+								if !status {
+									color.Red("Disconnected")
+								} else {
+									err = errors.New("state set down error")
+									sentry.CaptureException(err)
+									return err
+								}
+
+							} else {
+								color.Red("Not connected")
 							}
+
 							return nil
 						},
 					},
@@ -269,25 +279,17 @@ func main() {
 								return nil
 							}
 
-							status, err := wrapper.GetStatus()
+							state := actions.State{}
+							status := state.GetStatus()
 
-							if err != nil {
-								return err
-							}
-
-							if !status {
-								color.Red("Not connected")
+							if status {
+								color.Green("Connected")
 							} else {
-								location, err := wrapper.GetConnectedLocation()
-
-								if err != nil {
-									return err
-								}
-
-								color.Green(fmt.Sprintf("Connected to %s, %s", location.Name, location.Country.Name))
-
+								color.Red("Not connected")
 							}
+
 							return nil
+
 						},
 					},
 				},
