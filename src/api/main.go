@@ -5,6 +5,8 @@ package api
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"time"
 
 	forestvpn_api "github.com/forestvpn/api-client-go"
@@ -79,54 +81,29 @@ func (w ApiClientWrapper) GetDevice(id string) (*forestvpn_api.Device, error) {
 	return resp, err
 }
 
-func (w ApiClientWrapper) GetStatus() (bool, error) {
-	deviceID, err := auth.LoadDeviceID()
+func IsActiveDevice(deviceID string, ApiHost string, accessToken string) (bool, error) {
+	url := "https://" + ApiHost + "/v2/devices/" + deviceID + "/"
+	auth.Client.SetTimeout(time.Duration(1 * time.Second))
+	resp, err := auth.Client.R().
+		SetAuthToken(accessToken).
+		Get(url)
 
 	if err != nil {
 		return false, err
 	}
 
-	resp, err := w.GetDevice(deviceID)
-
-	if err != nil {
-		return false, err
-	}
-
+	jsonResp := make(map[string]time.Time)
+	json.Unmarshal(resp.Body(), &jsonResp)
+	lastActiveAt := jsonResp["last_active_at"]
+	fmt.Println(lastActiveAt)
 	now := time.Now()
-	lastActive := resp.GetLastActiveAt()
-	year, month, day := lastActive.Date()
-	localYear, localMonth, localDay := now.Date()
-	hours, minutes, _ := lastActive.Clock()
-	localHours, localMinutes, _ := now.Clock()
+	year, month, day := lastActiveAt.Date()
+	nowYear, nowMonth, nowDay := now.Date()
+	hours, minutes, _ := lastActiveAt.Clock()
+	nowHours, nowMinutes, _ := now.Clock()
 
-	if localYear != year || localMonth != month || localDay != day || localHours != hours || localMinutes != minutes {
+	if year != nowYear || month != nowMonth || day != nowDay || hours != nowHours || minutes != nowMinutes {
 		return false, nil
-	} else {
-		return true, nil
 	}
-}
-
-func (w ApiClientWrapper) GetConnectedLocation() (forestvpn_api.Location, error) {
-	var location forestvpn_api.Location
-	session, err := auth.JsonLoad(auth.SessionFile)
-
-	if err != nil {
-		return location, err
-	}
-
-	locations, err := w.GetLocations()
-
-	if err != nil {
-		return location, err
-	}
-
-	id := session["location"]
-
-	for _, loc := range locations {
-		if loc.GetId() == id {
-			location = loc
-		}
-	}
-
-	return location, err
+	return true, nil
 }
