@@ -89,25 +89,25 @@ steps:
     when:
       event:
         - tag
-  - name: docs
-    image: golang:1.18.4-alpine3.15
-      environment:
-        GITHUB_TOKEN:
-          from_secret: GITHUB_TOKEN
-    privileged: false
-    volumes:
-      - name: cache
-        path: /cache
-    commands:
-      - cd src
-      - go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
-      - gomarkdoc --output '{{.Dir}}/README.md' ./...
-      - git remote set-url origin https://anatolio-deb:${GITHUB_TOKEN}@github.com/forestvpn/cli.git
-      - git add .
-      - git commit -m "docs update from ci"
-      - git push
-    depends_on:
-      - deps
+  # - name: docs
+  #   image: golang:1.18.4-alpine3.15
+  #     environment:
+  #       GITHUB_TOKEN:
+  #         from_secret: GITHUB_TOKEN
+  #   privileged: false
+  #   volumes:
+  #     - name: cache
+  #       path: /cache
+  #   commands:
+  #     - cd src
+  #     - go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
+  #     - gomarkdoc --output '{{.Dir}}/README.md' ./...
+  #     - git remote set-url origin https://anatolio-deb:${GITHUB_TOKEN}@github.com/forestvpn/cli.git
+  #     - git add .
+  #     - git commit -m "docs update from ci"
+  #     - git push
+  #   depends_on:
+  #     - deps
 trigger:
   event:
     - push

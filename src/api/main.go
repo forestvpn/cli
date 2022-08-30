@@ -5,12 +5,8 @@ package api
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"time"
 
 	forestvpn_api "github.com/forestvpn/api-client-go"
-	"github.com/forestvpn/cli/auth"
 )
 
 // ApiClientWrapper is a structure that wraps forestvpn_api.APIClient to extend it.
@@ -79,31 +75,4 @@ func (w ApiClientWrapper) GetDevice(id string) (*forestvpn_api.Device, error) {
 	auth := context.WithValue(context.Background(), forestvpn_api.ContextAccessToken, w.AccessToken)
 	resp, _, err := w.APIClient.DeviceApi.GetDevice(auth, id).Execute()
 	return resp, err
-}
-
-func IsActiveDevice(deviceID string, ApiHost string, accessToken string) (bool, error) {
-	url := "https://" + ApiHost + "/v2/devices/" + deviceID + "/"
-	auth.Client.SetTimeout(time.Duration(1 * time.Second))
-	resp, err := auth.Client.R().
-		SetAuthToken(accessToken).
-		Get(url)
-
-	if err != nil {
-		return false, err
-	}
-
-	jsonResp := make(map[string]time.Time)
-	json.Unmarshal(resp.Body(), &jsonResp)
-	lastActiveAt := jsonResp["last_active_at"]
-	fmt.Println(lastActiveAt)
-	now := time.Now()
-	year, month, day := lastActiveAt.Date()
-	nowYear, nowMonth, nowDay := now.Date()
-	hours, minutes, _ := lastActiveAt.Clock()
-	nowHours, nowMinutes, _ := now.Clock()
-
-	if year != nowYear || month != nowMonth || day != nowDay || hours != nowHours || minutes != nowMinutes {
-		return false, nil
-	}
-	return true, nil
 }

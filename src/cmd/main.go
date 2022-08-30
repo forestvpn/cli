@@ -201,34 +201,30 @@ func main() {
 								color.Println("Use 'fvpn location ls' to see available locations.")
 							} else {
 								state := actions.State{}
+								status := state.GetStatus()
+
+								if status {
+									err := state.SetDown(auth.WireguardConfig)
+
+									if err != nil {
+										return err
+									}
+								}
+
 								err := state.SetUp(auth.WireguardConfig)
 
 								if err != nil {
 									return err
 								}
 
-								deviceID, err := auth.LoadDeviceID()
+								status = state.GetStatus()
 
-								if err != nil {
-									return err
-								}
-
-								active, err := api.IsActiveDevice(deviceID, ApiHost, wrapper.AccessToken)
-
-								if err != nil {
-									return err
-								}
-
-								if active {
-									state := actions.State{}
-									err := state.SetDown(auth.WireguardConfig)
-
-									if err != nil {
-										return err
-									}
-									color.Red("Disconnected")
+								if status {
+									color.Green("Connected")
 								} else {
-									color.Red("Not connected")
+									err = errors.New("state set up error")
+									sentry.CaptureException(err)
+									return err
 								}
 							}
 							return nil
@@ -245,20 +241,26 @@ func main() {
 								return nil
 							}
 
-							deviceID, err := auth.LoadDeviceID()
+							state := actions.State{}
+							status := state.GetStatus()
 
-							if err != nil {
-								return err
-							}
+							if status {
+								err := state.SetDown(auth.WireguardConfig)
 
-							active, err := api.IsActiveDevice(deviceID, ApiHost, wrapper.AccessToken)
+								if err != nil {
+									return err
+								}
 
-							if err != nil {
-								return err
-							}
+								status := state.GetStatus()
 
-							if active {
-								color.Green("Connected")
+								if !status {
+									color.Red("Disconnected")
+								} else {
+									err = errors.New("state set down error")
+									sentry.CaptureException(err)
+									return err
+								}
+
 							} else {
 								color.Red("Not connected")
 							}
@@ -277,19 +279,10 @@ func main() {
 								return nil
 							}
 
-							deviceID, err := auth.LoadDeviceID()
+							state := actions.State{}
+							status := state.GetStatus()
 
-							if err != nil {
-								return err
-							}
-
-							active, err := api.IsActiveDevice(deviceID, ApiHost, wrapper.AccessToken)
-
-							if err != nil {
-								return err
-							}
-
-							if active {
+							if status {
 								color.Green("Connected")
 							} else {
 								color.Red("Not connected")

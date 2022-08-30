@@ -24,7 +24,7 @@ func (s *State) setStatus() {
 	}
 }
 
-// Deprecated: GetStatus is a method to get the status of a Wireguard connection.
+// GetStatus is a method to get the status of a Wireguard connection.
 //
 // Using api.ApiClientWrapper.GetStatus instead
 func (s *State) GetStatus() bool {
