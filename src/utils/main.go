@@ -3,6 +3,7 @@
 package utils
 
 import (
+	"fmt"
 	"net"
 	"os/exec"
 	"strings"
@@ -29,21 +30,22 @@ func GetExistingRoutes() ([]string, error) {
 	for _, record := range strings.Split(string(stdout), "\n") {
 		dest := strings.Split(record, " ")[0]
 
-		_, network, err := net.ParseCIDR(dest)
+		if dest != "0.0.0.0" {
+			_, network, err := net.ParseCIDR(dest)
 
-		if err != nil {
-			ip := net.ParseIP(dest)
+			if err != nil {
+				ip := net.ParseIP(dest)
 
-			if ip != nil {
-				_, network, err = net.ParseCIDR(ip2Net(ip.String()))
+				if ip != nil {
+					_, network, err = net.ParseCIDR(ip2Net(ip.String()))
+				}
+
 			}
 
+			if err == nil {
+				existingRoutesMap[network.String()] = true
+			}
 		}
-
-		if err == nil {
-			existingRoutesMap[network.String()] = true
-		}
-
 	}
 
 	hostip, err := GetHostIP()
@@ -73,6 +75,9 @@ func GetHostIP() (net.IP, error) {
 func ExcludeDisallowedIps(allowed []string, disallowed []string) ([]string, error) {
 	var netmap = make(map[string]bool)
 	var allowednew []string
+
+	fmt.Println(strings.Join(disallowed, ","))
+	fmt.Println(strings.Join(allowed, ","))
 
 	for _, a := range allowed {
 		containsDisallowedNetwork := false
