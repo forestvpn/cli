@@ -232,6 +232,7 @@ func main() {
 					{
 						Name:        "down",
 						Description: "Disconnect from ForestVPN",
+						Usage:       "Shut down the connection",
 						Action: func(ctx *cli.Context) error {
 							if !auth.IsAuthenticated() {
 								fmt.Println("Are you signed in?")
@@ -270,6 +271,7 @@ func main() {
 					{
 						Name:        "status",
 						Description: "See wether connection is active",
+						Usage:       "Check the status of the connection",
 						Action: func(ctx *cli.Context) error {
 							if !auth.IsAuthenticated() {
 								fmt.Println("Are you signed in?")
