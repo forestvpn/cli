@@ -390,7 +390,7 @@ func (w AuthClientWrapper) SetLocation(billingFeature forestvpn_api.BillingFeatu
 			return err
 		}
 
-		_, err = peerSection.NewKey("AllowedIPs", strings.Join(allowedIps, ","))
+		_, err = peerSection.NewKey("AllowedIPs", strings.Join(allowedIps, ", "))
 
 		if err != nil {
 			return err
