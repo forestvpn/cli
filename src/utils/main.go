@@ -28,9 +28,11 @@ func GetExistingRoutes() ([]string, error) {
 	stdout, _ := exec.Command("netstat", "-n", "-r", "-f", "inet").Output()
 
 	for _, record := range strings.Split(string(stdout), "\n") {
-		dest := strings.Split(record, " ")[0]
+		flag := strings.Split(record, " ")[2]
 
-		if dest != "0.0.0.0" {
+		if flag == "UH" || flag == "UGH" || flag == "UHLSW" || flag == "UHLWIir" || flag == "U" {
+			dest := strings.Split(record, " ")[0]
+
 			_, network, err := net.ParseCIDR(dest)
 
 			if err != nil {
@@ -46,6 +48,7 @@ func GetExistingRoutes() ([]string, error) {
 				existingRoutesMap[network.String()] = true
 			}
 		}
+
 	}
 
 	hostip, err := GetHostIP()
