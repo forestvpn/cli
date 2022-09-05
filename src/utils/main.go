@@ -3,9 +3,10 @@
 package utils
 
 import (
-	"fmt"
 	"net"
 	"os/exec"
+	"regexp"
+	"runtime"
 	"strings"
 
 	"github.com/c-robinson/iplib"
@@ -26,26 +27,44 @@ func GetExistingRoutes() ([]string, error) {
 	var existingRoutes []string
 
 	stdout, _ := exec.Command("netstat", "-n", "-r", "-f", "inet").Output()
+	os := runtime.GOOS
 
 	for _, record := range strings.Split(string(stdout), "\n") {
-		dest := strings.Split(record, " ")[0]
+		if len(record) > 0 {
+			var flag string
+			space := regexp.MustCompile(`\s+`)
+			record = space.ReplaceAllString(record, " ")
 
-		if dest != "0.0.0.0" {
-			_, network, err := net.ParseCIDR(dest)
+			switch os {
+			case "windows":
+				flag = strings.Split(record, " ")[3]
+			case "darwin":
+				flag = strings.Split(record, " ")[2]
+			case "linux":
+				flag = strings.Split(record, " ")[3]
+			}
 
-			if err != nil {
-				ip := net.ParseIP(dest)
+			if flag == "UH" || flag == "UGH" || flag == "UHLSW" || flag == "UHLWIir" || flag == "U" {
+				dest := strings.Split(record, " ")[0]
 
-				if ip != nil {
-					_, network, err = net.ParseCIDR(ip2Net(ip.String()))
+				_, network, err := net.ParseCIDR(dest)
+
+				if err != nil {
+					ip := net.ParseIP(dest)
+
+					if ip != nil {
+						_, network, err = net.ParseCIDR(ip2Net(ip.String()))
+					}
+
 				}
 
+				if err == nil {
+					existingRoutesMap[network.String()] = true
+				}
 			}
 
-			if err == nil {
-				existingRoutesMap[network.String()] = true
-			}
 		}
+
 	}
 
 	hostip, err := GetHostIP()
@@ -75,9 +94,6 @@ func GetHostIP() (net.IP, error) {
 func ExcludeDisallowedIps(allowed []string, disallowed []string) ([]string, error) {
 	var netmap = make(map[string]bool)
 	var allowednew []string
-
-	fmt.Println(strings.Join(disallowed, ","))
-	fmt.Println(strings.Join(allowed, ","))
 
 	for _, a := range allowed {
 		containsDisallowedNetwork := false
