@@ -6,7 +6,6 @@ import (
 	"net"
 	"os/exec"
 	"regexp"
-	"runtime"
 	"strings"
 
 	"github.com/c-robinson/iplib"
@@ -27,36 +26,18 @@ func GetExistingRoutes() ([]string, error) {
 	var existingRoutes []string
 
 	stdout, _ := exec.Command("netstat", "-n", "-r", "-f", "inet").Output()
-	os := runtime.GOOS
 
 	for _, record := range strings.Split(string(stdout), "\n") {
-		var flag string
 		space := regexp.MustCompile(`\s+`)
 		record = space.ReplaceAllString(record, " ")
 		splited := strings.Split(record, " ")
+		dest := splited[0]
 
-		if len(record) > 0 && len(splited) >= 4 {
-			switch os {
-			case "windows":
-				flag = splited[3]
-			case "darwin":
-				flag = splited[2]
-			case "linux":
-				flag = splited[3]
-			}
+		if len(record) > 0 && len(splited) >= 4 && dest == "0.0.0.0" || dest == "default" {
+			ip := net.ParseIP(splited[1])
 
-			if flag == "UH" || flag == "UGH" || flag == "UHLSW" || flag == "UHLWIir" || flag == "U" {
-				dest := splited[0]
-				_, network, err := net.ParseCIDR(dest)
-
-				if err != nil {
-					ip := net.ParseIP(dest)
-
-					if ip != nil {
-						_, network, err = net.ParseCIDR(ip2Net(ip.String()))
-					}
-
-				}
+			if ip != nil {
+				_, network, err := net.ParseCIDR(ip2Net(ip.String()))
 
 				if err == nil {
 					existingRoutesMap[network.String()] = true
