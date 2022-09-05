@@ -30,23 +30,23 @@ func GetExistingRoutes() ([]string, error) {
 	os := runtime.GOOS
 
 	for _, record := range strings.Split(string(stdout), "\n") {
-		if len(record) > 0 {
-			var flag string
-			space := regexp.MustCompile(`\s+`)
-			record = space.ReplaceAllString(record, " ")
+		var flag string
+		space := regexp.MustCompile(`\s+`)
+		record = space.ReplaceAllString(record, " ")
+		splited := strings.Split(record, " ")
 
+		if len(record) > 0 && len(splited) >= 4 {
 			switch os {
 			case "windows":
-				flag = strings.Split(record, " ")[3]
+				flag = splited[3]
 			case "darwin":
-				flag = strings.Split(record, " ")[2]
+				flag = splited[2]
 			case "linux":
-				flag = strings.Split(record, " ")[3]
+				flag = splited[3]
 			}
 
 			if flag == "UH" || flag == "UGH" || flag == "UHLSW" || flag == "UHLWIir" || flag == "U" {
-				dest := strings.Split(record, " ")[0]
-
+				dest := splited[0]
 				_, network, err := net.ParseCIDR(dest)
 
 				if err != nil {
