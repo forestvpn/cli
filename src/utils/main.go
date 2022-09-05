@@ -3,6 +3,7 @@
 package utils
 
 import (
+	"fmt"
 	"net"
 	"os/exec"
 	"regexp"
@@ -48,18 +49,20 @@ func GetExistingRoutes() ([]string, error) {
 
 	}
 
-	hostip, err := GetHostIP()
+	// hostip, err := GetHostIP()
 
-	if err != nil {
-		return nil, err
-	}
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	ipnet := ip2Net(hostip.String())
-	existingRoutesMap[ipnet] = true
+	// ipnet := ip2Net(hostip.String())
+	// existingRoutesMap[ipnet] = true
 
 	for k := range existingRoutesMap {
 		existingRoutes = append(existingRoutes, k)
 	}
+
+	fmt.Println(existingRoutes)
 	return existingRoutes, nil
 }
 
