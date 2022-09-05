@@ -3,6 +3,7 @@
 package utils
 
 import (
+	"fmt"
 	"net"
 	"os/exec"
 	"regexp"
@@ -60,6 +61,8 @@ func GetExistingRoutes() ([]string, error) {
 	for k := range existingRoutesMap {
 		existingRoutes = append(existingRoutes, k)
 	}
+
+	fmt.Println(existingRoutes)
 	return existingRoutes, nil
 }
 
