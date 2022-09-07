@@ -3,8 +3,10 @@ package main
 import (
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/forestvpn/cli/actions"
 	"github.com/forestvpn/cli/api"
@@ -61,14 +63,17 @@ func main() {
 	wrapper := api.GetApiClient(accessToken, ApiHost)
 	apiClient := actions.AuthClientWrapper{AuthClient: authClient, ApiClient: wrapper}
 
+	fmt.Println("Sentry DSN is ", DSN)
+
 	err = sentry.Init(sentry.ClientOptions{
-		Dsn:              DSN,
-		TracesSampleRate: 1.0,
+		Dsn: DSN,
 	})
 
 	if err != nil {
-		sentry.Logger.Panicf("%s: %s", err, DSN)
+		log.Fatalf("sentry.Init: %s", err)
 	}
+
+	defer sentry.Flush(2 * time.Second)
 
 	app := &cli.App{
 		EnableBashCompletion: true,
