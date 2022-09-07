@@ -402,8 +402,8 @@ func main() {
 	err = app.Run(os.Args)
 
 	if err != nil {
-		caser := cases.Title(language.AmericanEnglish)
 		sentry.CaptureException(err)
+		caser := cases.Title(language.AmericanEnglish)
 		msg := strings.Split(err.Error(), " ")
 		msg[0] = caser.String(msg[0])
 		color.Red(strings.Join(msg, " "))

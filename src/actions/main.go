@@ -58,7 +58,7 @@ func (w AuthClientWrapper) Register(email string, password string) error {
 	json.Unmarshal(response.Body(), &data)
 
 	if data["registered"] {
-		return errors.New("the user already exists")
+		return errors.New("a profile for this user already exists")
 	}
 
 	passwordfield, err := auth.GetPasswordField([]byte(password))
