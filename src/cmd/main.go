@@ -63,8 +63,6 @@ func main() {
 	wrapper := api.GetApiClient(accessToken, ApiHost)
 	apiClient := actions.AuthClientWrapper{AuthClient: authClient, ApiClient: wrapper}
 
-	fmt.Println("Sentry DSN is ", DSN)
-
 	err = sentry.Init(sentry.ClientOptions{
 		Dsn: DSN,
 	})
