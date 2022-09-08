@@ -41,7 +41,9 @@ func (s SignUpForm) ValidatePasswordConfirmation() error {
 }
 
 // getPasswordField is a method that prompts the user a password and then validates it.
-func GetPasswordField(password []byte) (PasswordField, error) {
+// validate is a boolean that allows to enable or disable password validation.
+// E.g. when password validation is needed on registration but not on login.
+func GetPasswordField(password []byte, validate bool) (PasswordField, error) {
 	passwordfield := PasswordField{Value: password}
 
 	for !(len(passwordfield.Value) > 0) {
@@ -56,10 +58,12 @@ func GetPasswordField(password []byte) (PasswordField, error) {
 		passwordfield.Value = password
 	}
 
-	err := passwordfield.Validate()
+	if validate {
+		err := passwordfield.Validate()
 
-	if err != nil {
-		return passwordfield, err
+		if err != nil {
+			return passwordfield, err
+		}
 	}
 
 	return passwordfield, nil
