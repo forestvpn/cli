@@ -61,7 +61,8 @@ func (w AuthClientWrapper) Register(email string, password string) error {
 		return errors.New("the user already exists")
 	}
 
-	passwordfield, err := auth.GetPasswordField([]byte(password))
+	validate := true
+	passwordfield, err := auth.GetPasswordField([]byte(password), validate)
 
 	if err != nil {
 		return err
@@ -174,7 +175,8 @@ func (w AuthClientWrapper) Login(email string, password string, deviceID string)
 			return errors.New("the user doesn't exist")
 		}
 
-		passwordfield, err := auth.GetPasswordField([]byte(password))
+		validate := false
+		passwordfield, err := auth.GetPasswordField([]byte(password), validate)
 
 		if err != nil {
 			return err
