@@ -71,7 +71,7 @@ func (w AuthClientWrapper) Register(email string, password string) error {
 	err = passwordfield.Validate()
 
 	if err != nil {
-		return err
+		return errors.New("invalid email or password")
 	}
 
 	signinform.PasswordField = passwordfield
