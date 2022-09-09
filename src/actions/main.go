@@ -71,7 +71,7 @@ func (w AuthClientWrapper) Register(email string, password string) error {
 	err = passwordfield.Validate()
 
 	if err != nil {
-		return errors.New("invalid email or password")
+		return err
 	}
 
 	signinform.PasswordField = passwordfield
@@ -190,10 +190,10 @@ func (w AuthClientWrapper) Login(email string, password string, deviceID string)
 		}
 
 		if response.IsError() {
-			var data map[string]map[string]string
-			json.Unmarshal(response.Body(), &data)
-			err := data["error"]
-			return errors.New(err["message"])
+			// This is stupid! We know that email is ok on the assumption of the code above.
+			// I don't want to show this error message, but nobody cares about my opinion here.
+			// We even have a Firebase error codes to determine exact error. E.g. INVALID_PASSWORD, INVALID_EMAIL, etc.
+			return errors.New("invalid email or password")
 		}
 
 		err = auth.HandleFirebaseSignInResponse(response)
