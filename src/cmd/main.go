@@ -230,7 +230,7 @@ func main() {
 										return err
 									}
 
-									color.Green("Connected to %s", session["city"], session["country"])
+									color.Green("Connected to %s, %s", session["city"], session["country"])
 								} else {
 									err = errors.New("state set up error")
 									sentry.CaptureException(err)
@@ -302,7 +302,7 @@ func main() {
 									return err
 								}
 
-								color.Green("Connected to %s", session["city"], session["country"])
+								color.Green("Connected to %s, %s", session["city"], session["country"])
 							} else {
 								color.Red("Not connected")
 							}
