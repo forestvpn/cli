@@ -427,7 +427,5 @@ func (w AuthClientWrapper) SetLocation(billingFeature forestvpn_api.BillingFeatu
 		return err
 	}
 
-	color.New(color.FgGreen).Println(fmt.Sprintf("Default location is set to %s", location.Location.GetId()))
-
 	return nil
 }
