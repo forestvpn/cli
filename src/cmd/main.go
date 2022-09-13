@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -222,7 +223,14 @@ func main() {
 								status = state.GetStatus()
 
 								if status {
-									color.Green("Connected")
+									session, err := auth.JsonLoad(auth.SessionFile)
+
+									if err != nil {
+										sentry.CaptureException(err)
+										return err
+									}
+
+									color.Green("Connected to %s", session["city"], session["country"])
 								} else {
 									err = errors.New("state set up error")
 									sentry.CaptureException(err)
@@ -287,7 +295,14 @@ func main() {
 							status := state.GetStatus()
 
 							if status {
-								color.Green("Connected")
+								session, err := auth.JsonLoad(auth.SessionFile)
+
+								if err != nil {
+									sentry.CaptureException(err)
+									return err
+								}
+
+								color.Green("Connected to %s", session["city"], session["country"])
 							} else {
 								color.Red("Not connected")
 							}
@@ -368,6 +383,22 @@ func main() {
 							if !found {
 								return fmt.Errorf("no such location: %s", arg)
 							}
+
+							session := make(map[string]any)
+							country := location.Location.GetCountry()
+							session["location"] = map[string]string{
+								"city":    location.Location.GetName(),
+								"country": country.GetName(),
+							}
+
+							data, err := json.Marshal(session)
+
+							if err != nil {
+								sentry.CaptureException(err)
+								return err
+							}
+
+							auth.JsonDump(data, auth.SessionFile)
 
 							return apiClient.SetLocation(billingFeature, location, includeRoutes)
 						},
