@@ -384,9 +384,8 @@ func main() {
 								return fmt.Errorf("no such location: %s", arg)
 							}
 
-							session := make(map[string]any)
 							country := location.Location.GetCountry()
-							session["location"] = map[string]string{
+							session := map[string]string{
 								"city":    location.Location.GetName(),
 								"country": country.GetName(),
 							}
