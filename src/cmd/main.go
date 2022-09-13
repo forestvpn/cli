@@ -385,9 +385,11 @@ func main() {
 							}
 
 							country := location.Location.GetCountry()
+							city := location.Location.GetName()
+							countryName := country.GetName()
 							session := map[string]string{
-								"city":    location.Location.GetName(),
-								"country": country.GetName(),
+								"city":    city,
+								"country": countryName,
 							}
 
 							data, err := json.Marshal(session)
@@ -399,7 +401,16 @@ func main() {
 
 							auth.JsonDump(data, auth.SessionFile)
 
-							return apiClient.SetLocation(billingFeature, location, includeRoutes)
+							err = apiClient.SetLocation(billingFeature, location, includeRoutes)
+
+							if err != nil {
+								sentry.CaptureException(err)
+								return err
+							}
+
+							color.New(color.FgGreen).Println(fmt.Sprintf("Default location is set to %s, %s", city, countryName))
+
+							return nil
 						},
 					},
 					{
