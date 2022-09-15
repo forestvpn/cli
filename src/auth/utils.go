@@ -35,7 +35,7 @@ var WireguardConfig = AppDir + "fvpn0.conf"
 
 // The SessionFile is a file for storing the last session information.
 //
-// Deprecated: It's used to track down the status of connection.
+// It's used to track down the status of connection.
 var SessionFile = AppDir + "session.json"
 
 // Init is a function that creates directories structure for Forest CLI.

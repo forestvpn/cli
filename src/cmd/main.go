@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -126,11 +127,12 @@ func main() {
 							},
 						},
 						Action: func(c *cli.Context) error {
-							localDevice, _ := auth.JsonLoad(auth.DeviceFile)
+							localDevice, err := auth.JsonLoad(auth.DeviceFile)
 
-							// if err != nil {
-							// 	return err
-							// }
+							if err != nil {
+								sentry.CaptureException(err)
+								return err
+							}
 
 							deviceID := localDevice["id"]
 							return apiClient.Login(email, password, deviceID)
@@ -222,7 +224,14 @@ func main() {
 								status = state.GetStatus()
 
 								if status {
-									color.Green("Connected")
+									session, err := auth.JsonLoad(auth.SessionFile)
+
+									if err != nil {
+										sentry.CaptureException(err)
+										return err
+									}
+
+									color.Green("Connected to %s, %s", session["city"], session["country"])
 								} else {
 									err = errors.New("state set up error")
 									sentry.CaptureException(err)
@@ -287,7 +296,14 @@ func main() {
 							status := state.GetStatus()
 
 							if status {
-								color.Green("Connected")
+								session, err := auth.JsonLoad(auth.SessionFile)
+
+								if err != nil {
+									sentry.CaptureException(err)
+									return err
+								}
+
+								color.Green("Connected to %s, %s", session["city"], session["country"])
 							} else {
 								color.Red("Not connected")
 							}
@@ -369,7 +385,33 @@ func main() {
 								return fmt.Errorf("no such location: %s", arg)
 							}
 
-							return apiClient.SetLocation(billingFeature, location, includeRoutes)
+							country := location.Location.GetCountry()
+							city := location.Location.GetName()
+							countryName := country.GetName()
+							session := map[string]string{
+								"city":    city,
+								"country": countryName,
+							}
+
+							data, err := json.Marshal(session)
+
+							if err != nil {
+								sentry.CaptureException(err)
+								return err
+							}
+
+							auth.JsonDump(data, auth.SessionFile)
+
+							err = apiClient.SetLocation(billingFeature, location, includeRoutes)
+
+							if err != nil {
+								sentry.CaptureException(err)
+								return err
+							}
+
+							color.New(color.FgGreen).Println(fmt.Sprintf("Default location is set to %s, %s", city, countryName))
+
+							return nil
 						},
 					},
 					{

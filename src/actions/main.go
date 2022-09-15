@@ -61,7 +61,8 @@ func (w AuthClientWrapper) Register(email string, password string) error {
 		return errors.New("a profile for this user already exists")
 	}
 
-	passwordfield, err := auth.GetPasswordField([]byte(password))
+	validate := true
+	passwordfield, err := auth.GetPasswordField([]byte(password), validate)
 
 	if err != nil {
 		return err
@@ -174,7 +175,8 @@ func (w AuthClientWrapper) Login(email string, password string, deviceID string)
 			return errors.New("the user doesn't exist")
 		}
 
-		passwordfield, err := auth.GetPasswordField([]byte(password))
+		validate := false
+		passwordfield, err := auth.GetPasswordField([]byte(password), validate)
 
 		if err != nil {
 			return err
@@ -188,10 +190,10 @@ func (w AuthClientWrapper) Login(email string, password string, deviceID string)
 		}
 
 		if response.IsError() {
-			var data map[string]map[string]string
-			json.Unmarshal(response.Body(), &data)
-			err := data["error"]
-			return errors.New(err["message"])
+			// This is stupid! We know that email is ok on the assumption of the code above.
+			// I don't want to show this error message, but nobody cares about my opinion here.
+			// We even have a Firebase error codes to determine exact error. E.g. INVALID_PASSWORD, INVALID_EMAIL, etc.
+			return errors.New("invalid email or password")
 		}
 
 		err = auth.HandleFirebaseSignInResponse(response)
@@ -424,8 +426,6 @@ func (w AuthClientWrapper) SetLocation(billingFeature forestvpn_api.BillingFeatu
 	if err != nil {
 		return err
 	}
-
-	color.New(color.FgGreen).Println(fmt.Sprintf("Default location is set to %s", location.Location.GetId()))
 
 	return nil
 }
