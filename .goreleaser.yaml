@@ -10,11 +10,9 @@ builds:
       - arm64
     binary: fvpn
     ldflags:
-      - "-s -w -X main.appVersion={{.Env.VERSION}} -X main.DSN={{.Env.SENTRY_DSN}} -X main.firebaseApiKey={{.Env.STAGING_FIREBASE_API_KEY}} -X main.apiHost={{.Env.STAGING_API_URL}}"
+      - "-s -w -X main.appVersion={{.Env.VERSION}} -X main.DSN={{.Env.SENTRY_DSN}} -X main.firebaseApiKey={{.Env.PRODUCTION_FIREBASE_API_KEY}} -X main.apiHost={{.Env.PRODUCTION_API_URL}}"
 checksum:
   name_template: 'checksums.txt'
-snapshot:
-  name_template: "{{ incpatch .Version }}-next"
 changelog:
   sort: asc
   filters:
@@ -45,20 +43,16 @@ nfpms:
     # Priority.
     priority: extra
     file_name_template: "{{ .PackageName }}_{{ .Os }}_{{ .Arch }}"
+brews:
+- name: fvpn
+  description: "Forest VPN CLI client for macOS, Linux, and Windows"
+  homepage: https://github.com/forestvpn/cli
+  dependencies:
+    - name: wireguard-tools
+  tap:
+    owner: forestvpn
+    name: homebrew-core
+  test: |
+    system "#{bin}/fvpn version"
 archives:
 - name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
-release:
-  prerelease: true
-  # Header template for the release body.
-  # Defaults to empty.
-  header: |
-    ## ForestVPN CLI ({{ .Date }})
-
-    Welcome to this development release!
-
-  # Footer template for the release body.
-  # Defaults to empty.
-  footer: |
-    ## Thanks!
-
-    Those were the changes on {{ .Date }}!

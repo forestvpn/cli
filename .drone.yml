@@ -66,9 +66,9 @@ steps:
     image: golang:1.18.4-alpine3.15
     environment:
       PRODUCTION_FIREBASE_API_KEY:
-        from_secret: STAGING_FIREBASE_API_KEY
+        from_secret: PRODUCTION_FIREBASE_API_KEY
       PRODUCTION_API_URL:
-        from_secret: STAGING_API_URL
+        from_secret: PRODUCTION_API_URL
       SENTRY_DSN:
        from_secret: SENTRY_DSN
       GITHUB_TOKEN:
@@ -78,10 +78,9 @@ steps:
       - name: cache
         path: /cache
     commands:
-      - export VERSION=${DRONE_BRANCH}-${DRONE_BUILD_CREATED}
+      - export VERSION=${DRONE_TAG}
+      - apk add git
       - go install github.com/goreleaser/goreleaser@latest
-      # - go install github.com/miniscruff/changie@latest
-      # - goreleaser --release-notes <(some_changelog_generator)
       - cd src/cmd
       - goreleaser release -f ../../.goreleaser.yaml
     depends_on:
