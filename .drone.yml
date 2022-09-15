@@ -113,7 +113,7 @@ steps:
       # - go install github.com/miniscruff/changie@latest
       # - goreleaser --release-notes <(some_changelog_generator)
       - cd src/cmd
-      - goreleaser release -f ../../.goreleaser-stage.yaml
+      - goreleaser release -f ../../.goreleaser-stage.yaml --snapshot
     depends_on:
       - deps
     when:
