@@ -127,11 +127,12 @@ func main() {
 							},
 						},
 						Action: func(c *cli.Context) error {
-							localDevice, _ := auth.JsonLoad(auth.DeviceFile)
+							localDevice, err := auth.JsonLoad(auth.DeviceFile)
 
-							// if err != nil {
-							// 	return err
-							// }
+							if err != nil {
+								sentry.CaptureException(err)
+								return err
+							}
 
 							deviceID := localDevice["id"]
 							return apiClient.Login(email, password, deviceID)
