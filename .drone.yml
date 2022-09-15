@@ -55,6 +55,13 @@ steps:
   #     - /usr/local/bin/codecov -f /cache/coverage.txt
   #   depends_on:
   #     - test
+  - name: fetch
+    image: docker:git
+    commands:
+      - git fetch --tags
+    when:
+      event:
+        - tag
   - name: release
     image: golang:1.18.4-alpine3.15
     environment:
