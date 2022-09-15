@@ -89,6 +89,37 @@ steps:
     when:
       event:
         - tag
+      branch:
+        - main
+  - name: staging-release
+    image: golang:1.18.4-alpine3.15
+    environment:
+      PRODUCTION_FIREBASE_API_KEY:
+        from_secret: STAGING_FIREBASE_API_KEY
+      PRODUCTION_API_URL:
+        from_secret: STAGING_API_URL
+      SENTRY_DSN:
+       from_secret: SENTRY_DSN
+      GITHUB_TOKEN:
+        from_secret: GITHUB_TOKEN
+    privileged: false
+    volumes:
+      - name: cache
+        path: /cache
+    commands:
+      - export VERSION=${DRONE_BRANCH}-${DRONE_BUILD_CREATED}
+      - go install github.com/goreleaser/goreleaser@latest
+      # - go install github.com/miniscruff/changie@latest
+      # - goreleaser --release-notes <(some_changelog_generator)
+      - cd src/cmd
+      - goreleaser release -f ../../.goreleaser-stage.yaml
+    depends_on:
+      - deps
+    when:
+      event:
+        - push
+      branch:
+        - stage
   # - name: docs
   #   image: golang:1.18.4-alpine3.15
   #     environment:
