@@ -127,7 +127,13 @@ func TestLoadAccessTokenWhileLoggedIn(t *testing.T) {
 		t.Error(err)
 	}
 
-	response, err = authClient.GetAccessToken()
+	refreshToken, err := auth.LoadRefreshToken()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	response, err = authClient.GetAccessToken(refreshToken)
 
 	if err != nil {
 		t.Error(err)

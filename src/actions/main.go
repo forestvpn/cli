@@ -153,66 +153,81 @@ func (w AuthClientWrapper) Register(email string, password string) error {
 //
 // See https://firebase.google.com/docs/reference/rest/auth#section-sign-in-email-password for more information.
 func (w AuthClientWrapper) Login(email string, password string, deviceID string) error {
-	if !auth.IsRefreshTokenExists() {
-		signinform := auth.SignInForm{}
-		emailfield, err := auth.GetEmailField(email)
+	signinform := auth.SignInForm{}
+	emailfield, err := auth.GetEmailField(email)
 
-		if err != nil {
-			return err
-		}
+	if err != nil {
+		return err
+	}
 
-		signinform.EmailField = emailfield
-		response, err := w.AuthClient.GetUserData(emailfield.Value)
+	signinform.EmailField = emailfield
+	response, err := w.AuthClient.GetUserData(emailfield.Value)
 
-		if err != nil {
-			return err
-		}
+	if err != nil {
+		return err
+	}
 
-		var data map[string]bool
-		json.Unmarshal(response.Body(), &data)
+	var data map[string]any
+	json.Unmarshal(response.Body(), &data)
 
-		if !data["registered"] {
+	var x interface{} = data["registered"]
+	switch v := x.(type) {
+	case bool:
+		if !v {
 			return errors.New("the user doesn't exist")
 		}
 
-		validate := false
-		passwordfield, err := auth.GetPasswordField([]byte(password), validate)
+	}
 
-		if err != nil {
-			return err
-		}
+	validate := false
+	passwordfield, err := auth.GetPasswordField([]byte(password), validate)
 
-		signinform.PasswordField = passwordfield
-		response, err = w.AuthClient.SignIn(signinform)
+	if err != nil {
+		return err
+	}
 
-		if err != nil {
-			return err
-		}
+	signinform.PasswordField = passwordfield
+	response, err = w.AuthClient.SignIn(signinform)
 
-		if response.IsError() {
-			// This is stupid! We know that email is ok on the assumption of the code above.
-			// I don't want to show this error message, but nobody cares about my opinion here.
-			// We even have a Firebase error codes to determine exact error. E.g. INVALID_PASSWORD, INVALID_EMAIL, etc.
-			return errors.New("invalid email or password")
-		}
+	if err != nil {
+		return err
+	}
 
-		err = auth.HandleFirebaseSignInResponse(response)
+	if response.IsError() {
+		// This is stupid! We know that email is ok on the assumption of the code above.
+		// I don't want to show this error message, but nobody cares about my opinion here.
+		// We even have a Firebase error codes to determine exact error. E.g. INVALID_PASSWORD, INVALID_EMAIL, etc.
+		return errors.New("invalid email or password")
+	}
 
-		if err != nil {
-			return err
-		}
+	err = auth.HandleFirebaseSignInResponse(response)
 
-		response, err = w.AuthClient.GetAccessToken()
+	if err != nil {
+		return err
+	}
 
-		if err != nil {
-			return err
-		}
+	refreshToken, err := auth.LoadRefreshToken()
 
-		err = auth.JsonDump(response.Body(), auth.FirebaseAuthFile)
+	if err != nil {
+		return err
+	}
 
-		if err != nil {
-			return err
-		}
+	response, err = w.AuthClient.GetAccessToken(refreshToken)
+
+	if err != nil {
+		return err
+	}
+
+	err = auth.HandleFirebaseAuthResponse(response)
+
+	if err != nil {
+		return err
+	}
+
+	err = auth.JsonDump(response.Body(), auth.FirebaseAuthFile)
+
+	if err != nil {
+		return err
 	}
 
 	if len(deviceID) == 0 {
@@ -243,7 +258,6 @@ func (w AuthClientWrapper) Login(email string, password string, deviceID string)
 
 	}
 
-	color.Green("Logged in")
 	return nil
 }
 
@@ -256,7 +270,7 @@ func (w AuthClientWrapper) Logout() error {
 			return err
 		}
 	}
-	color.Green("Logged out")
+
 	return nil
 }
 
@@ -328,12 +342,7 @@ func (w AuthClientWrapper) SetLocation(billingFeature forestvpn_api.BillingFeatu
 		return auth.BuyPremiumDialog()
 	}
 
-	deviceID, err := auth.LoadDeviceID()
-
-	if err != nil {
-		return err
-	}
-
+	deviceID := auth.LoadDeviceID()
 	device, err := w.ApiClient.UpdateDevice(deviceID, location.Location.GetId())
 
 	if err != nil {

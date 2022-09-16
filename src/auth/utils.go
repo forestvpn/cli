@@ -12,6 +12,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/go-resty/resty/v2"
 )
 
@@ -106,12 +107,23 @@ func LoadAccessToken() (string, error) {
 
 // HandleFirebaseAuthResponse is a function to extracts the error message from the Firebase REST API response when the status is ok.
 func HandleFirebaseAuthResponse(response *resty.Response) error {
-	if response.IsError() {
-		var body map[string]map[string]string
-		json.Unmarshal(response.Body(), &body)
-		msg := body["error"]
-		return errors.New(msg["message"])
+	var body map[string]any
+	err := json.Unmarshal(response.Body(), &body)
+
+	if err != nil {
+		return err
 	}
+
+	var x interface{} = body["error"]
+	switch v := x.(type) {
+	case map[string]any:
+		var x interface{} = v["message"]
+		switch v := x.(type) {
+		case string:
+			return errors.New(v)
+		}
+	}
+
 	return nil
 }
 
@@ -128,30 +140,26 @@ func HandleFirebaseSignInResponse(response *resty.Response) error {
 
 // LoadRefreshToken is a function to quickly get the local refresh token from FirebaseAuthFile.
 func LoadRefreshToken() (string, error) {
-	data, err := JsonLoad(FirebaseAuthFile)
+	var refreshToken string
+	refreshToken, err := loadKey("refresh_token", FirebaseAuthFile)
 
 	if err != nil {
 		return "", err
+	} else if len(refreshToken) == 0 {
+		refreshToken, err = loadKey("refreshToken", FirebaseAuthFile)
+
+		if err != nil {
+			return "", err
+		}
 	}
 
-	token := data["refresh_token"]
-
-	if len(token) > 0 {
-		return token, err
-	}
-
-	token = data["refreshToken"]
-
-	if len(token) > 0 {
-		return token, err
-	}
-	return "", errors.New("refresh token not found")
+	return refreshToken, nil
 }
 
 // IsRefreshTokenExists is a function to quickly check refresh token exists locally.
 func IsRefreshTokenExists() bool {
-	_, err := LoadRefreshToken()
-	return err == nil
+	refreshToken, err := LoadRefreshToken()
+	return err == nil && len(refreshToken) > 0
 }
 
 // Deprecated: IsDeviceCreated is a function that checks if the DeviceFile exist, i.e device is created.
@@ -161,13 +169,14 @@ func IsDeviceCreated() bool {
 }
 
 // LoadDeviceID is a function to quickly get the device ID from the DeviceFile.
-func LoadDeviceID() (string, error) {
+func LoadDeviceID() string {
+	var key string
 	key, err := loadKey("id", DeviceFile)
 
 	if err != nil {
-		return "", err
+		sentry.CaptureException(err)
 	}
-	return key, nil
+	return key
 }
 
 // BuyPremiumDialog is a function that prompts the user to by premium subscrition on Forest VPN.
@@ -214,4 +223,15 @@ func IsAuthenticated() bool {
 func IsLocationSet() bool {
 	_, err := os.Stat(WireguardConfig)
 	return !os.IsNotExist(err)
+}
+
+func LoadSession() map[string]string {
+	var session map[string]string
+	session, err := JsonLoad(SessionFile)
+
+	if err != nil {
+		sentry.CaptureException(err)
+	}
+
+	return session
 }
