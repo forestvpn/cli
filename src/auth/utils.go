@@ -12,6 +12,7 @@ import (
 	"runtime"
 	"strings"
 
+	forestvpn_api "github.com/forestvpn/api-client-go"
 	"github.com/getsentry/sentry-go"
 	"github.com/go-resty/resty/v2"
 )
@@ -27,23 +28,110 @@ var FirebaseAuthFile = AppDir + "firebase.json"
 // The DeviceFile represents the device created for the user.
 //
 // Read more: https://github.com/forestvpn/api-client-go.
-var DeviceFile = AppDir + "device.json"
+const DeviceFile string = "/device.json"
 
 // WireguardConfig is a Wireguard configuration file.
 //
 // It's being rewrittten per location change.
 var WireguardConfig = AppDir + "fvpn0.conf"
 
-// The SessionFile is a file for storing the last session information.
+// Deprecated: The SessionFile is a file for storing the last session information.
 //
 // It's used to track down the status of connection.
 var SessionFile = AppDir + "session.json"
 
+var ProfilesDir = AppDir + "profiles/"
+
+const ActiveUserLockFile string = "/.active.lock"
+
+func loadFirebaseAuthFile() (map[string]any, error) {
+	var firebaseAuthFile map[string]any
+
+	data, err := readFile(FirebaseAuthFile)
+
+	if err != nil {
+		return firebaseAuthFile, err
+	}
+
+	err = json.Unmarshal(data, &firebaseAuthFile)
+	return firebaseAuthFile, err
+}
+
+func LoadAccessToken() (string, error) {
+	var accessToken string
+	firebaseAuthFile, err := loadFirebaseAuthFile()
+
+	if err != nil {
+		return "", err
+	}
+
+	var y interface{} = firebaseAuthFile["access_token"]
+	switch v := y.(type) {
+	case string:
+		accessToken = v
+	}
+
+	return accessToken, err
+}
+
+func AddProfile(user_id string, device *forestvpn_api.Device, activate bool) error {
+	path := ProfilesDir + user_id
+
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		err = os.Mkdir(path, 0755)
+
+		if err != nil {
+			sentry.CaptureException(err)
+		}
+	}
+
+	data, err := json.MarshalIndent(device, "", "    ")
+
+	if err != nil {
+		return err
+	}
+
+	err = JsonDump(data, path+DeviceFile)
+
+	if err != nil {
+		return err
+	}
+
+	if activate {
+		err = SetActiveProfile(user_id)
+	}
+	return err
+}
+
+func LoadUserID() (string, error) {
+	var id string
+	auth, err := loadFirebaseAuthFile()
+
+	if err != nil {
+		return id, err
+	}
+
+	var y interface{} = auth["user_id"]
+	switch v := y.(type) {
+	case string:
+		id = v
+	}
+
+	return id, err
+}
+
 // Init is a function that creates directories structure for Forest CLI.
 func Init() error {
-	if _, err := os.Stat(AppDir); os.IsNotExist(err) {
-		os.Mkdir(AppDir, 0755)
+	for _, dir := range []string{AppDir, ProfilesDir} {
+		if _, err := os.Stat(dir); os.IsNotExist(err) {
+			err = os.Mkdir(dir, 0755)
+
+			if err != nil {
+				sentry.CaptureException(err)
+			}
+		}
 	}
+
 	return nil
 }
 
@@ -81,30 +169,6 @@ func readFile(filepath string) ([]byte, error) {
 
 }
 
-// JsonLoad  is a function that reads the content of a file and unmarshals it into the map.
-// If there's no file or it is empty, returns an empty map.
-func JsonLoad(filepath string) (map[string]string, error) {
-	data := make(map[string]string)
-	byteStream, err := readFile(filepath)
-
-	if err == nil {
-		json.Unmarshal(byteStream, &data)
-	}
-
-	return data, err
-}
-
-// loadKey is a function to quickly find some key in the json encoded file.
-func loadKey(key string, file string) (string, error) {
-	data, err := JsonLoad(file)
-	return data[key], err
-}
-
-// LoadAccessToken is a function to quickly get the local access token from FirebaseAuthFile.
-func LoadAccessToken() (string, error) {
-	return loadKey("access_token", FirebaseAuthFile)
-}
-
 // HandleFirebaseAuthResponse is a function to extracts the error message from the Firebase REST API response when the status is ok.
 func HandleFirebaseAuthResponse(response *resty.Response) error {
 	var body map[string]any
@@ -140,43 +204,59 @@ func HandleFirebaseSignInResponse(response *resty.Response) error {
 
 // LoadRefreshToken is a function to quickly get the local refresh token from FirebaseAuthFile.
 func LoadRefreshToken() (string, error) {
-	var refreshToken string
-	refreshToken, err := loadKey("refresh_token", FirebaseAuthFile)
+	firebaseAuthFile, err := loadFirebaseAuthFile()
 
 	if err != nil {
 		return "", err
-	} else if len(refreshToken) == 0 {
-		refreshToken, err = loadKey("refreshToken", FirebaseAuthFile)
+	}
 
-		if err != nil {
-			return "", err
+	var refreshToken string
+
+	var y interface{} = firebaseAuthFile["refresh_token"]
+	switch v := y.(type) {
+	case string:
+		refreshToken = v
+	}
+
+	if len(refreshToken) == 0 {
+		var y interface{} = firebaseAuthFile["refreshToken"]
+		switch v := y.(type) {
+		case string:
+			refreshToken = v
 		}
 	}
 
-	return refreshToken, nil
+	return refreshToken, err
 }
 
 // IsRefreshTokenExists is a function to quickly check refresh token exists locally.
-func IsRefreshTokenExists() bool {
+func IsRefreshTokenExists() (bool, error) {
 	refreshToken, err := LoadRefreshToken()
-	return err == nil && len(refreshToken) > 0
-}
-
-// Deprecated: IsDeviceCreated is a function that checks if the DeviceFile exist, i.e device is created.
-func IsDeviceCreated() bool {
-	_, err := readFile(DeviceFile)
-	return err == nil
-}
-
-// LoadDeviceID is a function to quickly get the device ID from the DeviceFile.
-func LoadDeviceID() string {
-	var key string
-	key, err := loadKey("id", DeviceFile)
 
 	if err != nil {
-		sentry.CaptureException(err)
+		return false, err
 	}
-	return key
+
+	return len(refreshToken) > 0, err
+}
+
+// IsDeviceCreated is a function that checks if the DeviceFile exist, i.e device is created.
+func IsDeviceCreated(user_id string) bool {
+	_, err := os.Stat(ProfilesDir + user_id + DeviceFile)
+	return !os.IsNotExist(err)
+}
+
+func LoadDevice(user_id string) (*forestvpn_api.Device, error) {
+	var device *forestvpn_api.Device
+	data, err := readFile(ProfilesDir + user_id + DeviceFile)
+
+	if err != nil {
+		return device, err
+	}
+
+	err = json.Unmarshal(data, &device)
+	return device, err
+
 }
 
 // BuyPremiumDialog is a function that prompts the user to by premium subscrition on Forest VPN.
@@ -207,31 +287,119 @@ func BuyPremiumDialog() error {
 }
 
 // IsAuthenticated is a helper function to quickly check wether user is authenticated by checking existance of an access token.
-func IsAuthenticated() bool {
+func IsAuthenticated() (bool, error) {
+	authenticated := false
 	accessToken, err := LoadAccessToken()
 
 	if err != nil {
-		return false
-	} else if len(accessToken) < 1 {
-		return false
+		return authenticated, err
 	}
-	return true
+
+	if len(accessToken) > 0 {
+		authenticated = true
+	}
+	return authenticated, err
 
 }
 
-// IsLocationSet is a function to check wether Wireguard configuration file created after location selection.
+// Deprecated: IsLocationSet is a function to check wether Wireguard configuration file created after location selection.
 func IsLocationSet() bool {
 	_, err := os.Stat(WireguardConfig)
 	return !os.IsNotExist(err)
 }
 
-func LoadSession() map[string]string {
-	var session map[string]string
-	session, err := JsonLoad(SessionFile)
-
-	if err != nil {
-		sentry.CaptureException(err)
+func ProfileExists(user_id string) bool {
+	if _, err := os.Stat(ProfilesDir + user_id); os.IsNotExist(err) {
+		return true
 	}
 
-	return session
+	return false
+}
+
+func IsActiveProfile(user_id string) bool {
+	path := ProfilesDir + user_id + ActiveUserLockFile
+
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return false
+	}
+
+	return true
+
+}
+
+func SetActiveProfile(user_id string) error {
+	files, err := ioutil.ReadDir(ProfilesDir)
+
+	if err != nil {
+		return err
+	}
+
+	removed := false
+	created := false
+
+	for _, f := range files {
+		if f.IsDir() {
+			path := ProfilesDir + f.Name() + ActiveUserLockFile
+
+			if _, err := os.Stat(path); !removed && !os.IsNotExist(err) {
+				err := os.Remove(path)
+
+				if err != nil {
+					sentry.CaptureException(err)
+				}
+				removed = true
+			} else if !created && f.Name() == user_id {
+				_, err := os.Create(ProfilesDir + f.Name() + ActiveUserLockFile)
+
+				if err != nil {
+					return err
+				}
+
+				created = true
+			} else if created && removed {
+				break
+			}
+		}
+	}
+	return nil
+}
+
+func RemoveFirebaseAuthFile() error {
+	if _, err := os.Stat(FirebaseAuthFile); !os.IsNotExist(err) {
+		err = os.Remove(FirebaseAuthFile)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func RemoveActiveUserLockFile() error {
+	if _, err := os.Stat(ActiveUserLockFile); !os.IsNotExist(err) {
+		err = os.Remove(ActiveUserLockFile)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func UpdateProfileDevice(device *forestvpn_api.Device) error {
+	data, err := json.MarshalIndent(device, "", "    ")
+
+	if err != nil {
+		return err
+	}
+
+	user_id, err := LoadUserID()
+
+	if err != nil {
+		return err
+	}
+
+	return JsonDump(data, ProfilesDir+user_id+DeviceFile)
 }

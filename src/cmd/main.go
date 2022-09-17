@@ -1,11 +1,9 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
-	"math/rand"
 	"os"
 	"strings"
 	"time"
@@ -52,8 +50,9 @@ func main() {
 	}
 
 	authClient := auth.AuthClient{ApiKey: firebaseApiKey}
+	exists, _ := auth.IsRefreshTokenExists()
 
-	if auth.IsRefreshTokenExists() {
+	if exists {
 		refreshToken, _ := auth.LoadRefreshToken()
 		response, err := authClient.GetAccessToken(refreshToken)
 
@@ -129,98 +128,69 @@ func main() {
 							},
 						},
 						Action: func(c *cli.Context) error {
-							session := auth.LoadSession()
+							var includeHostIps = true
+							var user_id string
 
-							if !auth.IsRefreshTokenExists() {
-								if session["user"] != email {
-									err := os.Remove(auth.DeviceFile)
+							exists, err = apiClient.Login(email, password)
 
-									if err != nil {
-										sentry.CaptureException(err)
-									}
-								}
-
-								deviceID := auth.LoadDeviceID()
-
-								if err != nil {
-									sentry.CaptureException(err)
-									return err
-								}
-
-								err = apiClient.Login(email, password, deviceID)
-
-								if err != nil {
-									sentry.CaptureException(err)
-									return err
-								}
-
-								if session["user"] != email {
-									wrapper.AccessToken, err = auth.LoadAccessToken()
-									apiClient.ApiClient.AccessToken = wrapper.AccessToken
-
-									if err != nil {
-										sentry.CaptureException(err)
-										return err
-									}
-
-									resp, err := wrapper.GetBillingFeatures()
-
-									if err != nil {
-										return err
-									}
-
-									billingFeature := resp[0]
-									locations, err := wrapper.GetLocations()
-
-									if err != nil {
-										return err
-									}
-
-									wrappedLocations := actions.GetWrappedLocations(billingFeature, locations)
-									var location actions.LocationWrapper
-									var randomIndex int
-									var locationSet []actions.LocationWrapper
-
-									if actions.IsPremiumUser(billingFeature) {
-										locationSet = wrappedLocations
-									} else {
-										for _, loc := range wrappedLocations {
-											if !loc.Premium {
-												locationSet = append(locationSet, loc)
-											}
-										}
-									}
-
-									randomIndex = rand.Intn(len(locationSet))
-									location = wrappedLocations[randomIndex]
-									err = apiClient.SetLocation(billingFeature, location, includeRoutes)
-
-									if err != nil {
-										sentry.CaptureException(err)
-										return err
-									}
-								}
-
-								session["user"] = email
-								data, err := json.MarshalIndent(session, "", "    ")
-
-								if err != nil {
-									sentry.CaptureException(err)
-									return err
-								}
-
-								err = auth.JsonDump(data, auth.SessionFile)
-
-								if err != nil {
-									sentry.CaptureException(err)
-									return err
-								}
-
+							if err != nil {
+								return err
 							}
 
-							if auth.IsRefreshTokenExists() {
-								color.Green("Logged in")
+							if !exists {
+								activate := true
+								accessToken, err := auth.LoadAccessToken()
+
+								if err != nil {
+									return err
+								}
+
+								wrapper.AccessToken = accessToken
+								apiClient.ApiClient.AccessToken = wrapper.AccessToken
+								device, err := wrapper.CreateDevice()
+
+								if err != nil {
+									return err
+								}
+
+								user_id, err := auth.LoadUserID()
+
+								if err != nil {
+									return err
+								}
+
+								err = auth.AddProfile(user_id, device, activate)
+
+								if err != nil {
+									return err
+								}
+
+								err = apiClient.SetLocation(device, includeHostIps)
+
+								if err != nil {
+									return err
+								}
+							} else {
+								device, err := auth.LoadDevice(user_id)
+
+								if err != nil {
+									return err
+								}
+
+								err = apiClient.SetLocation(device, includeHostIps)
+
+								if err != nil {
+									return err
+								}
+
+								err = auth.SetActiveProfile(email)
+
+								if err != nil {
+									return err
+								}
 							}
+
+							color.Green("Logged in")
 							return nil
 						},
 					},
@@ -228,70 +198,37 @@ func main() {
 						Name:  "logout",
 						Usage: "Log out from your ForestVPN account on this device",
 						Action: func(c *cli.Context) error {
-							deviceID := auth.LoadDeviceID()
-							err = wrapper.DeleteDevice(deviceID)
+							state := actions.State{}
+							status := state.GetStatus()
+
+							if status {
+								fmt.Println("Please, set down the connection before attempting to log out.")
+								color := color.New(color.Faint)
+								color.Println("Try 'forest state down'")
+								return nil
+							}
+
+							exists, err := auth.IsRefreshTokenExists()
 
 							if err != nil {
-								sentry.CaptureException(err)
 								return err
 							}
 
-							err := apiClient.Logout()
-
-							if err != nil {
-								sentry.CaptureException(err)
-								return err
+							if !exists {
+								color.Red("Logged out")
+								return nil
 							}
 
-							err = os.Remove(auth.DeviceFile)
+							err = apiClient.Logout()
 
 							if err != nil {
-								sentry.CaptureException(err)
+								return err
 							}
 
 							color.Green("Logged out")
-							return err
+							return nil
 						},
 					},
-					// {
-					// 	Name:  "account",
-					// 	Usage: "Manage multiple accounts",
-					// 	Subcommands: []*cli.Command{
-					// 		{
-					// 			Name:  "show",
-					// 			Usage: "Show all user accounts logged in",
-					// 		},
-					// 		{
-					// 			Name:  "default",
-					// 			Usage: "Set a default account",
-					// 			Flags: []cli.Flag{
-					// 				&cli.StringFlag{
-					// 					Name:        "email",
-					// 					Destination: &email,
-					// 					Usage:       "Email address of your account",
-					// 					Value:       "",
-					// 					Aliases:     []string{"e"},
-					// 				},
-					// 			},
-					// 			Action: func(c *cli.Context) error {
-					// 				if !auth.IsAuthenticated() {
-					// 					fmt.Println("Are you signed in?")
-					// 					color := color.New(color.Faint)
-					// 					color.Println("Try 'forest auth signin'")
-					// 					return nil
-					// 				}
-					// 				emailfield, err := auth.GetEmailField(email)
-
-					// 				if err == nil {
-					// 					fmt.Println(emailfield.Value)
-					// 				} else {
-					// 					sentry.CaptureException(err)
-					// 				}
-					// 				return err
-					// 			},
-					// 		},
-					// 	},
-					// },
 				},
 			},
 			{
@@ -302,54 +239,60 @@ func main() {
 
 						Name:  "up",
 						Usage: "Connect to the ForestVPN",
-						Flags: []cli.Flag{
-							&cli.BoolFlag{
-								Name:        "include-routes",
-								Destination: &includeRoutes,
-								Usage:       "Route all system network interfaces into VPN tunnel",
-								Value:       false,
-								Aliases:     []string{"i"},
-							},
-						},
 						Action: func(c *cli.Context) error {
-							if !auth.IsAuthenticated() {
+							authenticated, err := auth.IsAuthenticated()
+
+							if err != nil {
+								return err
+							}
+
+							if !authenticated {
 								fmt.Println("Are you logged in?")
 								color := color.New(color.Faint)
 								color.Println("Try 'forest account login'")
 								return nil
-							} else if auth.IsLocationSet() {
-								state := actions.State{}
-								status := state.GetStatus()
+							}
 
-								if status {
-									err := state.SetDown(auth.WireguardConfig)
+							state := actions.State{}
+							status := state.GetStatus()
 
-									if err != nil {
-										return err
-									}
+							if status {
+								err := state.SetDown(auth.WireguardConfig)
+
+								if err != nil {
+									return err
 								}
+							}
 
-								err := state.SetUp(auth.WireguardConfig)
+							err = state.SetUp(auth.WireguardConfig)
+
+							if err != nil {
+								return err
+							}
+
+							status = state.GetStatus()
+
+							if status {
+								user_id, err := auth.LoadUserID()
 
 								if err != nil {
 									return err
 								}
 
-								status = state.GetStatus()
+								device, err := auth.LoadDevice(user_id)
 
-								if status {
-									session := auth.LoadSession()
-									color.Green("Connected to %s, %s", session["city"], session["country"])
-								} else {
-									err = errors.New("state set up error")
-									sentry.CaptureException(err)
+								if err != nil {
 									return err
 								}
+
+								location := device.GetLocation()
+								country := location.GetCountry()
+
+								color.Green("Connected to %s, %s", location.GetName(), country.GetName())
 							} else {
-								fmt.Println("Please, choose the location to connect.")
-								color := color.New(color.Faint)
-								color.Println("Use 'fvpn location ls' to see available locations.")
+								return err
 							}
+
 							return nil
 						},
 					},
@@ -358,7 +301,13 @@ func main() {
 						Description: "Disconnect from ForestVPN",
 						Usage:       "Shut down the connection",
 						Action: func(ctx *cli.Context) error {
-							if !auth.IsAuthenticated() {
+							authenticated, err := auth.IsAuthenticated()
+
+							if err != nil {
+								return err
+							}
+
+							if !authenticated {
 								fmt.Println("Are you logged in?")
 								color := color.New(color.Faint)
 								color.Println("Try 'forest account login'")
@@ -380,8 +329,6 @@ func main() {
 								if !status {
 									color.Red("Disconnected")
 								} else {
-									err = errors.New("state set down error")
-									sentry.CaptureException(err)
 									return err
 								}
 
@@ -397,7 +344,13 @@ func main() {
 						Description: "See wether connection is active",
 						Usage:       "Check the status of the connection",
 						Action: func(ctx *cli.Context) error {
-							if !auth.IsAuthenticated() {
+							authenticated, err := auth.IsAuthenticated()
+
+							if err != nil {
+								return err
+							}
+
+							if !authenticated {
 								fmt.Println("Are you signed in?")
 								color := color.New(color.Faint)
 								color.Println("Try 'forest auth signin'")
@@ -408,9 +361,23 @@ func main() {
 							status := state.GetStatus()
 
 							if status {
-								session := auth.LoadSession()
 
-								color.Green("Connected to %s, %s", session["city"], session["country"])
+								user_id, err := auth.LoadUserID()
+
+								if err != nil {
+									return err
+								}
+
+								device, err := auth.LoadDevice(user_id)
+
+								if err != nil {
+									return err
+								}
+
+								location := device.GetLocation()
+								country := location.GetCountry()
+
+								color.Green("Connected to %s, %s", location.GetName(), country.GetName())
 							} else {
 								color.Red("Not connected")
 							}
@@ -438,8 +405,13 @@ func main() {
 							},
 						},
 						Action: func(cCtx *cli.Context) error {
+							authenticated, err := auth.IsAuthenticated()
 
-							if !auth.IsAuthenticated() {
+							if err != nil {
+								return err
+							}
+
+							if !authenticated {
 								fmt.Println("Are you logged in?")
 								color := color.New(color.Faint)
 								color.Println("Try 'forest account login'")
@@ -489,35 +461,49 @@ func main() {
 							}
 
 							if !found {
-								return fmt.Errorf("no such location: %s", arg)
+								err := fmt.Errorf("no such location: %s", arg)
+								return err
+							}
+
+							expireDate := billingFeature.GetExpiryDate()
+							now := time.Now()
+
+							if !expireDate.After(now) && location.Premium {
+								return auth.BuyPremiumDialog()
+							}
+
+							user_id, err := auth.LoadUserID()
+
+							if err != nil {
+								return err
+							}
+
+							device, err := auth.LoadDevice(user_id)
+
+							if err != nil {
+								return err
+							}
+
+							device, err = wrapper.UpdateDevice(device.GetId(), location.Location.GetId())
+
+							if err != nil {
+								return err
+							}
+
+							err = auth.UpdateProfileDevice(device)
+
+							if err != nil {
+								return err
+							}
+
+							err = apiClient.SetLocation(device, includeRoutes)
+
+							if err != nil {
+								return err
 							}
 
 							country := location.Location.GetCountry()
-							city := location.Location.GetName()
-							countryName := country.GetName()
-							session := map[string]string{
-								"city":    city,
-								"country": countryName,
-							}
-
-							data, err := json.Marshal(session)
-
-							if err != nil {
-								sentry.CaptureException(err)
-								return err
-							}
-
-							auth.JsonDump(data, auth.SessionFile)
-
-							err = apiClient.SetLocation(billingFeature, location, includeRoutes)
-
-							if err != nil {
-								sentry.CaptureException(err)
-								return err
-							}
-
-							color.New(color.FgGreen).Println(fmt.Sprintf("Default location is set to %s, %s", city, countryName))
-
+							color.New(color.FgGreen).Println(fmt.Sprintf("Default location is set to %s, %s", location.Location.GetName(), country.GetName()))
 							return nil
 						},
 					},
