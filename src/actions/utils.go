@@ -9,12 +9,17 @@ type LocationWrapper struct {
 	Premium  bool
 }
 
+func IsPremiumUser(billingFeature forestvpn_api.BillingFeature) bool {
+	return billingFeature.GetBundleId() == "com.forestvpn.premium"
+
+}
+
 func GetWrappedLocations(billingFeature forestvpn_api.BillingFeature, locations []forestvpn_api.Location) []LocationWrapper {
 	var wrappedLocations []LocationWrapper
 	constraint := billingFeature.GetConstraints()[0]
 	subject := constraint.GetSubject()
 
-	if billingFeature.GetBundleId() == "com.forestvpn.premium" {
+	if IsPremiumUser(billingFeature) {
 		for _, location := range locations {
 			var premium bool
 

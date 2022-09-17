@@ -76,3 +76,9 @@ func (w ApiClientWrapper) GetDevice(id string) (*forestvpn_api.Device, error) {
 	resp, _, err := w.APIClient.DeviceApi.GetDevice(auth, id).Execute()
 	return resp, err
 }
+
+func (w ApiClientWrapper) DeleteDevice(id string) error {
+	auth := context.WithValue(context.Background(), forestvpn_api.ContextAccessToken, w.AccessToken)
+	_, err := w.APIClient.DeviceApi.DeleteDevice(auth, id).Execute()
+	return err
+}

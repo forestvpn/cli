@@ -97,12 +97,7 @@ func (c AuthClient) ExchangeRefreshForIdToken(refreshToken string) (*resty.Respo
 }
 
 // GetAccessToken is a method to obtain a new access token from Firebase REST API and dump the response into FirebaseAuthFile.
-func (c AuthClient) GetAccessToken() (*resty.Response, error) {
-	refreshToken, err := LoadRefreshToken()
-
-	if err != nil {
-		return nil, err
-	}
+func (c AuthClient) GetAccessToken(refreshToken string) (*resty.Response, error) {
 	response, err := c.ExchangeRefreshForIdToken(refreshToken)
 
 	if err != nil {

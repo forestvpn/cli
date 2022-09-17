@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -25,13 +24,13 @@ var (
 	// DSN is a Data Source Name for Sentry. It is stored in an environment variable and assigned during the build with ldflags.
 	//
 	// See https://docs.sentry.io/product/sentry-basics/dsn-explainer/ for more information.
-	DSN string
+	DSN = os.Getenv("SENTRY_DSN")
 	// appVersion value is stored in an environment variable and assigned during the build with ldflags.
-	appVersion string
+	appVersion = os.Getenv("VERSION")
 	// firebaseApiKey is stored in an environment variable and assigned during the build with ldflags.
-	firebaseApiKey string
+	firebaseApiKey = os.Getenv("STAGING_FIREBASE_API_KEY")
 	// ApiHost is a hostname of Forest VPN back-end API that is stored in an environment variable and assigned during the build with ldflags.
-	ApiHost string
+	ApiHost = os.Getenv("STAGING_API_URL")
 )
 
 func main() {
@@ -51,9 +50,11 @@ func main() {
 	}
 
 	authClient := auth.AuthClient{ApiKey: firebaseApiKey}
+	exists, _ := auth.IsRefreshTokenExists()
 
-	if auth.IsRefreshTokenExists() {
-		response, err := authClient.GetAccessToken()
+	if exists {
+		refreshToken, _ := auth.LoadRefreshToken()
+		response, err := authClient.GetAccessToken(refreshToken)
 
 		if err == nil {
 			auth.JsonDump(response.Body(), auth.FirebaseAuthFile)
@@ -127,63 +128,107 @@ func main() {
 							},
 						},
 						Action: func(c *cli.Context) error {
-							localDevice, err := auth.JsonLoad(auth.DeviceFile)
+							var includeHostIps = true
+							var user_id string
+
+							exists, err = apiClient.Login(email, password)
 
 							if err != nil {
-								sentry.CaptureException(err)
 								return err
 							}
 
-							deviceID := localDevice["id"]
-							return apiClient.Login(email, password, deviceID)
+							if !exists {
+								activate := true
+								accessToken, err := auth.LoadAccessToken()
+
+								if err != nil {
+									return err
+								}
+
+								wrapper.AccessToken = accessToken
+								apiClient.ApiClient.AccessToken = wrapper.AccessToken
+								device, err := wrapper.CreateDevice()
+
+								if err != nil {
+									return err
+								}
+
+								user_id, err := auth.LoadUserID()
+
+								if err != nil {
+									return err
+								}
+
+								err = auth.AddProfile(user_id, device, activate)
+
+								if err != nil {
+									return err
+								}
+
+								err = apiClient.SetLocation(device, includeHostIps)
+
+								if err != nil {
+									return err
+								}
+							} else {
+								device, err := auth.LoadDevice(user_id)
+
+								if err != nil {
+									return err
+								}
+
+								err = apiClient.SetLocation(device, includeHostIps)
+
+								if err != nil {
+									return err
+								}
+
+								err = auth.SetActiveProfile(email)
+
+								if err != nil {
+									return err
+								}
+							}
+
+							color.Green("Logged in")
+							return nil
 						},
 					},
 					{
 						Name:  "logout",
 						Usage: "Log out from your ForestVPN account on this device",
 						Action: func(c *cli.Context) error {
-							return apiClient.Logout()
+							state := actions.State{}
+							status := state.GetStatus()
+
+							if status {
+								fmt.Println("Please, set down the connection before attempting to log out.")
+								color := color.New(color.Faint)
+								color.Println("Try 'forest state down'")
+								return nil
+							}
+
+							exists, err := auth.IsRefreshTokenExists()
+
+							if err != nil {
+								return err
+							}
+
+							if !exists {
+								color.Red("Logged out")
+								return nil
+							}
+
+							err = apiClient.Logout()
+
+							if err != nil {
+								return err
+							}
+
+							color.Green("Logged out")
+							return nil
 						},
 					},
-					// {
-					// 	Name:  "account",
-					// 	Usage: "Manage multiple accounts",
-					// 	Subcommands: []*cli.Command{
-					// 		{
-					// 			Name:  "show",
-					// 			Usage: "Show all user accounts logged in",
-					// 		},
-					// 		{
-					// 			Name:  "default",
-					// 			Usage: "Set a default account",
-					// 			Flags: []cli.Flag{
-					// 				&cli.StringFlag{
-					// 					Name:        "email",
-					// 					Destination: &email,
-					// 					Usage:       "Email address of your account",
-					// 					Value:       "",
-					// 					Aliases:     []string{"e"},
-					// 				},
-					// 			},
-					// 			Action: func(c *cli.Context) error {
-					// 				if !auth.IsAuthenticated() {
-					// 					fmt.Println("Are you signed in?")
-					// 					color := color.New(color.Faint)
-					// 					color.Println("Try 'forest auth signin'")
-					// 					return nil
-					// 				}
-					// 				emailfield, err := auth.GetEmailField(email)
-
-					// 				if err == nil {
-					// 					fmt.Println(emailfield.Value)
-					// 				} else {
-					// 					sentry.CaptureException(err)
-					// 				}
-					// 				return err
-					// 			},
-					// 		},
-					// 	},
-					// },
 				},
 			},
 			{
@@ -195,49 +240,59 @@ func main() {
 						Name:  "up",
 						Usage: "Connect to the ForestVPN",
 						Action: func(c *cli.Context) error {
-							if !auth.IsAuthenticated() {
+							authenticated, err := auth.IsAuthenticated()
+
+							if err != nil {
+								return err
+							}
+
+							if !authenticated {
 								fmt.Println("Are you logged in?")
 								color := color.New(color.Faint)
 								color.Println("Try 'forest account login'")
-							} else if !auth.IsLocationSet() {
-								fmt.Println("Please, choose the location to connect.")
-								color := color.New(color.Faint)
-								color.Println("Use 'fvpn location ls' to see available locations.")
-							} else {
-								state := actions.State{}
-								status := state.GetStatus()
+								return nil
+							}
 
-								if status {
-									err := state.SetDown(auth.WireguardConfig)
+							state := actions.State{}
+							status := state.GetStatus()
 
-									if err != nil {
-										return err
-									}
+							if status {
+								err := state.SetDown(auth.WireguardConfig)
+
+								if err != nil {
+									return err
 								}
+							}
 
-								err := state.SetUp(auth.WireguardConfig)
+							err = state.SetUp(auth.WireguardConfig)
+
+							if err != nil {
+								return err
+							}
+
+							status = state.GetStatus()
+
+							if status {
+								user_id, err := auth.LoadUserID()
 
 								if err != nil {
 									return err
 								}
 
-								status = state.GetStatus()
+								device, err := auth.LoadDevice(user_id)
 
-								if status {
-									session, err := auth.JsonLoad(auth.SessionFile)
-
-									if err != nil {
-										sentry.CaptureException(err)
-										return err
-									}
-
-									color.Green("Connected to %s, %s", session["city"], session["country"])
-								} else {
-									err = errors.New("state set up error")
-									sentry.CaptureException(err)
+								if err != nil {
 									return err
 								}
+
+								location := device.GetLocation()
+								country := location.GetCountry()
+
+								color.Green("Connected to %s, %s", location.GetName(), country.GetName())
+							} else {
+								return err
 							}
+
 							return nil
 						},
 					},
@@ -246,10 +301,16 @@ func main() {
 						Description: "Disconnect from ForestVPN",
 						Usage:       "Shut down the connection",
 						Action: func(ctx *cli.Context) error {
-							if !auth.IsAuthenticated() {
-								fmt.Println("Are you signed in?")
+							authenticated, err := auth.IsAuthenticated()
+
+							if err != nil {
+								return err
+							}
+
+							if !authenticated {
+								fmt.Println("Are you logged in?")
 								color := color.New(color.Faint)
-								color.Println("Try 'forest auth signin'")
+								color.Println("Try 'forest account login'")
 								return nil
 							}
 
@@ -268,8 +329,6 @@ func main() {
 								if !status {
 									color.Red("Disconnected")
 								} else {
-									err = errors.New("state set down error")
-									sentry.CaptureException(err)
 									return err
 								}
 
@@ -285,7 +344,13 @@ func main() {
 						Description: "See wether connection is active",
 						Usage:       "Check the status of the connection",
 						Action: func(ctx *cli.Context) error {
-							if !auth.IsAuthenticated() {
+							authenticated, err := auth.IsAuthenticated()
+
+							if err != nil {
+								return err
+							}
+
+							if !authenticated {
 								fmt.Println("Are you signed in?")
 								color := color.New(color.Faint)
 								color.Println("Try 'forest auth signin'")
@@ -296,14 +361,23 @@ func main() {
 							status := state.GetStatus()
 
 							if status {
-								session, err := auth.JsonLoad(auth.SessionFile)
+
+								user_id, err := auth.LoadUserID()
 
 								if err != nil {
-									sentry.CaptureException(err)
 									return err
 								}
 
-								color.Green("Connected to %s, %s", session["city"], session["country"])
+								device, err := auth.LoadDevice(user_id)
+
+								if err != nil {
+									return err
+								}
+
+								location := device.GetLocation()
+								country := location.GetCountry()
+
+								color.Green("Connected to %s, %s", location.GetName(), country.GetName())
 							} else {
 								color.Red("Not connected")
 							}
@@ -325,14 +399,19 @@ func main() {
 							&cli.BoolFlag{
 								Name:        "include-routes",
 								Destination: &includeRoutes,
-								Usage:       "Include existing routes",
+								Usage:       "Route all system network interfaces into VPN tunnel",
 								Value:       false,
 								Aliases:     []string{"i"},
 							},
 						},
 						Action: func(cCtx *cli.Context) error {
+							authenticated, err := auth.IsAuthenticated()
 
-							if !auth.IsAuthenticated() {
+							if err != nil {
+								return err
+							}
+
+							if !authenticated {
 								fmt.Println("Are you logged in?")
 								color := color.New(color.Faint)
 								color.Println("Try 'forest account login'")
@@ -382,35 +461,49 @@ func main() {
 							}
 
 							if !found {
-								return fmt.Errorf("no such location: %s", arg)
+								err := fmt.Errorf("no such location: %s", arg)
+								return err
+							}
+
+							expireDate := billingFeature.GetExpiryDate()
+							now := time.Now()
+
+							if !expireDate.After(now) && location.Premium {
+								return auth.BuyPremiumDialog()
+							}
+
+							user_id, err := auth.LoadUserID()
+
+							if err != nil {
+								return err
+							}
+
+							device, err := auth.LoadDevice(user_id)
+
+							if err != nil {
+								return err
+							}
+
+							device, err = wrapper.UpdateDevice(device.GetId(), location.Location.GetId())
+
+							if err != nil {
+								return err
+							}
+
+							err = auth.UpdateProfileDevice(device)
+
+							if err != nil {
+								return err
+							}
+
+							err = apiClient.SetLocation(device, includeRoutes)
+
+							if err != nil {
+								return err
 							}
 
 							country := location.Location.GetCountry()
-							city := location.Location.GetName()
-							countryName := country.GetName()
-							session := map[string]string{
-								"city":    city,
-								"country": countryName,
-							}
-
-							data, err := json.Marshal(session)
-
-							if err != nil {
-								sentry.CaptureException(err)
-								return err
-							}
-
-							auth.JsonDump(data, auth.SessionFile)
-
-							err = apiClient.SetLocation(billingFeature, location, includeRoutes)
-
-							if err != nil {
-								sentry.CaptureException(err)
-								return err
-							}
-
-							color.New(color.FgGreen).Println(fmt.Sprintf("Default location is set to %s, %s", city, countryName))
-
+							color.New(color.FgGreen).Println(fmt.Sprintf("Default location is set to %s, %s", location.Location.GetName(), country.GetName()))
 							return nil
 						},
 					},

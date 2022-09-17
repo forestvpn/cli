@@ -11,7 +11,6 @@ import (
 	"os"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/fatih/color"
 	"github.com/olekukonko/tablewriter"
@@ -152,112 +151,115 @@ func (w AuthClientWrapper) Register(email string, password string) error {
 // If the deviceID is empty, then should create a new device on login.
 //
 // See https://firebase.google.com/docs/reference/rest/auth#section-sign-in-email-password for more information.
-func (w AuthClientWrapper) Login(email string, password string, deviceID string) error {
-	if !auth.IsRefreshTokenExists() {
-		signinform := auth.SignInForm{}
-		emailfield, err := auth.GetEmailField(email)
+func (w AuthClientWrapper) Login(email string, password string) (bool, error) {
+	signinform := auth.SignInForm{}
+	emailfield, err := auth.GetEmailField(email)
 
-		if err != nil {
-			return err
-		}
-
-		signinform.EmailField = emailfield
-		response, err := w.AuthClient.GetUserData(emailfield.Value)
-
-		if err != nil {
-			return err
-		}
-
-		var data map[string]bool
-		json.Unmarshal(response.Body(), &data)
-
-		if !data["registered"] {
-			return errors.New("the user doesn't exist")
-		}
-
-		validate := false
-		passwordfield, err := auth.GetPasswordField([]byte(password), validate)
-
-		if err != nil {
-			return err
-		}
-
-		signinform.PasswordField = passwordfield
-		response, err = w.AuthClient.SignIn(signinform)
-
-		if err != nil {
-			return err
-		}
-
-		if response.IsError() {
-			// This is stupid! We know that email is ok on the assumption of the code above.
-			// I don't want to show this error message, but nobody cares about my opinion here.
-			// We even have a Firebase error codes to determine exact error. E.g. INVALID_PASSWORD, INVALID_EMAIL, etc.
-			return errors.New("invalid email or password")
-		}
-
-		err = auth.HandleFirebaseSignInResponse(response)
-
-		if err != nil {
-			return err
-		}
-
-		response, err = w.AuthClient.GetAccessToken()
-
-		if err != nil {
-			return err
-		}
-
-		err = auth.JsonDump(response.Body(), auth.FirebaseAuthFile)
-
-		if err != nil {
-			return err
-		}
+	if err != nil {
+		return false, err
 	}
 
-	if len(deviceID) == 0 {
-		accessToken, err := auth.LoadAccessToken()
+	signinform.EmailField = emailfield
+	response, err := w.AuthClient.GetUserData(emailfield.Value)
 
-		if err != nil {
-			return err
-		}
+	if err != nil {
+		return false, err
+	}
 
-		w.ApiClient.AccessToken = accessToken
-		response, err := w.ApiClient.CreateDevice()
+	err = auth.HandleFirebaseAuthResponse(response)
 
-		if err != nil {
-			return err
-		}
+	if err != nil {
+		return false, err
+	}
 
-		b, err := json.MarshalIndent(response, "", "    ")
+	var data map[string]any
+	err = json.Unmarshal(response.Body(), &data)
 
-		if err != nil {
-			return err
-		}
-
-		err = auth.JsonDump(b, auth.DeviceFile)
-
-		if err != nil {
-			return err
-		}
+	if err != nil {
+		return false, err
 
 	}
 
-	color.Green("Logged in")
-	return nil
+	var x interface{} = data["registered"]
+	switch v := x.(type) {
+	case bool:
+		if !v {
+			return false, errors.New("the user doesn't exist")
+		}
+	}
+
+	var user_id string
+
+	var y interface{} = data["localId"]
+	switch v := y.(type) {
+	case string:
+		user_id = v
+	}
+
+	exists := auth.ProfileExists(user_id)
+	active := auth.IsActiveProfile(user_id)
+
+	if exists && active {
+		return exists, errors.New("the user already logged in")
+	}
+
+	validate := false
+	passwordfield, err := auth.GetPasswordField([]byte(password), validate)
+
+	if err != nil {
+		return exists, err
+	}
+
+	signinform.PasswordField = passwordfield
+	response, err = w.AuthClient.SignIn(signinform)
+
+	if err != nil {
+		return exists, err
+	}
+
+	if response.IsError() {
+		// This is stupid! We know that email is ok on the assumption of the code above.
+		// I don't want to show this error message, but nobody cares about my opinion here.
+		// We even have a Firebase error codes to determine exact error. E.g. INVALID_PASSWORD, INVALID_EMAIL, etc.
+		return exists, errors.New("invalid email or password")
+	}
+
+	err = auth.HandleFirebaseSignInResponse(response)
+
+	if err != nil {
+		return exists, err
+	}
+
+	refreshToken, err := auth.LoadRefreshToken()
+
+	if err != nil {
+		return exists, err
+	}
+
+	response, err = w.AuthClient.GetAccessToken(refreshToken)
+
+	if err != nil {
+		return exists, err
+	}
+
+	err = auth.HandleFirebaseAuthResponse(response)
+
+	if err != nil {
+		return exists, err
+	}
+
+	return exists, auth.JsonDump(response.Body(), auth.FirebaseAuthFile)
 }
 
 // Logout is a method that removes FirebaseAuthFile, i.e. logs out the user.
 func (w AuthClientWrapper) Logout() error {
-	if _, err := os.Stat(auth.FirebaseAuthFile); !os.IsNotExist(err) {
-		err = os.Remove(auth.FirebaseAuthFile)
+	err := auth.RemoveFirebaseAuthFile()
 
-		if err != nil {
-			return err
-		}
+	if err != nil {
+		return err
 	}
-	color.Green("Logged out")
-	return nil
+
+	return auth.RemoveActiveUserLockFile()
 }
 
 // ListLocations is a function to get the list of locations available for user.
@@ -320,26 +322,7 @@ func (w AuthClientWrapper) ListLocations(country string) error {
 // If the user subscrition on the Forest VPN services is out of date, it calls BuyPremiumDialog.
 //
 // See https://github.com/forestvpn/api-client-go/blob/main/docs/BillingFeature.md for more information.
-func (w AuthClientWrapper) SetLocation(billingFeature forestvpn_api.BillingFeature, location LocationWrapper, includeHostIP bool) error {
-	expireDate := billingFeature.GetExpiryDate()
-	now := time.Now()
-
-	if !expireDate.After(now) && location.Premium {
-		return auth.BuyPremiumDialog()
-	}
-
-	deviceID, err := auth.LoadDeviceID()
-
-	if err != nil {
-		return err
-	}
-
-	device, err := w.ApiClient.UpdateDevice(deviceID, location.Location.GetId())
-
-	if err != nil {
-		return err
-	}
-
+func (w AuthClientWrapper) SetLocation(device *forestvpn_api.Device, includeHostIps bool) error {
 	config := ini.Empty()
 	interfaceSection, err := config.NewSection("Interface")
 
@@ -372,24 +355,27 @@ func (w AuthClientWrapper) SetLocation(billingFeature forestvpn_api.BillingFeatu
 			return err
 		}
 
-		existingRoutes, err := utils.GetExistingRoutes()
+		allowedIps := peer.GetAllowedIps()
 
-		if err != nil {
-			return err
-		}
+		if !includeHostIps {
+			existingRoutes, err := utils.GetExistingRoutes()
 
-		activeSShClientIps, err := utils.GetActiveSshClientIps()
+			if err != nil {
+				return err
+			}
 
-		if err != nil {
-			return err
-		}
+			activeSShClientIps, err := utils.GetActiveSshClientIps()
 
-		disallowed := append(existingRoutes, activeSShClientIps...)
-		allowed := peer.GetAllowedIps()
-		allowedIps, err := utils.ExcludeDisallowedIps(allowed, disallowed)
+			if err != nil {
+				return err
+			}
 
-		if err != nil {
-			return err
+			disallowed := append(existingRoutes, activeSShClientIps...)
+			allowedIps, err = utils.ExcludeDisallowedIps(allowedIps, disallowed)
+
+			if err != nil {
+				return err
+			}
 		}
 
 		_, err = peerSection.NewKey("AllowedIPs", strings.Join(allowedIps, ", "))
