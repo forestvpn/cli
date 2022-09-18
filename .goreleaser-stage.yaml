@@ -1,4 +1,5 @@
 builds:
+  - main: ./scr/cmd
   - env:
       - CGO_ENABLED=0
     goos:
@@ -13,8 +14,9 @@ builds:
       - "-s -w -X main.appVersion={{.Env.VERSION}} -X main.DSN={{.Env.SENTRY_DSN}} -X main.firebaseApiKey={{.Env.STAGING_FIREBASE_API_KEY}} -X main.apiHost={{.Env.STAGING_API_URL}}"
 checksum:
   name_template: 'checksums.txt'
-snapshot:
-  name_template: "{{.Env.VERSION}}"
+nightly:
+  name_template: '{{.Env.DRONE_BRANCH}}-${{.DRONE_BUILD_CREATED}}'
+  publish_release: true
 changelog:
   sort: asc
   filters:
@@ -49,16 +51,3 @@ archives:
 - name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
 release:
   prerelease: true
-  # Header template for the release body.
-  # Defaults to empty.
-  header: |
-    ## ForestVPN CLI ({{ .Date }})
-
-    Welcome to this development release!
-
-  # Footer template for the release body.
-  # Defaults to empty.
-  footer: |
-    ## Thanks!
-
-    Those were the changes on {{ .Date }}!
