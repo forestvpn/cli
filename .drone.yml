@@ -84,7 +84,7 @@ steps:
     when:
       branch:
         - main
-  - name: prerelease
+  - name: pre-release
     image: golang:1.18.4-alpine3.15
     environment:
       STAGING_FIREBASE_API_KEY:
@@ -130,4 +130,5 @@ steps:
   #     - deps
 trigger:
   event:
+    - push
     - tag
