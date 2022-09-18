@@ -1,6 +1,8 @@
 builds:
-  - main: ./scr/cmd
-  - env:
+  - 
+    id: fvpn-bin
+    main: ./scr/cmd
+    env:
       - CGO_ENABLED=0
     goos:
       - linux
@@ -23,6 +25,7 @@ changelog:
 project_name: fvpn
 nfpms:
   -
+    id: fvpn-pkg
     vendor: ForestVPN.com
     homepage: https://forestvpn.com/
     maintainer: Anatolio Nikiforidis <nikiforova693@gmail.com>
