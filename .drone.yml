@@ -84,6 +84,8 @@ steps:
     when:
       branch:
         - main
+      event:
+        - push
   - name: pre-release
     image: golang:1.18.4-alpine3.15
     environment:
@@ -109,6 +111,8 @@ steps:
     when:
       branch:
         - stage
+      event:
+        - push
   # - name: docs
   #   image: golang:1.18.4-alpine3.15
   #     environment:
@@ -130,5 +134,4 @@ steps:
   #     - deps
 trigger:
   event:
-    - push
     - tag
