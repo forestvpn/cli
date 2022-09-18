@@ -105,6 +105,8 @@ steps:
       - apk add git
       - export VERSION=${DRONE_TAG}
       - go install github.com/goreleaser/goreleaser@latest
+      - pwd
+      - ls
       - goreleaser release -f .goreleaser-stage.yaml
     depends_on:
       - fetch
