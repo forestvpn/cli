@@ -138,6 +138,3 @@ steps:
   #     - git push
   #   depends_on:
   #     - deps
-trigger:
-  event:
-    - tag
