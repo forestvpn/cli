@@ -51,7 +51,7 @@ brews:
     - name: wireguard-tools
   tap:
     owner: forestvpn
-    name: homebrew-core
+    name: homebrew-stable
   test: |
     system "#{bin}/fvpn version"
 archives:

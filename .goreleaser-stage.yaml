@@ -46,6 +46,17 @@ nfpms:
     # Priority.
     priority: extra
     file_name_template: "{{ .PackageName }}_{{ .Os }}_{{ .Arch }}"
+brews:
+- name: fvpn
+  description: "Forest VPN CLI client for macOS, Linux, and Windows"
+  homepage: https://github.com/forestvpn/cli
+  dependencies:
+    - name: wireguard-tools
+  tap:
+    owner: forestvpn
+    name: homebrew-stage
+  test: |
+    system "#{bin}/fvpn version"
 archives:
 - name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
 release:
