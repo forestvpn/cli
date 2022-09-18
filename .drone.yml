@@ -92,7 +92,7 @@ steps:
         - tag
       branch:
         - main
-  - name: pre-release
+  - name: prerelease
     image: golang:1.18.4-alpine3.15
     environment:
       STAGING_FIREBASE_API_KEY:
