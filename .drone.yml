@@ -25,6 +25,9 @@ steps:
       - cd src
       - go get -t -d -v ./...
       - go build all
+    when:
+      event:
+        - tag
   # - name: test
   #   image: golang:1.18.4-alpine3.15
   #   environment:
