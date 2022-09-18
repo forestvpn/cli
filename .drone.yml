@@ -25,6 +25,9 @@ steps:
       - cd src
       - go get -t -d -v ./...
       - go build all
+    when:
+      event:
+        - tag
   # - name: test
   #   image: golang:1.18.4-alpine3.15
   #   environment:
@@ -59,6 +62,9 @@ steps:
     image: docker:git
     commands:
       - git fetch --tags
+    when:
+      event:
+        - tag
   - name: release
     image: golang:1.18.4-alpine3.15
     environment:
@@ -85,7 +91,7 @@ steps:
       branch:
         - main
       event:
-        - push
+        - tag
   - name: pre-release
     image: golang:1.18.4-alpine3.15
     environment:
@@ -112,7 +118,7 @@ steps:
       branch:
         - stage
       event:
-        - push
+        - tag
   # - name: docs
   #   image: golang:1.18.4-alpine3.15
   #     environment:
