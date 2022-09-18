@@ -14,9 +14,6 @@ builds:
       - "-s -w -X main.appVersion={{.Env.VERSION}} -X main.DSN={{.Env.SENTRY_DSN}} -X main.firebaseApiKey={{.Env.STAGING_FIREBASE_API_KEY}} -X main.apiHost={{.Env.STAGING_API_URL}}"
 checksum:
   name_template: 'checksums.txt'
-nightly:
-  name_template: '{{.Env.DRONE_BRANCH}}-${{.DRONE_BUILD_CREATED}}'
-  publish_release: true
 changelog:
   sort: asc
   filters:

@@ -108,41 +108,12 @@ steps:
       - apk add git
       - export VERSION=${DRONE_TAG}
       - go install github.com/goreleaser/goreleaser@latest
-      - cd src/cmd
-      - goreleaser release -f goreleaser-stage.yaml --nightly
+      - goreleaser release -f goreleaser-stage.yaml
     depends_on:
       - fetch
     when:
       event:
         - tag
-      branch:
-        - stage
-  - name: nightly
-    image: golang:1.18.4-alpine3.15
-    environment:
-      STAGING_FIREBASE_API_KEY:
-        from_secret: STAGING_FIREBASE_API_KEY
-      STAGING_API_URL:
-        from_secret: STAGING_API_URL
-      SENTRY_DSN:
-       from_secret: SENTRY_DSN
-      GITHUB_TOKEN:
-        from_secret: GITHUB_TOKEN
-    privileged: false
-    volumes:
-      - name: cache
-        path: /cache
-    commands:
-      - apk add git
-      - export VERSION=${DRONE_BRANCH}-${DRONE_BUILD_CREATED}
-      - go install github.com/goreleaser/goreleaser@latest
-      - cd src/cmd
-      - goreleaser release -f goreleaser-stage.yaml --nightly
-    depends_on:
-      - deps
-    when:
-      event:
-        - push
       branch:
         - stage
   # - name: docs
