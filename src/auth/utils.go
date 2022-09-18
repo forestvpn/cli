@@ -287,18 +287,14 @@ func BuyPremiumDialog() error {
 }
 
 // IsAuthenticated is a helper function to quickly check wether user is authenticated by checking existance of an access token.
-func IsAuthenticated() (bool, error) {
+func IsAuthenticated() bool {
 	authenticated := false
-	accessToken, err := LoadAccessToken()
-
-	if err != nil {
-		return authenticated, err
-	}
+	accessToken, _ := LoadAccessToken()
 
 	if len(accessToken) > 0 {
 		authenticated = true
 	}
-	return authenticated, err
+	return authenticated
 
 }
 

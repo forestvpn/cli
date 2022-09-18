@@ -240,13 +240,7 @@ func main() {
 						Name:  "up",
 						Usage: "Connect to the ForestVPN",
 						Action: func(c *cli.Context) error {
-							authenticated, err := auth.IsAuthenticated()
-
-							if err != nil {
-								return err
-							}
-
-							if !authenticated {
+							if !auth.IsAuthenticated() {
 								fmt.Println("Are you logged in?")
 								color := color.New(color.Faint)
 								color.Println("Try 'forest account login'")
@@ -301,13 +295,7 @@ func main() {
 						Description: "Disconnect from ForestVPN",
 						Usage:       "Shut down the connection",
 						Action: func(ctx *cli.Context) error {
-							authenticated, err := auth.IsAuthenticated()
-
-							if err != nil {
-								return err
-							}
-
-							if !authenticated {
+							if !auth.IsAuthenticated() {
 								fmt.Println("Are you logged in?")
 								color := color.New(color.Faint)
 								color.Println("Try 'forest account login'")
@@ -344,13 +332,7 @@ func main() {
 						Description: "See wether connection is active",
 						Usage:       "Check the status of the connection",
 						Action: func(ctx *cli.Context) error {
-							authenticated, err := auth.IsAuthenticated()
-
-							if err != nil {
-								return err
-							}
-
-							if !authenticated {
+							if !auth.IsAuthenticated() {
 								fmt.Println("Are you signed in?")
 								color := color.New(color.Faint)
 								color.Println("Try 'forest auth signin'")
@@ -405,13 +387,7 @@ func main() {
 							},
 						},
 						Action: func(cCtx *cli.Context) error {
-							authenticated, err := auth.IsAuthenticated()
-
-							if err != nil {
-								return err
-							}
-
-							if !authenticated {
+							if !auth.IsAuthenticated() {
 								fmt.Println("Are you logged in?")
 								color := color.New(color.Faint)
 								color.Println("Try 'forest account login'")
