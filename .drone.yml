@@ -25,9 +25,6 @@ steps:
       - cd src
       - go get -t -d -v ./...
       - go build all
-    when:
-      event:
-        - tag
   # - name: test
   #   image: golang:1.18.4-alpine3.15
   #   environment:
@@ -62,9 +59,6 @@ steps:
     image: docker:git
     commands:
       - git fetch --tags
-    when:
-      event:
-        - tag
   - name: release
     image: golang:1.18.4-alpine3.15
     environment:
@@ -114,11 +108,6 @@ steps:
       - goreleaser release -f goreleaser-stage.yaml
     depends_on:
       - fetch
-    when:
-      branch:
-        - stage
-      event:
-        - tag
   # - name: docs
   #   image: golang:1.18.4-alpine3.15
   #     environment:
@@ -138,3 +127,6 @@ steps:
   #     - git push
   #   depends_on:
   #     - deps
+trigger:
+  event:
+    - tag
