@@ -62,7 +62,7 @@ func LoadAccessToken() (string, error) {
 	firebaseAuthFile, err := loadFirebaseAuthFile()
 
 	if err != nil {
-		return "", err
+		return accessToken, err
 	}
 
 	var y interface{} = firebaseAuthFile["access_token"]
