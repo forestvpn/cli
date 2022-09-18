@@ -93,9 +93,9 @@ steps:
   - name: staging-release
     image: golang:1.18.4-alpine3.15
     environment:
-      PRODUCTION_FIREBASE_API_KEY:
+      STAGING_FIREBASE_API_KEY:
         from_secret: STAGING_FIREBASE_API_KEY
-      PRODUCTION_API_URL:
+      STAGING_API_URL:
         from_secret: STAGING_API_URL
       SENTRY_DSN:
        from_secret: SENTRY_DSN
