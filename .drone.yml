@@ -130,4 +130,7 @@ steps:
   #     - deps
 trigger:
   event:
-    - tag
+    - push
+  branches:
+    - main
+    - stage
