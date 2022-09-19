@@ -26,6 +26,7 @@ func (w ApiClientWrapper) CreateDevice() (*forestvpn_api.Device, error) {
 	request := *forestvpn_api.NewCreateOrUpdateDeviceRequest()
 	dev, resp, err := w.APIClient.DeviceApi.CreateDevice(auth).CreateOrUpdateDeviceRequest(request).Execute()
 	fmt.Println(resp.Body)
+	fmt.Println(resp.Request)
 	return dev, err
 
 }
