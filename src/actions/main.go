@@ -152,15 +152,7 @@ func (w AuthClientWrapper) Register(email string, password string) error {
 //
 // See https://firebase.google.com/docs/reference/rest/auth#section-sign-in-email-password for more information.
 func (w AuthClientWrapper) Login(email string, password string) (bool, error) {
-	signinform := auth.SignInForm{}
-	emailfield, err := auth.GetEmailField(email)
-
-	if err != nil {
-		return false, err
-	}
-
-	signinform.EmailField = emailfield
-	response, err := w.AuthClient.GetUserData(emailfield.Value)
+	response, err := w.AuthClient.GetUserData(email)
 
 	if err != nil {
 		return false, err
@@ -204,6 +196,14 @@ func (w AuthClientWrapper) Login(email string, password string) (bool, error) {
 	}
 
 	validate := false
+	signinform := auth.SignInForm{}
+	emailfield, err := auth.GetEmailField(email)
+
+	if err != nil {
+		return false, err
+	}
+
+	signinform.EmailField = emailfield
 	passwordfield, err := auth.GetPasswordField([]byte(password), validate)
 
 	if err != nil {
