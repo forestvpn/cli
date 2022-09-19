@@ -24,16 +24,17 @@ var (
 	// DSN is a Data Source Name for Sentry. It is stored in an environment variable and assigned during the build with ldflags.
 	//
 	// See https://docs.sentry.io/product/sentry-basics/dsn-explainer/ for more information.
-	DSN string
+	Dsn string
 	// appVersion value is stored in an environment variable and assigned during the build with ldflags.
 	appVersion string
 	// firebaseApiKey is stored in an environment variable and assigned during the build with ldflags.
 	firebaseApiKey string
 	// ApiHost is a hostname of Forest VPN back-end API that is stored in an environment variable and assigned during the build with ldflags.
-	ApiHost string
+	apiHost string
 )
 
 func main() {
+	fmt.Println(apiHost)
 	// email is user's email address used to sign in or sign up on the Firebase.
 	var email string
 	// password is user's password used during sign in or sign up on the Firebase.
@@ -62,11 +63,11 @@ func main() {
 	}
 
 	accessToken, _ := auth.LoadAccessToken()
-	wrapper := api.GetApiClient(accessToken, ApiHost)
+	wrapper := api.GetApiClient(accessToken, apiHost)
 	apiClient := actions.AuthClientWrapper{AuthClient: authClient, ApiClient: wrapper}
 
 	err = sentry.Init(sentry.ClientOptions{
-		Dsn: DSN,
+		Dsn: Dsn,
 	})
 
 	if err != nil {
