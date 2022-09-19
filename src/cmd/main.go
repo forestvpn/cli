@@ -131,6 +131,11 @@ func main() {
 							var includeHostIps = true
 							var user_id string
 
+							if auth.IsAuthenticated() {
+								color.Green("Logged in")
+								return nil
+							}
+
 							exists, err = apiClient.Login(email, password)
 
 							if err != nil {
