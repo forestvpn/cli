@@ -25,36 +25,6 @@ steps:
       - cd src
       - go get -t -d -v ./...
       - go build all
-  # - name: test
-  #   image: golang:1.18.4-alpine3.15
-  #   environment:
-  #     STAGING_EMAIL:
-  #       from_secret: STAGING_EMAIL
-  #     STAGING_PASSWORD:
-  #       from_secret: STAGING_PASSWORD
-  #   volumes:
-  #     - name: cache
-  #       path: /cache
-  #   commands:
-  #     - apk --no-cache add build-base
-  #     - go test -race -coverprofile=/cache/coverage.txt -covermode=atomic ./...
-  #   depends_on:
-  #     - deps
-  # - name: coverage
-  #   image: alpine:3.15
-  #   volumes:
-  #     - name: cache
-  #       path: /cache
-  #   environment:
-  #     CODECOV_TOKEN:
-  #       from_secret: CODECOV_TOKEN
-  #   commands:
-  #     - apk --no-cache add bash curl
-  #     - curl -L https://codecov.io/bash -o /usr/local/bin/codecov
-  #     - chmod +x /usr/local/bin/codecov
-  #     - /usr/local/bin/codecov -f /cache/coverage.txt
-  #   depends_on:
-  #     - test
   - name: fetch
     image: docker:git
     commands:
@@ -82,9 +52,9 @@ steps:
       - goreleaser release -f ../../.goreleaser-prod.yml
     depends_on:
       - fetch
-    trigger:
+    when:
       branch:
-        - stage
+        - main
   - name: pre-release
     image: golang:1.18.4-alpine3.15
     environment:
@@ -108,28 +78,9 @@ steps:
       - goreleaser release -f ../../.goreleaser-stage.yaml
     depends_on:
       - fetch
-    trigger:
+    when:
       branch:
         - stage
-  # - name: docs
-  #   image: golang:1.18.4-alpine3.15
-  #     environment:
-  #       GITHUB_TOKEN:
-  #         from_secret: GITHUB_TOKEN
-  #   privileged: false
-  #   volumes:
-  #     - name: cache
-  #       path: /cache
-  #   commands:
-  #     - cd src
-  #     - go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
-  #     - gomarkdoc --output '{{.Dir}}/README.md' ./...
-  #     - git remote set-url origin https://anatolio-deb:${GITHUB_TOKEN}@github.com/forestvpn/cli.git
-  #     - git add .
-  #     - git commit -m "docs update from ci"
-  #     - git push
-  #   depends_on:
-  #     - deps
 trigger:
   event:
     - tag
