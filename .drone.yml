@@ -82,8 +82,9 @@ steps:
       - goreleaser release -f ../../.goreleaser-prod.yml
     depends_on:
       - fetch
-    branch:
-      - main
+    trigger:
+      branch:
+        - stage
   - name: pre-release
     image: golang:1.18.4-alpine3.15
     environment:
@@ -107,8 +108,9 @@ steps:
       - goreleaser release -f ../../.goreleaser-stage.yaml
     depends_on:
       - fetch
-    branch:
-      - stage
+    trigger:
+      branch:
+        - stage
   # - name: docs
   #   image: golang:1.18.4-alpine3.15
   #     environment:
@@ -130,7 +132,4 @@ steps:
   #     - deps
 trigger:
   event:
-    - push
-  branches:
-    - main
-    - stage
+    - tag
