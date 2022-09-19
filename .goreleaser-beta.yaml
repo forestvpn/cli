@@ -1,0 +1,63 @@
+builds:
+  - 
+    id: fvpn-bin
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - freebsd
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    binary: fvpn
+    ldflags:
+      - "-s -w -X main.appVersion={{.Env.VERSION}} -X main.DSN={{.Env.SENTRY_DSN}} -X main.firebaseApiKey={{.Env.STAGING_FIREBASE_API_KEY}} -X main.apiHost={{.Env.STAGING_API_URL}}"
+checksum:
+  name_template: 'checksums.txt'
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+project_name: fvpn
+nfpms:
+  -
+    id: fvpn-pkg
+    vendor: ForestVPN.com
+    homepage: https://forestvpn.com/
+    maintainer: Anatolio Nikiforidis <nikiforova693@gmail.com>
+    description: |-
+      Fast, secure, and modern VPN.
+    license: MIT
+    formats:
+      - apk
+      - deb
+      - rpm
+    dependencies:
+      - wireguard-tools
+      - net-tools
+    bindir: /usr/local/bin
+    # Version Release.
+    release: 1
+    # Section.
+    section: default
+    # Priority.
+    priority: extra
+    file_name_template: "{{ .PackageName }}_{{ .Os }}_{{ .Arch }}"
+brews:
+- name: fvpn
+  description: "Forest VPN CLI client for macOS, Linux, and Windows"
+  homepage: https://github.com/forestvpn/cli
+  dependencies:
+    - name: wireguard-tools
+  tap:
+    owner: forestvpn
+    name: homebrew-beta
+  test: |
+    system "#{bin}/fvpn version"
+archives:
+- name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+release:
+  prerelease: true
