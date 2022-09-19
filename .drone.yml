@@ -54,7 +54,10 @@ steps:
       - fetch
     when:
       ref:
-        - refs/tags/v*.*.*
+        include:
+          - refs/tags/v*.*.*
+        exclude:
+          - refs/tags/v*.*.*-rc*
   - name: pre-release
     image: golang:1.18.4-alpine3.15
     environment:
