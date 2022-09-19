@@ -37,7 +37,7 @@ steps:
       PRODUCTION_API_URL:
         from_secret: PRODUCTION_API_URL
       SENTRY_DSN:
-       from_secret: SENTRY_DSN
+        from_secret: SENTRY_DSN
       GITHUB_TOKEN:
         from_secret: GITHUB_TOKEN
     privileged: false
@@ -49,7 +49,7 @@ steps:
       - apk add git
       - go install github.com/goreleaser/goreleaser@latest
       - cd ./src/cmd/
-      - goreleaser release -f ../../.goreleaser-prod.yml
+      - goreleaser release -f ../../.goreleaser-stable.yaml
     depends_on:
       - fetch
     when:
@@ -57,8 +57,8 @@ steps:
         include:
           - refs/tags/v*.*.*
         exclude:
-          - refs/tags/v*.*.*-rc*
-  - name: pre-release
+          - refs/tags/v*.*.*-beta*
+  - name: beta-release
     image: golang:1.18.4-alpine3.15
     environment:
       STAGING_FIREBASE_API_KEY:
@@ -66,7 +66,7 @@ steps:
       STAGING_API_URL:
         from_secret: STAGING_API_URL
       SENTRY_DSN:
-       from_secret: SENTRY_DSN
+        from_secret: SENTRY_DSN
       GITHUB_TOKEN:
         from_secret: GITHUB_TOKEN
     privileged: false
@@ -78,12 +78,12 @@ steps:
       - export VERSION=${DRONE_TAG}
       - go install github.com/goreleaser/goreleaser@latest
       - cd ./src/cmd/
-      - goreleaser release -f ../../.goreleaser-stage.yaml
+      - goreleaser release -f ../../.goreleaser-beta.yaml
     depends_on:
       - fetch
     when:
       ref:
-        - refs/tags/v*.*.*-rc*
+        - refs/tags/v*.*.*-beta*
 trigger:
   event:
     - tag

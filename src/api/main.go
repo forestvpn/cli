@@ -5,7 +5,6 @@ package api
 
 import (
 	"context"
-	"fmt"
 
 	forestvpn_api "github.com/forestvpn/api-client-go"
 )
@@ -24,11 +23,8 @@ type ApiClientWrapper struct {
 func (w ApiClientWrapper) CreateDevice() (*forestvpn_api.Device, error) {
 	auth := context.WithValue(context.Background(), forestvpn_api.ContextAccessToken, w.AccessToken)
 	request := *forestvpn_api.NewCreateOrUpdateDeviceRequest()
-	dev, resp, err := w.APIClient.DeviceApi.CreateDevice(auth).CreateOrUpdateDeviceRequest(request).Execute()
-	fmt.Println(resp.Body)
-	fmt.Println(resp.Request)
+	dev, _, err := w.APIClient.DeviceApi.CreateDevice(auth).CreateOrUpdateDeviceRequest(request).Execute()
 	return dev, err
-
 }
 
 // UpdateDevice updates an existing device for the user on the back-end.

@@ -1,7 +1,5 @@
 builds:
-  - 
-    id: fvpn-bin
-    env:
+  - env:
       - CGO_ENABLED=0
     goos:
       - linux
@@ -12,7 +10,7 @@ builds:
       - arm64
     binary: fvpn
     ldflags:
-      - "-s -w -X main.appVersion={{.Env.VERSION}} -X main.DSN={{.Env.SENTRY_DSN}} -X main.firebaseApiKey={{.Env.STAGING_FIREBASE_API_KEY}} -X main.apiHost={{.Env.STAGING_API_URL}}"
+      - "-X main.appVersion={{.Env.VERSION}} -X main.Dsn={{.Env.SENTRY_DSN}} -X main.firebaseApiKey={{.Env.PRODUCTION_FIREBASE_API_KEY}} -X main.apiHost={{.Env.PRODUCTION_API_URL}}"
 checksum:
   name_template: 'checksums.txt'
 changelog:
@@ -24,7 +22,6 @@ changelog:
 project_name: fvpn
 nfpms:
   -
-    id: fvpn-pkg
     vendor: ForestVPN.com
     homepage: https://forestvpn.com/
     maintainer: Anatolio Nikiforidis <nikiforova693@gmail.com>
@@ -54,10 +51,8 @@ brews:
     - name: wireguard-tools
   tap:
     owner: forestvpn
-    name: homebrew-stage
+    name: homebrew-stable
   test: |
     system "#{bin}/fvpn version"
 archives:
 - name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
-release:
-  prerelease: true
