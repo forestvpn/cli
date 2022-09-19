@@ -34,7 +34,6 @@ var (
 )
 
 func main() {
-	fmt.Println(apiHost)
 	// email is user's email address used to sign in or sign up on the Firebase.
 	var email string
 	// password is user's password used during sign in or sign up on the Firebase.
