@@ -49,7 +49,7 @@ steps:
       - apk add git
       - go install github.com/goreleaser/goreleaser@latest
       - cd ./src/cmd/
-      - goreleaser release -f ../../.goreleaser-prod.yml
+      - goreleaser release -f ../../.goreleaser-stable.yml
     depends_on:
       - fetch
     when:
@@ -57,8 +57,8 @@ steps:
         include:
           - refs/tags/v*.*.*
         exclude:
-          - refs/tags/v*.*.*-rc*
-  - name: pre-release
+          - refs/tags/v*.*.*-beta*
+  - name: beta-release
     image: golang:1.18.4-alpine3.15
     environment:
       STAGING_FIREBASE_API_KEY:
@@ -74,16 +74,20 @@ steps:
       - name: cache
         path: /cache
     commands:
-      - apk add git
-      - export VERSION=${DRONE_TAG}
-      - go install github.com/goreleaser/goreleaser@latest
-      - cd ./src/cmd/
-      - goreleaser release -f ../../.goreleaser-stage.yaml
+      - echo $STAGING_FIREBASE_API_KEY
+      - echo $STAGING_API_URL
+      # - apk add git
+      # - export VERSION=${DRONE_TAG}
+      # - go install github.com/goreleaser/goreleaser@latest
+      # - cd ./src/cmd/
+      # - goreleaser release -f ../../.goreleaser-beta.yaml
     depends_on:
       - fetch
     when:
-      ref:
-        - refs/tags/v*.*.*-rc*
-trigger:
-  event:
-    - tag
+      event:
+        - push
+      # ref:
+      #   - refs/tags/v*.*.*-beta*
+# trigger:
+#   event:
+#     - tag
