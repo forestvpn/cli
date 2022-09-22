@@ -24,13 +24,13 @@ var (
 	// DSN is a Data Source Name for Sentry. It is stored in an environment variable and assigned during the build with ldflags.
 	//
 	// See https://docs.sentry.io/product/sentry-basics/dsn-explainer/ for more information.
-	Dsn string
+	Dsn = os.Getenv("SENTRY_DSN")
 	// appVersion value is stored in an environment variable and assigned during the build with ldflags.
-	appVersion string
+	appVersion = os.Getenv("VERSION")
 	// firebaseApiKey is stored in an environment variable and assigned during the build with ldflags.
-	firebaseApiKey string
+	firebaseApiKey = os.Getenv("STAGING_FIREBASE_API_KEY")
 	// ApiHost is a hostname of Forest VPN back-end API that is stored in an environment variable and assigned during the build with ldflags.
-	apiHost string
+	apiHost = os.Getenv("STAGING_API_URL")
 )
 
 func main() {
@@ -61,7 +61,8 @@ func main() {
 		}
 	}
 
-	accessToken, _ := auth.LoadAccessToken()
+	user_id, _ := auth.LoadUserID()
+	accessToken, _ := auth.LoadAccessToken(user_id)
 	wrapper := api.GetApiClient(accessToken, apiHost)
 	apiClient := actions.AuthClientWrapper{AuthClient: authClient, ApiClient: wrapper}
 
@@ -105,6 +106,9 @@ func main() {
 							},
 						},
 						Action: func(c *cli.Context) error {
+							if auth.IsAuthenticated() {
+								return errors.New("please, logout before attempting to register a new account")
+							}
 							return apiClient.Register(email, password)
 						},
 					},
@@ -131,20 +135,15 @@ func main() {
 							var includeHostIps = true
 							var user_id string
 
-							if auth.IsAuthenticated() {
-								color.Green("Logged in")
-								return nil
-							}
-
-							exists, err = apiClient.Login(email, password)
+							exists, user_id, err := apiClient.Login(email, password)
 
 							if err != nil {
 								return err
 							}
 
-							if !exists {
+							if !exists && !auth.IsAuthenticated() {
 								activate := true
-								accessToken, err := auth.LoadAccessToken()
+								accessToken, err := auth.LoadAccessToken(user_id)
 
 								if err != nil {
 									return err
@@ -153,12 +152,6 @@ func main() {
 								wrapper.AccessToken = accessToken
 								apiClient.ApiClient.AccessToken = wrapper.AccessToken
 								device, err := wrapper.CreateDevice()
-
-								if err != nil {
-									return err
-								}
-
-								user_id, err := auth.LoadUserID()
 
 								if err != nil {
 									return err
@@ -175,7 +168,7 @@ func main() {
 								if err != nil {
 									return err
 								}
-							} else {
+							} else if exists && !auth.IsAuthenticated() {
 								device, err := auth.LoadDevice(user_id)
 
 								if err != nil {
@@ -188,11 +181,13 @@ func main() {
 									return err
 								}
 
-								err = auth.SetActiveProfile(email)
+								err = auth.SetActiveProfile(user_id)
 
 								if err != nil {
 									return err
 								}
+							} else {
+								return errors.New("please, logout before attempting to login")
 							}
 
 							color.Green("Logged in")
@@ -230,7 +225,7 @@ func main() {
 								return err
 							}
 
-							color.Green("Logged out")
+							color.Red("Logged out")
 							return nil
 						},
 					},

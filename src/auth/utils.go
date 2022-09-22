@@ -22,9 +22,6 @@ var home, _ = os.UserHomeDir()
 // AppDir is Forest CLI application directory.
 var AppDir = home + "/.forestvpn/"
 
-// FirebaseAuthFile is a file to dump Firebase responses.
-var FirebaseAuthFile = AppDir + "firebase.json"
-
 // The DeviceFile represents the device created for the user.
 //
 // Read more: https://github.com/forestvpn/api-client-go.
@@ -44,10 +41,14 @@ var ProfilesDir = AppDir + "profiles/"
 
 const ActiveUserLockFile string = "/.active.lock"
 
-func loadFirebaseAuthFile() (map[string]any, error) {
+// FirebaseAuthFile is a file to dump Firebase responses.
+const FirebaseAuthFile = "/firebase.json"
+
+func loadFirebaseAuthFile(user_id string) (map[string]any, error) {
 	var firebaseAuthFile map[string]any
 
-	data, err := readFile(FirebaseAuthFile)
+	path := ProfilesDir + user_id + FirebaseAuthFile
+	data, err := readFile(path)
 
 	if err != nil {
 		return firebaseAuthFile, err
@@ -57,9 +58,9 @@ func loadFirebaseAuthFile() (map[string]any, error) {
 	return firebaseAuthFile, err
 }
 
-func LoadAccessToken() (string, error) {
+func LoadAccessToken(user_id string) (string, error) {
 	var accessToken string
-	firebaseAuthFile, err := loadFirebaseAuthFile()
+	firebaseAuthFile, err := loadFirebaseAuthFile(user_id)
 
 	if err != nil {
 		return accessToken, err
@@ -105,7 +106,13 @@ func AddProfile(user_id string, device *forestvpn_api.Device, activate bool) err
 
 func LoadUserID() (string, error) {
 	var id string
-	auth, err := loadFirebaseAuthFile()
+	user_id, err := loadActiveUserId()
+
+	if err != nil {
+		return id, err
+	}
+
+	auth, err := loadFirebaseAuthFile(user_id)
 
 	if err != nil {
 		return id, err
@@ -169,48 +176,78 @@ func readFile(filepath string) ([]byte, error) {
 
 }
 
-// HandleFirebaseAuthResponse is a function to extracts the error message from the Firebase REST API response when the status is ok.
-func HandleFirebaseAuthResponse(response *resty.Response) error {
+// handleFirebaseAuthResponse is a function to extracts the error message from the Firebase REST API response when the status is ok.
+func handleFirebaseAuthResponse(response *resty.Response) (string, error) {
 	var body map[string]any
+	var message string
+
 	err := json.Unmarshal(response.Body(), &body)
+
+	if err != nil {
+		return message, err
+	}
+
+	var x interface{} = body["error"]
+	switch v := x.(type) {
+	case map[string]interface{}:
+		var x interface{} = v["message"]
+		switch v := x.(type) {
+		case string:
+			message = v
+		}
+	}
+
+	return message, nil
+}
+
+// HandleFirebaseSignInResponse is a function that dumps the Firebase REST API response into FirebaseAuthFile.
+func HandleFirebaseSignInResponse(response *resty.Response) error {
+	message, err := handleFirebaseAuthResponse(response)
 
 	if err != nil {
 		return err
 	}
 
-	var x interface{} = body["error"]
-	switch v := x.(type) {
-	case map[string]any:
-		var x interface{} = v["message"]
-		switch v := x.(type) {
-		case string:
-			return errors.New(v)
-		}
+	if len(message) > 0 {
+		return errors.New("invalid email or password")
 	}
 
 	return nil
 }
 
-// HandleFirebaseSignInResponse is a function that dumps the Firebase REST API response into FirebaseAuthFile.
-func HandleFirebaseSignInResponse(response *resty.Response) error {
-	err := HandleFirebaseAuthResponse(response)
+func HandleFirebaseSignUpResponse(response *resty.Response) error {
+	message, err := handleFirebaseAuthResponse(response)
 
 	if err != nil {
 		return err
 	}
 
-	return JsonDump(response.Body(), FirebaseAuthFile)
+	switch message {
+	case "EMAIL_EXISTS":
+		return errors.New("the email address is already in use by another account")
+	case "OPERATION_NOT_ALLOWED":
+		return errors.New("password sign-in is disabled")
+	case "TOO_MANY_ATTEMPTS_TRY_LATER":
+		return errors.New("try again later")
+	}
+
+	return nil
 }
 
 // LoadRefreshToken is a function to quickly get the local refresh token from FirebaseAuthFile.
 func LoadRefreshToken() (string, error) {
-	firebaseAuthFile, err := loadFirebaseAuthFile()
+	var refreshToken string
+	user_id, err := loadActiveUserId()
+
+	if err != nil {
+		return refreshToken, err
+	}
+
+	firebaseAuthFile, err := loadFirebaseAuthFile(user_id)
 
 	if err != nil {
 		return "", err
 	}
-
-	var refreshToken string
 
 	var y interface{} = firebaseAuthFile["refresh_token"]
 	switch v := y.(type) {
@@ -289,7 +326,13 @@ func BuyPremiumDialog() error {
 // IsAuthenticated is a helper function to quickly check wether user is authenticated by checking existance of an access token.
 func IsAuthenticated() bool {
 	authenticated := false
-	accessToken, _ := LoadAccessToken()
+	user_id, err := loadActiveUserId()
+
+	if err != nil {
+		return authenticated
+	}
+
+	accessToken, _ := LoadAccessToken(user_id)
 
 	if len(accessToken) > 0 {
 		authenticated = true
@@ -306,15 +349,14 @@ func IsLocationSet() bool {
 
 func ProfileExists(user_id string) bool {
 	if _, err := os.Stat(ProfilesDir + user_id); os.IsNotExist(err) {
-		return true
+		return false
 	}
 
-	return false
+	return true
 }
 
 func IsActiveProfile(user_id string) bool {
 	path := ProfilesDir + user_id + ActiveUserLockFile
-
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return false
 	}
@@ -360,9 +402,10 @@ func SetActiveProfile(user_id string) error {
 	return nil
 }
 
-func RemoveFirebaseAuthFile() error {
-	if _, err := os.Stat(FirebaseAuthFile); !os.IsNotExist(err) {
-		err = os.Remove(FirebaseAuthFile)
+func RemoveFirebaseAuthFile(user_id string) error {
+	path := ProfilesDir + user_id + FirebaseAuthFile
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		err = os.Remove(path)
 
 		if err != nil {
 			return err
@@ -373,8 +416,16 @@ func RemoveFirebaseAuthFile() error {
 }
 
 func RemoveActiveUserLockFile() error {
-	if _, err := os.Stat(ActiveUserLockFile); !os.IsNotExist(err) {
-		err = os.Remove(ActiveUserLockFile)
+	user_id, err := loadActiveUserId()
+
+	if err != nil {
+		return err
+	}
+
+	path := ProfilesDir + user_id + ActiveUserLockFile
+
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		err = os.Remove(path)
 
 		if err != nil {
 			return err
@@ -398,4 +449,55 @@ func UpdateProfileDevice(device *forestvpn_api.Device) error {
 	}
 
 	return JsonDump(data, ProfilesDir+user_id+DeviceFile)
+}
+
+func LoadIdToken() (string, error) {
+	var idToken string
+	user_id, err := loadActiveUserId()
+
+	if err != nil {
+		return idToken, err
+	}
+
+	firebaseAuthFile, err := loadFirebaseAuthFile(user_id)
+
+	if err != nil {
+		return idToken, err
+	}
+
+	var y interface{} = firebaseAuthFile["id_token"]
+	switch v := y.(type) {
+	case string:
+		idToken = v
+	}
+
+	return idToken, err
+}
+
+func loadActiveUserId() (string, error) {
+	var user_id string
+	files, err := ioutil.ReadDir(ProfilesDir)
+
+	if err != nil {
+		return user_id, err
+	}
+
+	for _, profiledir := range files {
+		if profiledir.IsDir() {
+			path := ProfilesDir + profiledir.Name()
+			files, err := ioutil.ReadDir(path)
+
+			if err != nil {
+				return user_id, err
+			}
+
+			for _, file := range files {
+				if file.Name() == ActiveUserLockFile[1:] {
+					user_id = profiledir.Name()
+				}
+			}
+		}
+	}
+
+	return user_id, nil
 }

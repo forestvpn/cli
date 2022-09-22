@@ -47,27 +47,8 @@ func (w AuthClientWrapper) Register(email string, password string) error {
 		return err
 	}
 
-	response, err := w.AuthClient.GetUserData(emailfield.Value)
-
-	if err != nil {
-		return err
-	}
-
-	var data map[string]bool
-	json.Unmarshal(response.Body(), &data)
-
-	if data["registered"] {
-		return errors.New("a profile for this user already exists")
-	}
-
 	validate := true
 	passwordfield, err := auth.GetPasswordField([]byte(password), validate)
-
-	if err != nil {
-		return err
-	}
-
-	err = passwordfield.Validate()
 
 	if err != nil {
 		return err
@@ -91,13 +72,13 @@ func (w AuthClientWrapper) Register(email string, password string) error {
 		return err
 	}
 
-	response, err = w.AuthClient.SignUp(signupform)
+	response, err := w.AuthClient.SignUp(signupform)
 
 	if err != nil {
 		return err
 	}
 
-	err = auth.HandleFirebaseAuthResponse(response)
+	err = auth.HandleFirebaseSignUpResponse(response)
 
 	if err != nil {
 		return err
@@ -112,13 +93,24 @@ func (w AuthClientWrapper) Register(email string, password string) error {
 		return err
 	}
 
-	err = auth.JsonDump(response.Body(), auth.FirebaseAuthFile)
+	jsonresponse = make(map[string]string)
+	json.Unmarshal(response.Body(), &jsonresponse)
+	user_id := jsonresponse["user_id"]
+	profiledir := auth.ProfilesDir + user_id
+	err = os.Mkdir(profiledir, 0755)
 
 	if err != nil {
 		return err
 	}
 
-	accessToken, err := auth.LoadAccessToken()
+	path := profiledir + auth.FirebaseAuthFile
+	err = auth.JsonDump(response.Body(), path)
+
+	if err != nil {
+		return err
+	}
+
+	accessToken, err := auth.LoadAccessToken(user_id)
 
 	if err != nil {
 		return err
@@ -137,7 +129,8 @@ func (w AuthClientWrapper) Register(email string, password string) error {
 		return err
 	}
 
-	err = auth.JsonDump(b, auth.DeviceFile)
+	path = auth.ProfilesDir + user_id + auth.DeviceFile
+	err = auth.JsonDump(b, path)
 
 	if err == nil {
 		color.Green("Signed up")
@@ -151,115 +144,128 @@ func (w AuthClientWrapper) Register(email string, password string) error {
 // If the deviceID is empty, then should create a new device on login.
 //
 // See https://firebase.google.com/docs/reference/rest/auth#section-sign-in-email-password for more information.
-func (w AuthClientWrapper) Login(email string, password string) (bool, error) {
-	response, err := w.AuthClient.GetUserData(email)
-
-	if err != nil {
-		return false, err
-	}
-
-	err = auth.HandleFirebaseAuthResponse(response)
-
-	if err != nil {
-		return false, err
-	}
-
-	var data map[string]any
-	err = json.Unmarshal(response.Body(), &data)
-
-	if err != nil {
-		return false, err
-
-	}
-
-	var x interface{} = data["registered"]
-	switch v := x.(type) {
-	case bool:
-		if !v {
-			return false, errors.New("the user doesn't exist")
-		}
-	}
-
+func (w AuthClientWrapper) Login(email string, password string) (bool, string, error) {
 	var user_id string
-
-	var y interface{} = data["localId"]
-	switch v := y.(type) {
-	case string:
-		user_id = v
-	}
-
-	exists := auth.ProfileExists(user_id)
-	active := auth.IsActiveProfile(user_id)
-
-	if exists && active {
-		return exists, errors.New("the user already logged in")
-	}
-
+	exists := false
 	validate := false
 	signinform := auth.SignInForm{}
 	emailfield, err := auth.GetEmailField(email)
 
 	if err != nil {
-		return false, err
+		return exists, user_id, err
 	}
 
 	signinform.EmailField = emailfield
 	passwordfield, err := auth.GetPasswordField([]byte(password), validate)
 
 	if err != nil {
-		return exists, err
+		return exists, user_id, err
 	}
 
 	signinform.PasswordField = passwordfield
-	response, err = w.AuthClient.SignIn(signinform)
+	response, err := w.AuthClient.SignIn(signinform)
 
 	if err != nil {
-		return exists, err
-	}
-
-	if response.IsError() {
-		// This is stupid! We know that email is ok on the assumption of the code above.
-		// I don't want to show this error message, but nobody cares about my opinion here.
-		// We even have a Firebase error codes to determine exact error. E.g. INVALID_PASSWORD, INVALID_EMAIL, etc.
-		return exists, errors.New("invalid email or password")
+		return exists, user_id, err
 	}
 
 	err = auth.HandleFirebaseSignInResponse(response)
 
 	if err != nil {
-		return exists, err
+		return exists, user_id, err
 	}
 
-	refreshToken, err := auth.LoadRefreshToken()
+	var refreshToken string
+	var data map[string]any
+
+	err = json.Unmarshal(response.Body(), &data)
 
 	if err != nil {
-		return exists, err
+		return exists, user_id, err
+	}
+
+	var x interface{} = data["refreshToken"]
+	switch v := x.(type) {
+	case string:
+		refreshToken = v
 	}
 
 	response, err = w.AuthClient.GetAccessToken(refreshToken)
 
 	if err != nil {
-		return exists, err
+		return exists, user_id, err
 	}
 
-	err = auth.HandleFirebaseAuthResponse(response)
+	err = auth.HandleFirebaseSignInResponse(response)
 
 	if err != nil {
-		return exists, err
+		return exists, user_id, err
 	}
 
-	return exists, auth.JsonDump(response.Body(), auth.FirebaseAuthFile)
+	data = make(map[string]any)
+	err = json.Unmarshal(response.Body(), &data)
+
+	if err != nil {
+		return exists, user_id, err
+	}
+
+	var y interface{} = data["user_id"]
+	switch v := y.(type) {
+	case string:
+		user_id = v
+	}
+
+	if len(user_id) > 0 {
+		exists = auth.ProfileExists(user_id)
+		active := auth.IsActiveProfile(user_id)
+		profiledir := auth.ProfilesDir + user_id
+
+		if exists && active {
+			return exists, user_id, errors.New("already logged in")
+		} else if !exists {
+			err := os.Mkdir(profiledir, 0755)
+
+			if err != nil {
+				return exists, user_id, err
+			}
+		}
+
+		path := profiledir + auth.FirebaseAuthFile
+		err = auth.JsonDump(response.Body(), path)
+
+		if err != nil {
+			return exists, user_id, err
+		}
+	} else {
+		return exists, user_id, errors.New("error parsing firebase sign in response: invalid user_id")
+	}
+
+	return exists, user_id, nil
 }
 
 // Logout is a method that removes FirebaseAuthFile, i.e. logs out the user.
 func (w AuthClientWrapper) Logout() error {
-	err := auth.RemoveFirebaseAuthFile()
+	user_id, err := auth.LoadUserID()
 
 	if err != nil {
 		return err
 	}
 
-	return auth.RemoveActiveUserLockFile()
+	if len(user_id) > 0 {
+		err = auth.RemoveFirebaseAuthFile(user_id)
+
+		if err != nil {
+			return err
+		}
+
+		err = auth.RemoveActiveUserLockFile()
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // ListLocations is a function to get the list of locations available for user.

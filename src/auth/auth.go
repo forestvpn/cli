@@ -104,18 +104,16 @@ func (c AuthClient) GetAccessToken(refreshToken string) (*resty.Response, error)
 		return nil, err
 	}
 
-	err = JsonDump(response.Body(), FirebaseAuthFile)
 	return response, err
 }
 
-// GetUserInfo is used to check if the user already exists in the Firebase database during the registration.
+// GetUserData is used to check if the user already exists in the Firebase database during the registration.
 //
 // See https://firebase.google.com/docs/reference/rest/auth#section-get-account-info for more information.
-func (c AuthClient) GetUserData(email string) (*resty.Response, error) {
-	url := "https://identitytoolkit.googleapis.com/v1/accounts:createAuthUri"
+func (c AuthClient) GetUserData(idToken string) (*resty.Response, error) {
+	url := "https://identitytoolkit.googleapis.com/v1/accounts:lookup"
 	request := make(map[string]any)
-	request["identifier"] = email
-	request["continueUri"] = "http://localhost:8080/app"
+	request["idToken"] = idToken
 	body, err := json.Marshal(request)
 
 	if err != nil {
