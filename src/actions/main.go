@@ -12,7 +12,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/fatih/color"
 	"github.com/olekukonko/tablewriter"
 	"golang.org/x/term"
 	"gopkg.in/ini.v1"
@@ -34,6 +33,7 @@ type AuthClientWrapper struct {
 //
 // See https://firebase.google.com/docs/reference/rest/auth#section-create-email-password for more information.
 func (w AuthClientWrapper) Register(email string, password string) error {
+	var accessToken string
 	signinform := auth.SignInForm{}
 	emailfield, err := auth.GetEmailField(email)
 
@@ -88,55 +88,23 @@ func (w AuthClientWrapper) Register(email string, password string) error {
 	json.Unmarshal(response.Body(), &jsonresponse)
 	refreshToken := jsonresponse["refreshToken"]
 	response, err = w.AuthClient.ExchangeRefreshForIdToken(refreshToken)
-
-	if err != nil {
-		return err
-	}
-
 	jsonresponse = make(map[string]string)
 	json.Unmarshal(response.Body(), &jsonresponse)
-	user_id := jsonresponse["user_id"]
-	profiledir := auth.ProfilesDir + user_id
-	err = os.Mkdir(profiledir, 0755)
-
-	if err != nil {
-		return err
-	}
-
-	path := profiledir + auth.FirebaseAuthFile
-	err = auth.JsonDump(response.Body(), path)
-
-	if err != nil {
-		return err
-	}
-
-	accessToken, err := auth.LoadAccessToken(user_id)
+	accessToken = jsonresponse["access_token"]
 
 	if err != nil {
 		return err
 	}
 
 	w.ApiClient.AccessToken = accessToken
-	resp, err := w.ApiClient.CreateDevice()
+	device, err := w.ApiClient.CreateDevice()
 
 	if err != nil {
 		return err
 	}
 
-	b, err := json.MarshalIndent(resp, "", "    ")
-
-	if err != nil {
-		return err
-	}
-
-	path = auth.ProfilesDir + user_id + auth.DeviceFile
-	err = auth.JsonDump(b, path)
-
-	if err == nil {
-		color.Green("Signed up")
-	}
-
-	return err
+	activate := true
+	return auth.AddProfile(response, device, activate)
 }
 
 // Login is a method for logging in a user on the Firebase.
@@ -144,7 +112,7 @@ func (w AuthClientWrapper) Register(email string, password string) error {
 // If the deviceID is empty, then should create a new device on login.
 //
 // See https://firebase.google.com/docs/reference/rest/auth#section-sign-in-email-password for more information.
-func (w AuthClientWrapper) Login(email string, password string) (bool, string, error) {
+func (w AuthClientWrapper) Login(email string, password string) error {
 	var user_id string
 	exists := false
 	validate := false
@@ -152,27 +120,27 @@ func (w AuthClientWrapper) Login(email string, password string) (bool, string, e
 	emailfield, err := auth.GetEmailField(email)
 
 	if err != nil {
-		return exists, user_id, err
+		return err
 	}
 
 	signinform.EmailField = emailfield
 	passwordfield, err := auth.GetPasswordField([]byte(password), validate)
 
 	if err != nil {
-		return exists, user_id, err
+		return err
 	}
 
 	signinform.PasswordField = passwordfield
 	response, err := w.AuthClient.SignIn(signinform)
 
 	if err != nil {
-		return exists, user_id, err
+		return err
 	}
 
 	err = auth.HandleFirebaseSignInResponse(response)
 
 	if err != nil {
-		return exists, user_id, err
+		return err
 	}
 
 	var refreshToken string
@@ -181,7 +149,7 @@ func (w AuthClientWrapper) Login(email string, password string) (bool, string, e
 	err = json.Unmarshal(response.Body(), &data)
 
 	if err != nil {
-		return exists, user_id, err
+		return err
 	}
 
 	var x interface{} = data["refreshToken"]
@@ -193,20 +161,20 @@ func (w AuthClientWrapper) Login(email string, password string) (bool, string, e
 	response, err = w.AuthClient.GetAccessToken(refreshToken)
 
 	if err != nil {
-		return exists, user_id, err
+		return err
 	}
 
 	err = auth.HandleFirebaseSignInResponse(response)
 
 	if err != nil {
-		return exists, user_id, err
+		return err
 	}
 
 	data = make(map[string]any)
 	err = json.Unmarshal(response.Body(), &data)
 
 	if err != nil {
-		return exists, user_id, err
+		return err
 	}
 
 	var y interface{} = data["user_id"]
@@ -219,14 +187,60 @@ func (w AuthClientWrapper) Login(email string, password string) (bool, string, e
 		exists = auth.ProfileExists(user_id)
 		active := auth.IsActiveProfile(user_id)
 		profiledir := auth.ProfilesDir + user_id
+		includeHostIps := true
 
 		if exists && active {
-			return exists, user_id, errors.New("already logged in")
+			return errors.New("already logged in")
 		} else if !exists {
 			err := os.Mkdir(profiledir, 0755)
 
 			if err != nil {
-				return exists, user_id, err
+				return err
+			}
+
+			activate := true
+			var accessToken string
+
+			var y interface{} = data["access_token"]
+			switch v := y.(type) {
+			case string:
+				accessToken = v
+			}
+			w.ApiClient.AccessToken = accessToken
+			device, err := w.ApiClient.CreateDevice()
+
+			if err != nil {
+				return err
+			}
+
+			err = auth.AddProfile(response, device, activate)
+
+			if err != nil {
+				return err
+			}
+
+			err = w.SetLocation(device, includeHostIps)
+
+			if err != nil {
+				return err
+			}
+		} else {
+			device, err := auth.LoadDevice(user_id)
+
+			if err != nil {
+				return err
+			}
+
+			err = w.SetLocation(device, includeHostIps)
+
+			if err != nil {
+				return err
+			}
+
+			err = auth.SetActiveProfile(user_id)
+
+			if err != nil {
+				return err
 			}
 		}
 
@@ -234,13 +248,14 @@ func (w AuthClientWrapper) Login(email string, password string) (bool, string, e
 		err = auth.JsonDump(response.Body(), path)
 
 		if err != nil {
-			return exists, user_id, err
+			return err
 		}
+
 	} else {
-		return exists, user_id, errors.New("error parsing firebase sign in response: invalid user_id")
+		return errors.New("error parsing firebase sign in response: invalid user_id")
 	}
 
-	return exists, user_id, nil
+	return err
 }
 
 // Logout is a method that removes FirebaseAuthFile, i.e. logs out the user.

@@ -75,15 +75,29 @@ func LoadAccessToken(user_id string) (string, error) {
 	return accessToken, err
 }
 
-func AddProfile(user_id string, device *forestvpn_api.Device, activate bool) error {
+func AddProfile(response *resty.Response, device *forestvpn_api.Device, activate bool) error {
+	jsonresponse := make(map[string]string)
+	err := json.Unmarshal(response.Body(), &jsonresponse)
+
+	if err != nil {
+		return err
+	}
+
+	user_id := jsonresponse["user_id"]
 	path := ProfilesDir + user_id
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		err = os.Mkdir(path, 0755)
 
 		if err != nil {
-			sentry.CaptureException(err)
+			return err
 		}
+	}
+
+	err = JsonDump(response.Body(), path+FirebaseAuthFile)
+
+	if err != nil {
+		return err
 	}
 
 	data, err := json.MarshalIndent(device, "", "    ")

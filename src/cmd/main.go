@@ -109,7 +109,14 @@ func main() {
 							if auth.IsAuthenticated() {
 								return errors.New("please, logout before attempting to register a new account")
 							}
-							return apiClient.Register(email, password)
+
+							err := apiClient.Register(email, password)
+
+							if err == nil {
+								color.Green("Signed in")
+							}
+
+							return err
 						},
 					},
 					{
@@ -132,66 +139,17 @@ func main() {
 							},
 						},
 						Action: func(c *cli.Context) error {
-							var includeHostIps = true
-							var user_id string
-
-							exists, user_id, err := apiClient.Login(email, password)
-
-							if err != nil {
-								return err
-							}
-
-							if !exists && !auth.IsAuthenticated() {
-								activate := true
-								accessToken, err := auth.LoadAccessToken(user_id)
-
-								if err != nil {
-									return err
-								}
-
-								wrapper.AccessToken = accessToken
-								apiClient.ApiClient.AccessToken = wrapper.AccessToken
-								device, err := wrapper.CreateDevice()
-
-								if err != nil {
-									return err
-								}
-
-								err = auth.AddProfile(user_id, device, activate)
-
-								if err != nil {
-									return err
-								}
-
-								err = apiClient.SetLocation(device, includeHostIps)
-
-								if err != nil {
-									return err
-								}
-							} else if exists && !auth.IsAuthenticated() {
-								device, err := auth.LoadDevice(user_id)
-
-								if err != nil {
-									return err
-								}
-
-								err = apiClient.SetLocation(device, includeHostIps)
-
-								if err != nil {
-									return err
-								}
-
-								err = auth.SetActiveProfile(user_id)
-
-								if err != nil {
-									return err
-								}
-							} else {
+							if auth.IsAuthenticated() {
 								return errors.New("please, logout before attempting to login")
 							}
 
-							color.Green("Logged in")
-							return nil
+							err := apiClient.Login(email, password)
+
+							if err == nil {
+								color.Green("Logged in")
+							}
+
+							return err
 						},
 					},
 					{
