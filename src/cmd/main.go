@@ -107,7 +107,9 @@ func main() {
 						},
 						Action: func(c *cli.Context) error {
 							if auth.IsAuthenticated() {
-								return errors.New("please, logout before attempting to register a new account")
+								fmt.Println("Please, logout before attempting to register a new account.")
+								color := color.New(color.Faint)
+								color.Println("Try 'fvpn account logout'")
 							}
 
 							err := apiClient.Register(email, password)
@@ -140,7 +142,9 @@ func main() {
 						},
 						Action: func(c *cli.Context) error {
 							if auth.IsAuthenticated() {
-								return errors.New("please, logout before attempting to login")
+								fmt.Println("please, logout before attempting to login")
+								color := color.New(color.Faint)
+								color.Println("Try 'fvpn account logout'")
 							}
 
 							err := apiClient.Login(email, password)
@@ -172,15 +176,12 @@ func main() {
 								return err
 							}
 
-							if !exists {
-								color.Red("Logged out")
-								return nil
-							}
+							if exists {
+								err = apiClient.Logout()
 
-							err = apiClient.Logout()
-
-							if err != nil {
-								return err
+								if err != nil {
+									return err
+								}
 							}
 
 							color.Red("Logged out")
@@ -261,27 +262,17 @@ func main() {
 							}
 
 							state := actions.State{}
-							status := state.GetStatus()
 
-							if status {
+							if state.GetStatus() {
 								err := state.SetDown(auth.WireguardConfig)
 
 								if err != nil {
 									return err
 								}
 
-								status := state.GetStatus()
-
-								if !status {
-									color.Red("Disconnected")
-								} else {
-									return err
-								}
-
-							} else {
-								color.Red("Not connected")
 							}
 
+							color.Red("Not connected")
 							return nil
 						},
 					},
@@ -345,10 +336,19 @@ func main() {
 							},
 						},
 						Action: func(cCtx *cli.Context) error {
+							color := color.New(color.Faint)
+
 							if !auth.IsAuthenticated() {
 								fmt.Println("Are you logged in?")
-								color := color.New(color.Faint)
-								color.Println("Try 'forest account login'")
+								color.Println("Try 'fvpn account login'")
+								return nil
+							}
+
+							state := actions.State{}
+
+							if state.GetStatus() {
+								fmt.Println("Please, set down the connection before setting a new location.")
+								color.Print("Try 'fvpn state down'")
 								return nil
 							}
 
