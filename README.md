@@ -51,10 +51,17 @@ fvpn state down
 # Installation
 
 ## macOS
-```
-brew install forestvpn/core/fvpn
-```
 Make sure you have [Homebrew installed](https://docs.brew.sh/Installation) on your Mac.
+
+### Latest stable version
+```
+brew install forestvpn/stable/fvpn
+```
+
+### Latest beta version
+```
+brew install forestvpn/beta/fvpn
+```
 
 ## Debian/Ubuntu
 
