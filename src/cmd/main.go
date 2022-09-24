@@ -336,11 +336,11 @@ func main() {
 							},
 						},
 						Action: func(cCtx *cli.Context) error {
-							color := color.New(color.Faint)
+							faint := color.New(color.Faint)
 
 							if !auth.IsAuthenticated() {
 								fmt.Println("Are you logged in?")
-								color.Println("Try 'fvpn account login'")
+								faint.Println("Try 'fvpn account login'")
 								return nil
 							}
 
@@ -348,7 +348,7 @@ func main() {
 
 							if state.GetStatus() {
 								fmt.Println("Please, set down the connection before setting a new location.")
-								color.Print("Try 'fvpn state down'")
+								faint.Print("Try 'fvpn state down'")
 								return nil
 							}
 
