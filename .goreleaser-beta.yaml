@@ -36,8 +36,10 @@ nfpms:
       - deb
       - rpm
     dependencies:
+      deb:
       - wireguard-tools
       - net-tools
+      - openresolv
     bindir: /usr/local/bin
     # Version Release.
     release: 1
