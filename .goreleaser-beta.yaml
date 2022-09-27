@@ -36,7 +36,6 @@ nfpms:
       - deb
       - rpm
     dependencies:
-      deb:
       - wireguard-tools
       - net-tools
       - openresolv
