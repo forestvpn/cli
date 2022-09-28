@@ -19,7 +19,6 @@ import (
 	forestvpn_api "github.com/forestvpn/api-client-go"
 	"github.com/forestvpn/cli/api"
 	"github.com/forestvpn/cli/auth"
-	"github.com/forestvpn/cli/utils"
 )
 
 // AuthClientWrapper is a structure that is used as a high-level wrapper for both AuthClient and ApiClient.
@@ -187,7 +186,6 @@ func (w AuthClientWrapper) Login(email string, password string) error {
 		exists = auth.ProfileExists(user_id)
 		active := auth.IsActiveProfile(user_id)
 		profiledir := auth.ProfilesDir + user_id
-		includeHostIps := true
 
 		if exists && active {
 			return errors.New("already logged in")
@@ -219,7 +217,7 @@ func (w AuthClientWrapper) Login(email string, password string) error {
 				return err
 			}
 
-			err = w.SetLocation(device, includeHostIps)
+			err = w.SetLocation(device)
 
 			if err != nil {
 				return err
@@ -231,7 +229,7 @@ func (w AuthClientWrapper) Login(email string, password string) error {
 				return err
 			}
 
-			err = w.SetLocation(device, includeHostIps)
+			err = w.SetLocation(device)
 
 			if err != nil {
 				return err
@@ -343,7 +341,7 @@ func (w AuthClientWrapper) ListLocations(country string) error {
 // If the user subscrition on the Forest VPN services is out of date, it calls BuyPremiumDialog.
 //
 // See https://github.com/forestvpn/api-client-go/blob/main/docs/BillingFeature.md for more information.
-func (w AuthClientWrapper) SetLocation(device *forestvpn_api.Device, includeHostIps bool) error {
+func (w AuthClientWrapper) SetLocation(device *forestvpn_api.Device) error {
 	config := ini.Empty()
 	interfaceSection, err := config.NewSection("Interface")
 
@@ -376,30 +374,7 @@ func (w AuthClientWrapper) SetLocation(device *forestvpn_api.Device, includeHost
 			return err
 		}
 
-		allowedIps := peer.GetAllowedIps()
-
-		if !includeHostIps {
-			existingRoutes, err := utils.GetExistingRoutes()
-
-			if err != nil {
-				return err
-			}
-
-			activeSShClientIps, err := utils.GetActiveSshClientIps()
-
-			if err != nil {
-				return err
-			}
-
-			disallowed := append(existingRoutes, activeSShClientIps...)
-			allowedIps, err = utils.ExcludeDisallowedIps(allowedIps, disallowed)
-
-			if err != nil {
-				return err
-			}
-		}
-
-		_, err = peerSection.NewKey("AllowedIPs", strings.Join(allowedIps, ", "))
+		_, err = peerSection.NewKey("AllowedIPs", "0.0.0.0/0")
 
 		if err != nil {
 			return err

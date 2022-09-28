@@ -40,8 +40,6 @@ func main() {
 	var password string
 	// country is stores prompted country name to filter locations by country.
 	var country string
-	// includeRoutes is a flag that indicates wether to route networks from system routing table into Wireguard tunnel interface.
-	var includeRoutes bool
 
 	err := auth.Init()
 
@@ -326,15 +324,6 @@ func main() {
 					{
 						Name:        "set",
 						Description: "Set the default location by specifying `UUID` or `Name`",
-						Flags: []cli.Flag{
-							&cli.BoolFlag{
-								Name:        "include-routes",
-								Destination: &includeRoutes,
-								Usage:       "Route all system network interfaces into VPN tunnel",
-								Value:       false,
-								Aliases:     []string{"i"},
-							},
-						},
 						Action: func(cCtx *cli.Context) error {
 							faint := color.New(color.Faint)
 
@@ -430,7 +419,7 @@ func main() {
 								return err
 							}
 
-							err = apiClient.SetLocation(device, includeRoutes)
+							err = apiClient.SetLocation(device)
 
 							if err != nil {
 								return err
