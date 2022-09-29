@@ -25,13 +25,13 @@ var (
 	// DSN is a Data Source Name for Sentry. It is stored in an environment variable and assigned during the build with ldflags.
 	//
 	// See https://docs.sentry.io/product/sentry-basics/dsn-explainer/ for more information.
-	Dsn string
+	Dsn = os.Getenv("SENTRY_DSN")
 	// appVersion value is stored in an environment variable and assigned during the build with ldflags.
 	appVersion string
 	// firebaseApiKey is stored in an environment variable and assigned during the build with ldflags.
-	firebaseApiKey string
+	firebaseApiKey = os.Getenv("STAGING_FIREBASE_API_KEY")
 	// ApiHost is a hostname of Forest VPN back-end API that is stored in an environment variable and assigned during the build with ldflags.
-	apiHost string
+	apiHost = os.Getenv("STAGING_API_URL")
 )
 
 func main() {
@@ -143,9 +143,10 @@ func main() {
 						},
 						Action: func(c *cli.Context) error {
 							if auth.IsAuthenticated() {
-								fmt.Println("please, logout before attempting to login")
+								fmt.Println("Please, logout before attempting to login")
 								color := color.New(color.Faint)
 								color.Println("Try 'fvpn account logout'")
+								return nil
 							}
 
 							err := apiClient.Login(email, password)
@@ -214,16 +215,16 @@ func main() {
 								return nil
 							}
 
-							state := actions.State{}
-							status := state.GetStatus()
+							// state := actions.State{}
+							// status := state.GetStatus()
 
-							if status {
-								err := state.SetDown(auth.WireguardConfig)
+							// if status {
+							// 	err := state.SetDown(auth.WireguardConfig)
 
-								if err != nil {
-									return err
-								}
-							}
+							// 	if err != nil {
+							// 		return err
+							// 	}
+							// }
 
 							if preserveSSH {
 								gateway, err := utils.GetDefaultGateway()
@@ -238,6 +239,8 @@ func main() {
 									return err
 								}
 
+								fmt.Println(destinations)
+
 								for _, d := range destinations {
 									err = utils.AddStaticRouteViaDefaultGateway(d, gateway)
 
@@ -247,34 +250,34 @@ func main() {
 								}
 							}
 
-							err = state.SetUp(auth.WireguardConfig)
+							// err = state.SetUp(auth.WireguardConfig)
 
-							if err != nil {
-								return err
-							}
+							// if err != nil {
+							// 	return err
+							// }
 
-							status = state.GetStatus()
+							// status = state.GetStatus()
 
-							if status {
-								user_id, err := auth.LoadUserID()
+							// if status {
+							// 	user_id, err := auth.LoadUserID()
 
-								if err != nil {
-									return err
-								}
+							// 	if err != nil {
+							// 		return err
+							// 	}
 
-								device, err := auth.LoadDevice(user_id)
+							// 	device, err := auth.LoadDevice(user_id)
 
-								if err != nil {
-									return err
-								}
+							// 	if err != nil {
+							// 		return err
+							// 	}
 
-								location := device.GetLocation()
-								country := location.GetCountry()
+							// 	location := device.GetLocation()
+							// 	country := location.GetCountry()
 
-								color.Green("Connected to %s, %s", location.GetName(), country.GetName())
-							} else {
-								return err
-							}
+							// 	color.Green("Connected to %s, %s", location.GetName(), country.GetName())
+							// } else {
+							// 	return err
+							// }
 
 							return nil
 						},

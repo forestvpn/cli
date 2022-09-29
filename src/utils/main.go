@@ -215,17 +215,21 @@ func GetDefaultGateway() (string, error) {
 			x := strings.Split(s, ":")
 
 			if strings.TrimSpace(x[0]) == "gateway" {
-				return strings.TrimSpace(x[1]), nil
+				defaultGatewayAddress = strings.TrimSpace(x[1])
 			}
 		}
 	case "linux":
-		record := strings.Split(strings.Split(string(stdout), "\n")[2], " ")
+		singleSpacePattern := regexp.MustCompile(`\s+`)
+		record := strings.Split(singleSpacePattern.ReplaceAllString(strings.Split(string(stdout), "\n")[2], " "), " ")
 
 		if strings.TrimSpace(record[0]) == "default" {
-			return strings.TrimSpace(record[1]), nil
+			defaultGatewayAddress = strings.TrimSpace(record[1])
 		}
-
 	}
 
-	return defaultGatewayAddress, errors.New("error parsing default gateway")
+	if len(defaultGatewayAddress) == 0 {
+		err = errors.New("error parsing default gateway")
+	}
+
+	return defaultGatewayAddress, err
 }
