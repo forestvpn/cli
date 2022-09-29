@@ -11,6 +11,7 @@ import (
 	"github.com/forestvpn/cli/actions"
 	"github.com/forestvpn/cli/api"
 	"github.com/forestvpn/cli/auth"
+	"github.com/forestvpn/cli/utils"
 	"github.com/google/uuid"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -40,8 +41,8 @@ func main() {
 	var password string
 	// country is stores prompted country name to filter locations by country.
 	var country string
-	// includeRoutes is a flag that indicates wether to route networks from system routing table into Wireguard tunnel interface.
-	var includeRoutes bool
+	// preserveSSH is a flag that indicates wether to route networks from system routing table into Wireguard tunnel interface.
+	var preserveSSH bool
 
 	err := auth.Init()
 
@@ -195,9 +196,16 @@ func main() {
 				Usage: "Control the state of connection",
 				Subcommands: []*cli.Command{
 					{
-
 						Name:  "up",
 						Usage: "Connect to the ForestVPN",
+						Flags: []cli.Flag{
+							&cli.BoolFlag{
+								Name:        "preserve-ssh",
+								Destination: &preserveSSH,
+								Usage:       "Usable when setting up a VPN connection on remote host using SSH. This will keep your SSH connection out of the VPN tunnel.",
+								Value:       false,
+							},
+						},
 						Action: func(c *cli.Context) error {
 							if !auth.IsAuthenticated() {
 								fmt.Println("Are you logged in?")
@@ -214,6 +222,28 @@ func main() {
 
 								if err != nil {
 									return err
+								}
+							}
+
+							if preserveSSH {
+								gateway, err := utils.GetDefaultGateway()
+
+								if err != nil {
+									return err
+								}
+
+								destinations, err := utils.GetActiveSshClientIps()
+
+								if err != nil {
+									return err
+								}
+
+								for _, d := range destinations {
+									err = utils.AddStaticRouteViaDefaultGateway(d, gateway)
+
+									if err != nil {
+										return err
+									}
 								}
 							}
 
@@ -326,15 +356,6 @@ func main() {
 					{
 						Name:        "set",
 						Description: "Set the default location by specifying `UUID` or `Name`",
-						Flags: []cli.Flag{
-							&cli.BoolFlag{
-								Name:        "include-routes",
-								Destination: &includeRoutes,
-								Usage:       "Route all system network interfaces into VPN tunnel",
-								Value:       false,
-								Aliases:     []string{"i"},
-							},
-						},
 						Action: func(cCtx *cli.Context) error {
 							faint := color.New(color.Faint)
 
@@ -430,7 +451,7 @@ func main() {
 								return err
 							}
 
-							err = apiClient.SetLocation(device, includeRoutes)
+							err = apiClient.SetLocation(device)
 
 							if err != nil {
 								return err

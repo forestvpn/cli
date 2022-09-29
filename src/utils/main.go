@@ -3,9 +3,12 @@
 package utils
 
 import (
+	"errors"
+	"fmt"
 	"net"
 	"os/exec"
 	"regexp"
+	"runtime"
 	"strings"
 
 	"github.com/c-robinson/iplib"
@@ -179,4 +182,33 @@ func GetActiveSshClientIps() ([]string, error) {
 	}
 
 	return ips, err
+}
+
+func AddStaticRouteViaDefaultGateway(destination string, gateway string) error {
+	cmd := strings.Split(fmt.Sprintf("route add -host %s %s", destination, gateway), " ")
+	os := runtime.GOOS
+	switch os {
+	case "linux":
+		cmd[4] = "gw"
+	}
+	return exec.Command(cmd[0], cmd[1:]...).Run()
+}
+
+func GetDefaultGateway() (string, error) {
+	var defaultGatewayAddress string
+	stdout, err := exec.Command("route", "get", "default").Output()
+
+	if err != nil {
+		return defaultGatewayAddress, err
+	}
+
+	for _, s := range strings.Split(string(stdout), "\n") {
+		x := strings.Split(s, ":")
+
+		if strings.TrimSpace(x[0]) == "gateway" {
+			return strings.TrimSpace(x[1]), nil
+		}
+	}
+
+	return defaultGatewayAddress, errors.New("error parsing default gateway")
 }
