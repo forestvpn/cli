@@ -187,10 +187,13 @@ func GetActiveSshClientIps() ([]string, error) {
 func AddStaticRouteViaDefaultGateway(destination string, gateway string) error {
 	cmd := strings.Split(fmt.Sprintf("route add -host %s %s", destination, gateway), " ")
 	os := runtime.GOOS
+
 	switch os {
 	case "linux":
 		cmd[4] = "gw"
+		cmd = append(cmd, gateway)
 	}
+	fmt.Println(cmd)
 	return exec.Command(cmd[0], cmd[1:]...).Run()
 }
 

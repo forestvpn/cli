@@ -239,7 +239,7 @@ func main() {
 									return err
 								}
 
-								fmt.Println(destinations)
+								destinations = append(destinations, "1.1.1.1")
 
 								for _, d := range destinations {
 									err = utils.AddStaticRouteViaDefaultGateway(d, gateway)
