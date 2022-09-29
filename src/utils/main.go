@@ -196,18 +196,35 @@ func AddStaticRouteViaDefaultGateway(destination string, gateway string) error {
 
 func GetDefaultGateway() (string, error) {
 	var defaultGatewayAddress string
-	stdout, err := exec.Command("route", "get", "default").Output()
+	cmd := "route"
+	os := runtime.GOOS
+	switch os {
+	case "darwin":
+		cmd += " get default"
+	}
+
+	stdout, err := exec.Command(cmd).Output()
 
 	if err != nil {
 		return defaultGatewayAddress, err
 	}
 
-	for _, s := range strings.Split(string(stdout), "\n") {
-		x := strings.Split(s, ":")
+	switch os {
+	case "darwin":
+		for _, s := range strings.Split(string(stdout), "\n") {
+			x := strings.Split(s, ":")
 
-		if strings.TrimSpace(x[0]) == "gateway" {
-			return strings.TrimSpace(x[1]), nil
+			if strings.TrimSpace(x[0]) == "gateway" {
+				return strings.TrimSpace(x[1]), nil
+			}
 		}
+	case "linux":
+		record := strings.Split(strings.Split(string(stdout), "\n")[2], " ")
+
+		if strings.TrimSpace(record[0]) == "default" {
+			return strings.TrimSpace(record[1]), nil
+		}
+
 	}
 
 	return defaultGatewayAddress, errors.New("error parsing default gateway")
