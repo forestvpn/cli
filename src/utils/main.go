@@ -176,7 +176,7 @@ func GetActiveSshClientIps() ([]string, error) {
 			ip := record[strings.Index(record, "(")+1 : strings.Index(record, ")")]
 
 			if net.ParseIP(ip) != nil {
-				ips = append(ips, ip2Net(ip))
+				ips = append(ips, ip)
 			}
 		}
 	}
