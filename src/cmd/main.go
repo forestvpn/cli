@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -11,6 +12,7 @@ import (
 	"github.com/forestvpn/cli/actions"
 	"github.com/forestvpn/cli/api"
 	"github.com/forestvpn/cli/auth"
+	"github.com/go-resty/resty/v2"
 	"github.com/google/uuid"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -24,13 +26,13 @@ var (
 	// DSN is a Data Source Name for Sentry. It is stored in an environment variable and assigned during the build with ldflags.
 	//
 	// See https://docs.sentry.io/product/sentry-basics/dsn-explainer/ for more information.
-	Dsn string
+	Dsn = os.Getenv("SENTRY_DSN")
 	// appVersion value is stored in an environment variable and assigned during the build with ldflags.
 	appVersion string
 	// firebaseApiKey is stored in an environment variable and assigned during the build with ldflags.
-	firebaseApiKey string
+	firebaseApiKey = os.Getenv("STAGING_FIREBASE_API_KEY")
 	// ApiHost is a hostname of Forest VPN back-end API that is stored in an environment variable and assigned during the build with ldflags.
-	apiHost string
+	apiHost = os.Getenv("STAGING_API_URL")
 )
 
 func main() {
@@ -51,11 +53,20 @@ func main() {
 	exists, _ := auth.IsRefreshTokenExists()
 
 	if exists {
+		var data map[string]string
+		var response *resty.Response
 		refreshToken, _ := auth.LoadRefreshToken()
-		response, err := authClient.GetAccessToken(refreshToken)
+		response, err = authClient.GetAccessToken(refreshToken)
+		err = json.Unmarshal(response.Body(), &data)
+
+		if err != nil {
+			panic(err)
+		}
+
+		path := auth.ProfilesDir + data["user_id"] + auth.FirebaseAuthFile
 
 		if err == nil {
-			auth.JsonDump(response.Body(), auth.FirebaseAuthFile)
+			auth.JsonDump(response.Body(), path)
 		}
 	}
 
@@ -283,7 +294,7 @@ func main() {
 							if !auth.IsAuthenticated() {
 								fmt.Println("Are you signed in?")
 								color := color.New(color.Faint)
-								color.Println("Try 'forest auth signin'")
+								color.Println("Try 'forest account login'")
 								return nil
 							}
 
