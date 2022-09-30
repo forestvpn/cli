@@ -140,7 +140,7 @@ func main() {
 						},
 						Action: func(c *cli.Context) error {
 							if auth.IsAuthenticated() {
-								fmt.Println("please, logout before attempting to login")
+								fmt.Println("Please, logout before attempting to login")
 								color := color.New(color.Faint)
 								color.Println("Try 'fvpn account logout'")
 								return nil
