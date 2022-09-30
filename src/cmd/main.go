@@ -145,6 +145,7 @@ func main() {
 								fmt.Println("please, logout before attempting to login")
 								color := color.New(color.Faint)
 								color.Println("Try 'fvpn account logout'")
+								return nil
 							}
 
 							err := apiClient.Login(email, password)
