@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -11,6 +12,7 @@ import (
 	"github.com/forestvpn/cli/actions"
 	"github.com/forestvpn/cli/api"
 	"github.com/forestvpn/cli/auth"
+	"github.com/go-resty/resty/v2"
 	"github.com/google/uuid"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -53,11 +55,20 @@ func main() {
 	exists, _ := auth.IsRefreshTokenExists()
 
 	if exists {
+		var data map[string]string
+		var response *resty.Response
 		refreshToken, _ := auth.LoadRefreshToken()
-		response, err := authClient.GetAccessToken(refreshToken)
+		response, err = authClient.GetAccessToken(refreshToken)
+		err = json.Unmarshal(response.Body(), &data)
+
+		if err != nil {
+			panic(err)
+		}
+
+		path := auth.ProfilesDir + data["user_id"] + auth.FirebaseAuthFile
 
 		if err == nil {
-			auth.JsonDump(response.Body(), auth.FirebaseAuthFile)
+			auth.JsonDump(response.Body(), path)
 		}
 	}
 
@@ -285,7 +296,7 @@ func main() {
 							if !auth.IsAuthenticated() {
 								fmt.Println("Are you signed in?")
 								color := color.New(color.Faint)
-								color.Println("Try 'forest auth signin'")
+								color.Println("Try 'forest account login'")
 								return nil
 							}
 
