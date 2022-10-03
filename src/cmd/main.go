@@ -455,7 +455,7 @@ func main() {
 								return err
 							}
 
-							err = apiClient.SetLocation(device)
+							err = authClientWrapper.SetLocation(device)
 
 							if err != nil {
 								return err
