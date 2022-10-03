@@ -284,7 +284,7 @@ func main() {
 
 							}
 
-							color.Red("Not connected")
+							color.Red("Disconnected")
 							return nil
 						},
 					},
@@ -304,7 +304,6 @@ func main() {
 							status := state.GetStatus()
 
 							if status {
-
 								user_id, err := auth.LoadUserID()
 
 								if err != nil {
@@ -322,7 +321,7 @@ func main() {
 
 								color.Green("Connected to %s, %s", location.GetName(), country.GetName())
 							} else {
-								color.Red("Not connected")
+								color.Red("Disconnected")
 							}
 
 							return nil
