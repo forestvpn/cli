@@ -44,6 +44,12 @@ func GetAuthClientWrapper() actions.AuthClientWrapper {
 		var response *resty.Response
 		refreshToken, _ := auth.LoadRefreshToken()
 		response, err := authClient.GetAccessToken(refreshToken)
+
+		if err != nil {
+			sentry.CaptureException(err)
+			log.Fatalf(err.Error())
+		}
+
 		err = json.Unmarshal(response.Body(), &data)
 
 		if err != nil {
