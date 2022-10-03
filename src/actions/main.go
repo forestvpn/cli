@@ -258,31 +258,6 @@ func (w AuthClientWrapper) Login(email string, password string) error {
 	return err
 }
 
-// Logout is a method that removes FirebaseAuthFile, i.e. logs out the user.
-func (w AuthClientWrapper) Logout() error {
-	user_id, err := auth.LoadUserID()
-
-	if err != nil {
-		return err
-	}
-
-	if len(user_id) > 0 {
-		err = auth.RemoveFirebaseAuthFile(user_id)
-
-		if err != nil {
-			return err
-		}
-
-		err = auth.RemoveActiveUserLockFile()
-
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 // ListLocations is a function to get the list of locations available for user.
 //
 // See https://github.com/forestvpn/api-client-go/blob/main/docs/GeoApi.md#listlocations for more information.

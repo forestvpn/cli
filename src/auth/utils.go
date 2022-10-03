@@ -148,7 +148,7 @@ func Init() error {
 			err = os.Mkdir(dir, 0755)
 
 			if err != nil {
-				sentry.CaptureException(err)
+				return err
 			}
 		}
 	}

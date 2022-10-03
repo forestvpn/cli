@@ -35,6 +35,39 @@ var (
 	apiHost = os.Getenv("STAGING_API_URL")
 )
 
+func GetAuthClientWrapper() actions.AuthClientWrapper {
+	authClient := auth.AuthClient{ApiKey: firebaseApiKey}
+	exists, _ := auth.IsRefreshTokenExists()
+
+	if exists {
+		var data map[string]string
+		var response *resty.Response
+		refreshToken, _ := auth.LoadRefreshToken()
+		response, err := authClient.GetAccessToken(refreshToken)
+		err = json.Unmarshal(response.Body(), &data)
+
+		if err != nil {
+			sentry.CaptureException(err)
+			log.Fatalf(err.Error())
+		}
+
+		path := auth.ProfilesDir + data["user_id"] + auth.FirebaseAuthFile
+		err = auth.JsonDump(response.Body(), path)
+
+		if err != nil {
+			sentry.CaptureException(err)
+			log.Fatalf(err.Error())
+		}
+
+	}
+
+	user_id, _ := auth.LoadUserID()
+	accessToken, _ := auth.LoadAccessToken(user_id)
+	wrapper := api.GetApiClient(accessToken, apiHost)
+	authClientWrapper := actions.AuthClientWrapper{AuthClient: authClient, ApiClient: wrapper}
+	return authClientWrapper
+}
+
 func main() {
 	// email is user's email address used to sign in or sign up on the Firebase.
 	var email string
@@ -46,34 +79,8 @@ func main() {
 	err := auth.Init()
 
 	if err != nil {
-		panic(err)
+		sentry.CaptureException(err)
 	}
-
-	authClient := auth.AuthClient{ApiKey: firebaseApiKey}
-	exists, _ := auth.IsRefreshTokenExists()
-
-	if exists {
-		var data map[string]string
-		var response *resty.Response
-		refreshToken, _ := auth.LoadRefreshToken()
-		response, err = authClient.GetAccessToken(refreshToken)
-		err = json.Unmarshal(response.Body(), &data)
-
-		if err != nil {
-			panic(err)
-		}
-
-		path := auth.ProfilesDir + data["user_id"] + auth.FirebaseAuthFile
-
-		if err == nil {
-			auth.JsonDump(response.Body(), path)
-		}
-	}
-
-	user_id, _ := auth.LoadUserID()
-	accessToken, _ := auth.LoadAccessToken(user_id)
-	wrapper := api.GetApiClient(accessToken, apiHost)
-	apiClient := actions.AuthClientWrapper{AuthClient: authClient, ApiClient: wrapper}
 
 	err = sentry.Init(sentry.ClientOptions{
 		Dsn: Dsn,
@@ -119,9 +126,11 @@ func main() {
 								fmt.Println("Please, logout before attempting to register a new account.")
 								color := color.New(color.Faint)
 								color.Println("Try 'fvpn account logout'")
+								return nil
 							}
 
-							err := apiClient.Register(email, password)
+							authClientWrapper := GetAuthClientWrapper()
+							err := authClientWrapper.Register(email, password)
 
 							if err == nil {
 								color.Green("Signed in")
@@ -157,7 +166,8 @@ func main() {
 								return nil
 							}
 
-							err := apiClient.Login(email, password)
+							authClientWrapper := GetAuthClientWrapper()
+							err := authClientWrapper.Login(email, password)
 
 							if err == nil {
 								color.Green("Logged in")
@@ -187,10 +197,24 @@ func main() {
 							}
 
 							if exists {
-								err = apiClient.Logout()
+								user_id, err := auth.LoadUserID()
 
 								if err != nil {
 									return err
+								}
+
+								if len(user_id) > 0 {
+									err = auth.RemoveFirebaseAuthFile(user_id)
+
+									if err != nil {
+										return err
+									}
+
+									err = auth.RemoveActiveUserLockFile()
+
+									if err != nil {
+										return err
+									}
 								}
 							}
 
@@ -358,14 +382,15 @@ func main() {
 								return errors.New("UUID or name required")
 							}
 
-							resp, err := wrapper.GetBillingFeatures()
+							authClientWrapper := GetAuthClientWrapper()
+							resp, err := authClientWrapper.ApiClient.GetBillingFeatures()
 
 							if err != nil {
 								return err
 							}
 
 							billingFeature := resp[0]
-							locations, err := wrapper.GetLocations()
+							locations, err := authClientWrapper.ApiClient.GetLocations()
 
 							if err != nil {
 								return err
@@ -418,7 +443,7 @@ func main() {
 								return err
 							}
 
-							device, err = wrapper.UpdateDevice(device.GetId(), location.Location.GetId())
+							device, err = authClientWrapper.ApiClient.UpdateDevice(device.GetId(), location.Location.GetId())
 
 							if err != nil {
 								return err
@@ -455,7 +480,8 @@ func main() {
 							},
 						},
 						Action: func(c *cli.Context) error {
-							return apiClient.ListLocations(country)
+							authClientWrapper := GetAuthClientWrapper()
+							return authClientWrapper.ListLocations(country)
 						},
 					},
 				},
