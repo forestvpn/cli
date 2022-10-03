@@ -17,7 +17,7 @@ func ip2Net(ip string) string {
 	return strings.Join(strings.Split(ip, ".")[:3], ".") + ".0/24"
 }
 
-// GetExistingRoutes is a function that calls a netstat shell command to get system routing table.
+// Deprecated: GetExistingRoutes is a function that calls a netstat shell command to get system routing table.
 // Then it extracts all the IP addresses from the shell command's output.
 // Each of an IP addresses is converted into related network using ip2Net in order to be compitable with Wireguard configuration format.
 // Returns a slice of a networks (as a strings) representing system routing table.
@@ -158,7 +158,7 @@ func ExcludeDisallowedIps(allowed []string, disallowed []string) ([]string, erro
 // GetActiveSshClientIps is a function that calls the "who" shell command to get active ssh sessions.
 // Then it extracts all the IP addresses from the command output and converts them into networks using ip2Net for a compability with Wiregaurd configuration format.
 // Returns a slice of networks representing the public networks of active ssh clients.
-func GetActiveSshClientIps() ([]string, error) {
+func GetActiveSshClients() ([]string, error) {
 	out, err := exec.Command("who").Output()
 
 	if err != nil {
