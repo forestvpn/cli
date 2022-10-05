@@ -12,7 +12,6 @@ import (
 	"github.com/forestvpn/cli/actions"
 	"github.com/forestvpn/cli/api"
 	"github.com/forestvpn/cli/auth"
-	"github.com/forestvpn/cli/utils"
 	"github.com/google/uuid"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -28,7 +27,7 @@ var (
 	// See https://docs.sentry.io/product/sentry-basics/dsn-explainer/ for more information.
 	Dsn = os.Getenv("SENTRY_DSN")
 	// appVersion value is stored in an environment variable and assigned during the build with ldflags.
-	appVersion = utils.GetLatestVersionTag()
+	appVersion string
 	// firebaseApiKey is stored in an environment variable and assigned during the build with ldflags.
 	firebaseApiKey = os.Getenv("STAGING_FIREBASE_API_KEY")
 	// ApiHost is a hostname of Forest VPN back-end API that is stored in an environment variable and assigned during the build with ldflags.
