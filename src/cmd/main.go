@@ -12,7 +12,7 @@ import (
 	"github.com/forestvpn/cli/actions"
 	"github.com/forestvpn/cli/api"
 	"github.com/forestvpn/cli/auth"
-	"github.com/go-resty/resty/v2"
+	"github.com/forestvpn/cli/utils"
 	"github.com/google/uuid"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -28,50 +28,43 @@ var (
 	// See https://docs.sentry.io/product/sentry-basics/dsn-explainer/ for more information.
 	Dsn = os.Getenv("SENTRY_DSN")
 	// appVersion value is stored in an environment variable and assigned during the build with ldflags.
-	appVersion string
+	appVersion = utils.GetLatestVersionTag()
 	// firebaseApiKey is stored in an environment variable and assigned during the build with ldflags.
 	firebaseApiKey = os.Getenv("STAGING_FIREBASE_API_KEY")
 	// ApiHost is a hostname of Forest VPN back-end API that is stored in an environment variable and assigned during the build with ldflags.
 	apiHost = os.Getenv("STAGING_API_URL")
 )
 
-func GetAuthClientWrapper() actions.AuthClientWrapper {
+func GetAuthClientWrapper() (actions.AuthClientWrapper, error) {
+	authClientWrapper := actions.AuthClientWrapper{}
 	authClient := auth.AuthClient{ApiKey: firebaseApiKey}
+
+	user_id, _ := auth.LoadUserID()
 	exists, _ := auth.IsRefreshTokenExists()
 
 	if exists {
-		var data map[string]string
-		var response *resty.Response
-		refreshToken, _ := auth.LoadRefreshToken()
-		response, err := authClient.GetAccessToken(refreshToken)
+		expired, _ := auth.IsAccessTokenExpired(user_id)
 
-		if err != nil {
-			sentry.CaptureException(err)
-			log.Fatalf(err.Error())
+		if expired {
+			refreshToken, _ := auth.LoadRefreshToken()
+			response, err := authClient.GetAccessToken(refreshToken)
+
+			if err != nil {
+				return authClientWrapper, err
+			}
+
+			err = authClientWrapper.SetUpProfile(response)
+
+			if err != nil {
+				return authClientWrapper, err
+			}
 		}
-
-		err = json.Unmarshal(response.Body(), &data)
-
-		if err != nil {
-			sentry.CaptureException(err)
-			log.Fatalf(err.Error())
-		}
-
-		path := auth.ProfilesDir + data["user_id"] + auth.FirebaseAuthFile
-		err = auth.JsonDump(response.Body(), path)
-
-		if err != nil {
-			sentry.CaptureException(err)
-			log.Fatalf(err.Error())
-		}
-
 	}
 
-	user_id, _ := auth.LoadUserID()
 	accessToken, _ := auth.LoadAccessToken(user_id)
-	wrapper := api.GetApiClient(accessToken, apiHost)
-	authClientWrapper := actions.AuthClientWrapper{AuthClient: authClient, ApiClient: wrapper}
-	return authClientWrapper
+	authClientWrapper.AuthClient = authClient
+	authClientWrapper.ApiClient = api.GetApiClient(accessToken, apiHost)
+	return authClientWrapper, nil
 }
 
 func main() {
@@ -98,7 +91,12 @@ func main() {
 
 	defer sentry.Flush(2 * time.Second)
 
+	cli.VersionPrinter = func(cCtx *cli.Context) {
+		fmt.Println(cCtx.App.Version)
+	}
+
 	app := &cli.App{
+		Version:              appVersion,
 		EnableBashCompletion: true,
 		Suggest:              true,
 		Name:                 "fvpn",
@@ -108,6 +106,86 @@ func main() {
 				Name:  "account",
 				Usage: "Manage your account",
 				Subcommands: []*cli.Command{
+					{
+						Name:  "status",
+						Usage: "See account info",
+						Action: func(c *cli.Context) error {
+							if !auth.IsAuthenticated() {
+								fmt.Println("Are you logged in?")
+								color := color.New(color.Faint)
+								color.Println("Try 'forest account login'")
+								return nil
+							}
+
+							user_id, err := auth.LoadUserID()
+
+							if err != nil {
+								return err
+							}
+
+							authClientWrapper, err := GetAuthClientWrapper()
+
+							if err != nil {
+								return err
+							}
+
+							billingFeature, err := authClientWrapper.LoadOrGetBillingFeature(user_id)
+
+							if err != nil {
+								return err
+							}
+
+							expiryDate := billingFeature.GetExpiryDate()
+							now := time.Now()
+							left := expiryDate.Sub(now)
+							days := left.Hours() / 24
+							idToken, err := auth.LoadIdToken(user_id)
+
+							if err != nil {
+								return err
+							}
+
+							response, err := authClientWrapper.AuthClient.GetUserData(idToken)
+
+							if err != nil {
+								return err
+							}
+
+							data := make(map[string]any)
+							err = json.Unmarshal(response.Body(), &data)
+
+							if err != nil {
+								return err
+							}
+
+							var email string
+
+							var x interface{} = data["users"]
+							switch users := x.(type) {
+							case []interface{}:
+								var y interface{} = users[0]
+								switch data := y.(type) {
+								case map[string]any:
+									var z interface{} = data["email"]
+									switch v := z.(type) {
+									case string:
+										email = v
+									}
+								}
+							}
+
+							plan := strings.Split(billingFeature.GetBundleId(), ".")[2]
+
+							color.Green("Logged-in as %s", email)
+							color.Green("Plan: %s", plan)
+
+							if plan == "premium" || days > 0 {
+								color.Green("%s days left", fmt.Sprint(int(days)))
+							}
+
+							return nil
+						},
+					},
 					{
 						Name:  "register",
 						Usage: "Sign up to use ForestVPN",
@@ -135,11 +213,16 @@ func main() {
 								return nil
 							}
 
-							authClientWrapper := GetAuthClientWrapper()
-							err := authClientWrapper.Register(email, password)
+							authClientWrapper, err := GetAuthClientWrapper()
+
+							if err != nil {
+								return err
+							}
+
+							err = authClientWrapper.Register(email, password)
 
 							if err == nil {
-								color.Green("Signed in")
+								color.Green("Registered")
 							}
 
 							return err
@@ -165,15 +248,13 @@ func main() {
 							},
 						},
 						Action: func(c *cli.Context) error {
-							if auth.IsAuthenticated() {
-								fmt.Println("please, logout before attempting to login")
-								color := color.New(color.Faint)
-								color.Println("Try 'fvpn account logout'")
-								return nil
+							authClientWrapper, err := GetAuthClientWrapper()
+
+							if err != nil {
+								return err
 							}
 
-							authClientWrapper := GetAuthClientWrapper()
-							err := authClientWrapper.Login(email, password)
+							err = authClientWrapper.Login(email, password)
 
 							if err == nil {
 								color.Green("Logged in")
@@ -250,11 +331,7 @@ func main() {
 							status := state.GetStatus()
 
 							if status {
-								err := state.SetDown(auth.WireguardConfig)
-
-								if err != nil {
-									return err
-								}
+								return errors.New("state is already up and running")
 							}
 
 							err = state.SetUp(auth.WireguardConfig)
@@ -263,9 +340,7 @@ func main() {
 								return err
 							}
 
-							status = state.GetStatus()
-
-							if status {
+							if state.GetStatus() {
 								user_id, err := auth.LoadUserID()
 
 								if err != nil {
@@ -283,7 +358,7 @@ func main() {
 
 								color.Green("Connected to %s, %s", location.GetName(), country.GetName())
 							} else {
-								return err
+								return errors.New("unexpected error: state.status is false after state is up")
 							}
 
 							return nil
@@ -310,9 +385,15 @@ func main() {
 									return err
 								}
 
+								if state.GetStatus() {
+									return errors.New("unexpected error: state.status is true after state is down")
+								}
+
+								color.Red("Disconnected")
+							} else {
+								return errors.New("state is already down")
 							}
 
-							color.Red("Disconnected")
 							return nil
 						},
 					},
@@ -363,8 +444,38 @@ func main() {
 				Usage: "Manage locations",
 				Subcommands: []*cli.Command{
 					{
-						Name:        "set",
-						Description: "Set the default location by specifying `UUID` or `Name`",
+						Name:  "status",
+						Usage: "See the location is set as a default for establishing connection",
+						Action: func(cCtx *cli.Context) error {
+							faint := color.New(color.Faint)
+
+							if !auth.IsAuthenticated() {
+								fmt.Println("Are you logged in?")
+								faint.Println("Try 'fvpn account login'")
+								return nil
+							}
+
+							user_id, err := auth.LoadUserID()
+
+							if err != nil {
+								return err
+							}
+
+							device, err := auth.LoadDevice(user_id)
+
+							if err != nil {
+								return err
+							}
+
+							location := device.GetLocation()
+							country := location.GetCountry()
+							color.New(color.FgGreen).Println(fmt.Sprintf("Default location is set to %s, %s", location.GetName(), country.GetName()))
+							return nil
+						},
+					},
+					{
+						Name:  "set",
+						Usage: "Set the default location by specifying `UUID` or `Name`",
 						Action: func(cCtx *cli.Context) error {
 							faint := color.New(color.Faint)
 
@@ -378,7 +489,7 @@ func main() {
 
 							if state.GetStatus() {
 								fmt.Println("Please, set down the connection before setting a new location.")
-								faint.Print("Try 'fvpn state down'")
+								faint.Println("Try 'fvpn state down'")
 								return nil
 							}
 
@@ -388,14 +499,24 @@ func main() {
 								return errors.New("UUID or name required")
 							}
 
-							authClientWrapper := GetAuthClientWrapper()
-							resp, err := authClientWrapper.ApiClient.GetBillingFeatures()
+							authClientWrapper, err := GetAuthClientWrapper()
 
 							if err != nil {
 								return err
 							}
 
-							billingFeature := resp[0]
+							user_id, err := auth.LoadUserID()
+
+							if err != nil {
+								return err
+							}
+
+							billingFeature, err := authClientWrapper.LoadOrGetBillingFeature(user_id)
+
+							if err != nil {
+								return err
+							}
+
 							locations, err := authClientWrapper.ApiClient.GetLocations()
 
 							if err != nil {
@@ -433,14 +554,8 @@ func main() {
 							expireDate := billingFeature.GetExpiryDate()
 							now := time.Now()
 
-							if !expireDate.After(now) && location.Premium {
-								return auth.BuyPremiumDialog()
-							}
-
-							user_id, err := auth.LoadUserID()
-
-							if err != nil {
-								return err
+							if now.After(expireDate) && location.Premium {
+								return auth.BuyPremiumDialog(location.Location.GetName())
 							}
 
 							device, err := auth.LoadDevice(user_id)
@@ -486,18 +601,15 @@ func main() {
 							},
 						},
 						Action: func(c *cli.Context) error {
-							authClientWrapper := GetAuthClientWrapper()
+							authClientWrapper, err := GetAuthClientWrapper()
+
+							if err != nil {
+								return err
+							}
+
 							return authClientWrapper.ListLocations(country)
 						},
 					},
-				},
-			},
-			{
-				Name:  "version",
-				Usage: "Show the version of ForestVPN CLI",
-				Action: func(ctx *cli.Context) error {
-					fmt.Printf("ForestVPN CLI %s\n", appVersion)
-					return nil
 				},
 			},
 		},
