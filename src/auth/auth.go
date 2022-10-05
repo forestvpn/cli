@@ -82,7 +82,7 @@ func (c AuthClient) SignIn(form SignInForm) (*resty.Response, error) {
 }
 
 // See https://firebase.google.com/docs/reference/rest/auth#section-refresh-token for more information.
-func (c AuthClient) ExchangeRefreshForIdToken(refreshToken string) (*resty.Response, error) {
+func (c AuthClient) exchangeRefreshForIdToken(refreshToken string) (*resty.Response, error) {
 	url := "https://securetoken.googleapis.com/v1/token"
 	body := fmt.Sprintf("grant_type=refresh_token&refresh_token=%s", refreshToken)
 	Client.SetTimeout(time.Duration(1 * time.Second))
@@ -98,7 +98,7 @@ func (c AuthClient) ExchangeRefreshForIdToken(refreshToken string) (*resty.Respo
 
 // GetAccessToken is a method to obtain a new access token from Firebase REST API and dump the response into FirebaseAuthFile.
 func (c AuthClient) GetAccessToken(refreshToken string) (*resty.Response, error) {
-	response, err := c.ExchangeRefreshForIdToken(refreshToken)
+	response, err := c.exchangeRefreshForIdToken(refreshToken)
 
 	if err != nil {
 		return nil, err

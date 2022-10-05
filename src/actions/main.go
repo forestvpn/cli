@@ -13,6 +13,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/olekukonko/tablewriter"
 	"golang.org/x/term"
 	"gopkg.in/ini.v1"
@@ -34,7 +35,6 @@ type AuthClientWrapper struct {
 //
 // See https://firebase.google.com/docs/reference/rest/auth#section-create-email-password for more information.
 func (w AuthClientWrapper) Register(email string, password string) error {
-	var accessToken string
 	signinform := auth.SignInForm{}
 	emailfield, err := auth.GetEmailField(email)
 
@@ -85,69 +85,17 @@ func (w AuthClientWrapper) Register(email string, password string) error {
 		return err
 	}
 
-	jsonresponse := make(map[string]string)
-	json.Unmarshal(response.Body(), &jsonresponse)
-	refreshToken := jsonresponse["refreshToken"]
-	response, err = w.AuthClient.ExchangeRefreshForIdToken(refreshToken)
-	jsonresponse = make(map[string]string)
-	json.Unmarshal(response.Body(), &jsonresponse)
-	accessToken = jsonresponse["access_token"]
-
-	if err != nil {
-		return err
-	}
-
-	w.ApiClient.AccessToken = accessToken
-	device, err := w.ApiClient.CreateDevice()
-
-	if err != nil {
-		return err
-	}
-
-	activate := true
-	return auth.AddProfile(response, device, activate)
+	return w.SetUpProfile(response)
 }
 
-// Login is a method for logging in a user on the Firebase.
-// Accepts the deviceID (coming from local file) which indicates wether the device was created on previous login.
-// If the deviceID is empty, then should create a new device on login.
-//
-// See https://firebase.google.com/docs/reference/rest/auth#section-sign-in-email-password for more information.
-func (w AuthClientWrapper) Login(email string, password string) error {
+func (w AuthClientWrapper) SetUpProfile(response *resty.Response) error {
 	var user_id string
-	exists := false
-	validate := false
-	signinform := auth.SignInForm{}
-	emailfield, err := auth.GetEmailField(email)
-
-	if err != nil {
-		return err
-	}
-
-	signinform.EmailField = emailfield
-	passwordfield, err := auth.GetPasswordField([]byte(password), validate)
-
-	if err != nil {
-		return err
-	}
-
-	signinform.PasswordField = passwordfield
-	response, err := w.AuthClient.SignIn(signinform)
-
-	if err != nil {
-		return err
-	}
-
-	err = auth.HandleFirebaseSignInResponse(response)
-
-	if err != nil {
-		return err
-	}
-
+	var accessToken string
 	var refreshToken string
+	var expires_in string
 	var data map[string]any
 
-	err = json.Unmarshal(response.Body(), &data)
+	err := json.Unmarshal(response.Body(), &data)
 
 	if err != nil {
 		return err
@@ -185,22 +133,9 @@ func (w AuthClientWrapper) Login(email string, password string) error {
 	}
 
 	if len(user_id) > 0 {
-		exists = auth.ProfileExists(user_id)
-		active := auth.IsActiveProfile(user_id)
-		profiledir := auth.ProfilesDir + user_id
+		exists := auth.ProfileExists(user_id)
 
-		if exists && active {
-			return errors.New("already logged in")
-		} else if !exists {
-			err := os.Mkdir(profiledir, 0755)
-
-			if err != nil {
-				return err
-			}
-
-			activate := true
-			var accessToken string
-
+		if !exists {
 			var y interface{} = data["access_token"]
 			switch v := y.(type) {
 			case string:
@@ -213,49 +148,100 @@ func (w AuthClientWrapper) Login(email string, password string) error {
 				return err
 			}
 
-			err = auth.AddProfile(response, device, activate)
+			path := auth.ProfilesDir + user_id
+			err = os.Mkdir(path, 0755)
+
+			if err != nil {
+				return err
+			}
+
+			data, err := json.MarshalIndent(device, "", "    ")
+
+			if err != nil {
+				return err
+			}
+
+			path = auth.ProfilesDir + user_id + auth.DeviceFile
+			err = auth.JsonDump(data, path)
 
 			if err != nil {
 				return err
 			}
 
 			err = w.SetLocation(device)
-
-			if err != nil {
-				return err
-			}
-		} else {
-			device, err := auth.LoadDevice(user_id)
-
-			if err != nil {
-				return err
-			}
-
-			err = w.SetLocation(device)
-
-			if err != nil {
-				return err
-			}
-
-			err = auth.SetActiveProfile(user_id)
 
 			if err != nil {
 				return err
 			}
 		}
 
-		path := profiledir + auth.FirebaseAuthFile
-		err = auth.JsonDump(response.Body(), path)
+		path := auth.ProfilesDir + user_id + auth.FirebaseAuthFile
+		err := auth.JsonDump(response.Body(), path)
 
 		if err != nil {
 			return err
+		}
+
+		active := auth.IsActiveProfile(user_id)
+
+		if !active {
+			err = auth.SetActiveProfile(user_id)
+
+			if err != nil {
+				return err
+			}
+
 		}
 
 	} else {
 		return errors.New("error parsing firebase sign in response: invalid user_id")
 	}
 
-	return err
+	var z interface{} = data["expires_in"]
+	switch v := z.(type) {
+	case string:
+		expires_in = v
+	}
+
+	return auth.DumpAccessTokenExpireDate(user_id, expires_in)
+}
+
+// Login is a method for logging in a user on the Firebase.
+// Accepts the deviceID (coming from local file) which indicates wether the device was created on previous login.
+// If the deviceID is empty, then should create a new device on login.
+//
+// See https://firebase.google.com/docs/reference/rest/auth#section-sign-in-email-password for more information.
+func (w AuthClientWrapper) Login(email string, password string) error {
+	validate := false
+	signinform := auth.SignInForm{}
+	emailfield, err := auth.GetEmailField(email)
+
+	if err != nil {
+		return err
+	}
+
+	signinform.EmailField = emailfield
+	passwordfield, err := auth.GetPasswordField([]byte(password), validate)
+
+	if err != nil {
+		return err
+	}
+
+	signinform.PasswordField = passwordfield
+	response, err := w.AuthClient.SignIn(signinform)
+
+	if err != nil {
+		return err
+	}
+
+	err = auth.HandleFirebaseSignInResponse(response)
+
+	if err != nil {
+		return err
+	}
+
+	return w.SetUpProfile(response)
+
 }
 
 // ListLocations is a function to get the list of locations available for user.
@@ -409,4 +395,47 @@ func (w AuthClientWrapper) SetLocation(device *forestvpn_api.Device) error {
 	}
 
 	return nil
+}
+
+func (w AuthClientWrapper) LoadOrGetBillingFeature(user_id string) (forestvpn_api.BillingFeature, error) {
+	var billingFeature forestvpn_api.BillingFeature
+	var err error
+	update := false
+
+	if auth.BillingFeautureExists(user_id) {
+		billingFeature, err = auth.LoadBillingFeature(user_id)
+
+		if err != nil {
+			return billingFeature, err
+		}
+
+		if auth.BillingFeatureExpired(billingFeature) {
+			update = true
+		}
+	} else {
+		update = true
+	}
+
+	if update {
+		resp, err := w.ApiClient.GetBillingFeatures()
+
+		if err != nil {
+			return billingFeature, err
+		}
+
+		billingFeature = resp[0]
+		data, err := json.MarshalIndent(billingFeature, "", "    ")
+
+		if err != nil {
+			return billingFeature, err
+		}
+
+		path := auth.ProfilesDir + user_id + auth.BillingFeatureFile
+		err = auth.JsonDump(data, path)
+
+		if err != nil {
+			return billingFeature, err
+		}
+	}
+	return billingFeature, nil
 }

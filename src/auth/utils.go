@@ -11,7 +11,9 @@ import (
 	"os/exec"
 	"runtime"
 	"strings"
+	"time"
 
+	"github.com/fatih/color"
 	forestvpn_api "github.com/forestvpn/api-client-go"
 	"github.com/getsentry/sentry-go"
 	"github.com/go-resty/resty/v2"
@@ -44,6 +46,9 @@ const ActiveUserLockFile string = "/.active.lock"
 // FirebaseAuthFile is a file to dump Firebase responses.
 const FirebaseAuthFile = "/firebase.json"
 
+const AccessTokenExpireDateFile = "/firebase-ext.json"
+const BillingFeatureFile = "/billing.json"
+
 func loadFirebaseAuthFile(user_id string) (map[string]any, error) {
 	var firebaseAuthFile map[string]any
 
@@ -75,6 +80,7 @@ func LoadAccessToken(user_id string) (string, error) {
 	return accessToken, err
 }
 
+// Deprecated
 func AddProfile(response *resty.Response, device *forestvpn_api.Device, activate bool) error {
 	jsonresponse := make(map[string]string)
 	err := json.Unmarshal(response.Body(), &jsonresponse)
@@ -312,7 +318,7 @@ func LoadDevice(user_id string) (*forestvpn_api.Device, error) {
 
 // BuyPremiumDialog is a function that prompts the user to by premium subscrition on Forest VPN.
 // If the user prompts 'yes', then it opens https://forestvpn.com/pricing/ page in the default browser.
-func BuyPremiumDialog() error {
+func BuyPremiumDialog(city string) error {
 	var answer string
 	var openCommand string
 	os := runtime.GOOS
@@ -324,7 +330,10 @@ func BuyPremiumDialog() error {
 	case "linux":
 		openCommand = "xdg-open"
 	}
-	fmt.Println("Buy Premium? ([Y]es/[N]o)")
+
+	faint := color.New(color.Faint)
+	faint.Println(fmt.Sprintf("%s availble for premium plan subscribers.", city))
+	fmt.Println("Would you like to subscribe? ([Y]es/[N]o)")
 	fmt.Scanln(&answer)
 
 	if strings.Contains("YESyesYesYEsyEsyeSyES", answer) {
@@ -465,14 +474,8 @@ func UpdateProfileDevice(device *forestvpn_api.Device) error {
 	return JsonDump(data, ProfilesDir+user_id+DeviceFile)
 }
 
-func LoadIdToken() (string, error) {
+func LoadIdToken(user_id string) (string, error) {
 	var idToken string
-	user_id, err := loadActiveUserId()
-
-	if err != nil {
-		return idToken, err
-	}
-
 	firebaseAuthFile, err := loadFirebaseAuthFile(user_id)
 
 	if err != nil {
@@ -514,4 +517,114 @@ func loadActiveUserId() (string, error) {
 	}
 
 	return user_id, nil
+}
+
+func GetAccessTokenExpireDate(expireTime string) (time.Time, error) {
+	now := time.Now()
+	h, err := time.ParseDuration(expireTime + "s")
+
+	if err != nil {
+		return now, err
+	}
+
+	return now.Add(time.Second + h), nil
+}
+
+func Date2Json(date time.Time) ([]byte, error) {
+	expireDate := make(map[string]string)
+	expireDate["expireDate"] = date.String()
+	return json.MarshalIndent(expireDate, "", "    ")
+}
+
+func loadAccessTokenExpireDate(user_id string) (time.Time, error) {
+	var expireTime time.Time
+	expireTimeMap := make(map[string]string)
+	path := ProfilesDir + user_id + AccessTokenExpireDateFile
+
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return expireTime, err
+	}
+
+	data, err := readFile(path)
+
+	if err != nil {
+		return expireTime, err
+	}
+
+	err = json.Unmarshal(data, &expireTimeMap)
+
+	if err != nil {
+		return expireTime, err
+	}
+
+	return time.Parse(time.RFC3339, expireTimeMap["expireTime"])
+
+}
+
+func IsAccessTokenExpired(user_id string) (bool, error) {
+	expired := false
+	now := time.Now()
+	expireDate, err := loadAccessTokenExpireDate(user_id)
+
+	if err != nil {
+		return expired, err
+	}
+
+	if expireDate.Before(now) {
+		expired = true
+	}
+	return expired, nil
+}
+
+func DumpAccessTokenExpireDate(user_id string, expires_in string) error {
+	expireTime, err := GetAccessTokenExpireDate(expires_in)
+
+	if err != nil {
+		return err
+	}
+
+	data, err := Date2Json(expireTime)
+
+	if err != nil {
+		return err
+	}
+
+	path := ProfilesDir + user_id + AccessTokenExpireDateFile
+	return JsonDump(data, path)
+}
+
+func LoadBillingFeature(user_id string) (forestvpn_api.BillingFeature, error) {
+	var billingFeature forestvpn_api.BillingFeature
+	path := ProfilesDir + user_id + BillingFeatureFile
+
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return billingFeature, err
+	}
+
+	data, err := readFile(path)
+
+	if err != nil {
+		return billingFeature, err
+	}
+
+	err = json.Unmarshal(data, &billingFeature)
+
+	if err != nil {
+		return billingFeature, err
+	}
+
+	return billingFeature, nil
+}
+
+func BillingFeautureExists(user_id string) bool {
+	path := ProfilesDir + user_id + BillingFeatureFile
+
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return false
+	}
+	return true
+}
+
+func BillingFeatureExpired(billingFeature forestvpn_api.BillingFeature) bool {
+	return time.Now().After(billingFeature.GetExpiryDate())
 }

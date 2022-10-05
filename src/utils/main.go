@@ -180,3 +180,8 @@ func GetActiveSshClients() ([]string, error) {
 
 	return ips, err
 }
+
+func GetLatestVersionTag() string {
+	stdout, _ := exec.Command("git", "describe", "--tags", "--abbrev=0").Output()
+	return strings.TrimSpace(string(stdout))
+}
