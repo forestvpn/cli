@@ -27,8 +27,9 @@ import (
 // AuthClientWrapper is a structure that is used as a high-level wrapper for both AuthClient and ApiClient.
 // It is used as main wgrest and Firebase REST API client as both of wrapped structures share the same AccessToken for authentication purposes.
 type AuthClientWrapper struct {
-	AuthClient auth.AuthClient
-	ApiClient  api.ApiClientWrapper
+	AuthClient  auth.AuthClient
+	ApiClient   api.ApiClientWrapper
+	AccountsMap auth.AccountsMap
 }
 
 // Register is a method to perform a user registration on Firebase.
@@ -85,125 +86,134 @@ func (w AuthClientWrapper) Register(email string, password string) error {
 		return err
 	}
 
-	return w.SetUpProfile(response)
+	user_id, err := w.SetUpProfile(response)
+
+	if err != nil {
+		return err
+	}
+
+	err = auth.SetActiveProfile(user_id)
+
+	if err != nil {
+		return err
+	}
+
+	return w.AccountsMap.AddAccount(signinform.EmailField.Value, user_id)
+
 }
 
-func (w AuthClientWrapper) SetUpProfile(response *resty.Response) error {
-	var user_id string
-	var accessToken string
-	var refreshToken string
-	var expires_in string
+func (w AuthClientWrapper) SetUpProfile(response *resty.Response) (string, error) {
 	var data map[string]any
-
 	err := json.Unmarshal(response.Body(), &data)
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	var x interface{} = data["refreshToken"]
-	switch v := x.(type) {
+	switch refreshToken := x.(type) {
 	case string:
-		refreshToken = v
+		if len(refreshToken) > 0 {
+			response, err = w.AuthClient.GetAccessToken(refreshToken)
+
+			if err != nil {
+				return "", err
+			}
+
+			err = auth.HandleFirebaseSignInResponse(response)
+
+			if err != nil {
+				return "", err
+			}
+
+			data = make(map[string]any)
+			err = json.Unmarshal(response.Body(), &data)
+
+			if err != nil {
+				return "", err
+			}
+		}
 	}
 
-	response, err = w.AuthClient.GetAccessToken(refreshToken)
-
-	if err != nil {
-		return err
-	}
-
-	err = auth.HandleFirebaseSignInResponse(response)
-
-	if err != nil {
-		return err
-	}
-
-	data = make(map[string]any)
-	err = json.Unmarshal(response.Body(), &data)
-
-	if err != nil {
-		return err
-	}
-
-	var y interface{} = data["user_id"]
-	switch v := y.(type) {
+	var i interface{} = data["refresh_token"]
+	switch refreshToken := i.(type) {
 	case string:
-		user_id = v
-	}
-
-	if len(user_id) > 0 {
-		exists := auth.ProfileExists(user_id)
-
-		if !exists {
-			var y interface{} = data["access_token"]
-			switch v := y.(type) {
+		if len(refreshToken) > 0 {
+			var y interface{} = data["user_id"]
+			switch user_id := y.(type) {
 			case string:
-				accessToken = v
+				if len(user_id) > 0 {
+					email := w.AccountsMap.GetEmail(user_id)
+
+					if len(email) == 0 {
+						var y interface{} = data["access_token"]
+						switch accessToken := y.(type) {
+						case string:
+							if len(accessToken) > 0 {
+								w.ApiClient.AccessToken = accessToken
+							} else {
+								return user_id, errors.New("unexpected error: invalid access token")
+							}
+						}
+
+						device, err := w.ApiClient.CreateDevice()
+
+						if err != nil {
+							return user_id, err
+						}
+
+						path := auth.ProfilesDir + user_id
+						err = os.Mkdir(path, 0755)
+
+						if err != nil {
+							return user_id, err
+						}
+
+						data, err := json.MarshalIndent(device, "", "    ")
+
+						if err != nil {
+							return user_id, err
+						}
+
+						path = auth.ProfilesDir + user_id + auth.DeviceFile
+						err = auth.JsonDump(data, path)
+
+						if err != nil {
+							return user_id, err
+						}
+
+						err = w.SetLocation(device)
+
+						if err != nil {
+							return user_id, err
+						}
+					}
+
+					path := auth.ProfilesDir + user_id + auth.FirebaseAuthFile
+					err = auth.JsonDump(response.Body(), path)
+
+					if err != nil {
+						return user_id, err
+					}
+
+					var z interface{} = data["expires_in"]
+					switch exp := z.(type) {
+					case string:
+						err = auth.DumpAccessTokenExpireDate(user_id, exp)
+						return user_id, err
+					}
+
+				} else {
+					return user_id, errors.New("error parsing firebase sign in response: invalid user_id")
+				}
 			}
-			w.ApiClient.AccessToken = accessToken
-			device, err := w.ApiClient.CreateDevice()
-
-			if err != nil {
-				return err
-			}
-
-			path := auth.ProfilesDir + user_id
-			err = os.Mkdir(path, 0755)
-
-			if err != nil {
-				return err
-			}
-
-			data, err := json.MarshalIndent(device, "", "    ")
-
-			if err != nil {
-				return err
-			}
-
-			path = auth.ProfilesDir + user_id + auth.DeviceFile
-			err = auth.JsonDump(data, path)
-
-			if err != nil {
-				return err
-			}
-
-			err = w.SetLocation(device)
-
-			if err != nil {
-				return err
-			}
+		} else {
+			return "", errors.New("unknown response type")
 		}
-
-		path := auth.ProfilesDir + user_id + auth.FirebaseAuthFile
-		err := auth.JsonDump(response.Body(), path)
-
-		if err != nil {
-			return err
-		}
-
-		active := auth.IsActiveProfile(user_id)
-
-		if !active {
-			err = auth.SetActiveProfile(user_id)
-
-			if err != nil {
-				return err
-			}
-
-		}
-
-	} else {
-		return errors.New("error parsing firebase sign in response: invalid user_id")
 	}
 
-	var z interface{} = data["expires_in"]
-	switch v := z.(type) {
-	case string:
-		expires_in = v
-	}
+	return "", nil
 
-	return auth.DumpAccessTokenExpireDate(user_id, expires_in)
 }
 
 // Login is a method for logging in a user on the Firebase.
@@ -212,7 +222,7 @@ func (w AuthClientWrapper) SetUpProfile(response *resty.Response) error {
 //
 // See https://firebase.google.com/docs/reference/rest/auth#section-sign-in-email-password for more information.
 func (w AuthClientWrapper) Login(email string, password string) error {
-	validate := false
+	var user_id string
 	signinform := auth.SignInForm{}
 	emailfield, err := auth.GetEmailField(email)
 
@@ -221,27 +231,48 @@ func (w AuthClientWrapper) Login(email string, password string) error {
 	}
 
 	signinform.EmailField = emailfield
-	passwordfield, err := auth.GetPasswordField([]byte(password), validate)
+	user_id = w.AccountsMap.GetUserID(emailfield.Value)
 
-	if err != nil {
-		return err
+	if len(user_id) == 0 {
+		validate := false
+		passwordfield, err := auth.GetPasswordField([]byte(password), validate)
+
+		if err != nil {
+			return err
+		}
+
+		signinform.PasswordField = passwordfield
+		response, err := w.AuthClient.SignIn(signinform)
+
+		if err != nil {
+			return err
+		}
+
+		err = auth.HandleFirebaseSignInResponse(response)
+
+		if err != nil {
+			return err
+		}
+
+		user_id, err = w.SetUpProfile(response)
+
+		if err != nil {
+			return err
+		}
+
+		err = w.AccountsMap.AddAccount(signinform.EmailField.Value, user_id)
+
+		if err != nil {
+			return err
+		}
 	}
 
-	signinform.PasswordField = passwordfield
-	response, err := w.AuthClient.SignIn(signinform)
+	active := auth.IsActiveProfile(user_id)
 
-	if err != nil {
-		return err
+	if !active {
+		return auth.SetActiveProfile(user_id)
 	}
-
-	err = auth.HandleFirebaseSignInResponse(response)
-
-	if err != nil {
-		return err
-	}
-
-	return w.SetUpProfile(response)
-
+	return nil
 }
 
 // ListLocations is a function to get the list of locations available for user.

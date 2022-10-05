@@ -46,8 +46,99 @@ const ActiveUserLockFile string = "/.active.lock"
 // FirebaseAuthFile is a file to dump Firebase responses.
 const FirebaseAuthFile = "/firebase.json"
 
-const AccessTokenExpireDateFile = "/firebase-ext.json"
+const FirebaseExtensionFile = "/firebase-ext.json"
 const BillingFeatureFile = "/billing.json"
+
+type AccountsMap struct {
+	path string
+}
+
+func GetAccountMap(accountsMapFile string) AccountsMap {
+	path := AppDir + accountsMapFile
+	accountmap := AccountsMap{path: path}
+	return accountmap
+}
+
+func (a AccountsMap) loadMap() (map[string]string, error) {
+	m := make(map[string]string)
+
+	if _, err := os.Stat(a.path); os.IsNotExist(err) {
+		return m, err
+	}
+
+	b, err := os.ReadFile(a.path)
+
+	if err != nil {
+		return m, err
+	}
+
+	err = json.Unmarshal(b, &m)
+	return m, err
+}
+
+func (a AccountsMap) AddAccount(email string, user_id string) error {
+	m, _ := a.loadMap()
+	m[email] = user_id
+	b, err := json.MarshalIndent(m, "", "    ")
+
+	if err != nil {
+		return err
+	}
+
+	return JsonDump(b, a.path)
+}
+
+func (a AccountsMap) SetEmail(email string) error {
+	m, err := a.loadMap()
+
+	if err != nil {
+		return err
+	}
+
+	m[email] = ""
+	b, err := json.Marshal(m)
+
+	if err != nil {
+		return err
+	}
+
+	return JsonDump(b, a.path)
+}
+
+func (a AccountsMap) SetUserID(email string, user_id string) error {
+	m, err := a.loadMap()
+
+	if err != nil {
+		return err
+	}
+
+	m[email] = user_id
+
+	b, err := json.Marshal(m)
+
+	if err != nil {
+		return err
+	}
+
+	return JsonDump(b, a.path)
+}
+
+func (a AccountsMap) GetUserID(email string) string {
+	m, _ := a.loadMap()
+	return m[email]
+}
+
+func (a AccountsMap) GetEmail(user_id string) string {
+	m, _ := a.loadMap()
+
+	for k, v := range m {
+		if v == user_id {
+			return k
+		}
+	}
+
+	return ""
+}
 
 func loadFirebaseAuthFile(user_id string) (map[string]any, error) {
 	var firebaseAuthFile map[string]any
@@ -538,27 +629,14 @@ func Date2Json(date time.Time) ([]byte, error) {
 
 func loadAccessTokenExpireDate(user_id string) (time.Time, error) {
 	var expireTime time.Time
-	expireTimeMap := make(map[string]string)
-	path := ProfilesDir + user_id + AccessTokenExpireDateFile
-
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return expireTime, err
-	}
-
-	data, err := readFile(path)
+	data, err := loadFirebaseExtensionFile(user_id)
 
 	if err != nil {
 		return expireTime, err
 	}
 
-	err = json.Unmarshal(data, &expireTimeMap)
-
-	if err != nil {
-		return expireTime, err
-	}
-
-	return time.Parse(time.RFC3339, expireTimeMap["expireTime"])
-
+	expireTime, err = time.Parse(time.RFC3339, data["expireTime"])
+	return expireTime, err
 }
 
 func IsAccessTokenExpired(user_id string) (bool, error) {
@@ -589,7 +667,7 @@ func DumpAccessTokenExpireDate(user_id string, expires_in string) error {
 		return err
 	}
 
-	path := ProfilesDir + user_id + AccessTokenExpireDateFile
+	path := ProfilesDir + user_id + FirebaseExtensionFile
 	return JsonDump(data, path)
 }
 
@@ -627,4 +705,22 @@ func BillingFeautureExists(user_id string) bool {
 
 func BillingFeatureExpired(billingFeature forestvpn_api.BillingFeature) bool {
 	return time.Now().After(billingFeature.GetExpiryDate())
+}
+
+func loadFirebaseExtensionFile(user_id string) (map[string]string, error) {
+	var data map[string]string
+	path := ProfilesDir + user_id + FirebaseExtensionFile
+
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return data, err
+	}
+
+	d, err := readFile(path)
+
+	if err != nil {
+		return data, err
+	}
+
+	err = json.Unmarshal(d, &data)
+	return data, err
 }
