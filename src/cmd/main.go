@@ -34,8 +34,11 @@ var (
 	apiHost string
 )
 
+const accountsMapFile = ".accounts.json"
+
 func GetAuthClientWrapper() (actions.AuthClientWrapper, error) {
-	authClientWrapper := actions.AuthClientWrapper{}
+	accountmap := auth.GetAccountMap(accountsMapFile)
+	authClientWrapper := actions.AuthClientWrapper{AccountsMap: accountmap}
 	authClient := auth.AuthClient{ApiKey: firebaseApiKey}
 
 	user_id, _ := auth.LoadUserID()
@@ -52,7 +55,7 @@ func GetAuthClientWrapper() (actions.AuthClientWrapper, error) {
 				return authClientWrapper, err
 			}
 
-			err = authClientWrapper.SetUpProfile(response)
+			user_id, err = authClientWrapper.SetUpProfile(response)
 
 			if err != nil {
 				return authClientWrapper, err
@@ -106,8 +109,15 @@ func main() {
 				Usage: "Manage your account",
 				Subcommands: []*cli.Command{
 					{
+						Name:  "ls",
+						Usage: "See local accounts ever logged in",
+						Action: func(c *cli.Context) error {
+							return nil
+						},
+					},
+					{
 						Name:  "status",
-						Usage: "See account info",
+						Usage: "See logged-in account info",
 						Action: func(c *cli.Context) error {
 							if !auth.IsAuthenticated() {
 								fmt.Println("Are you logged in?")
