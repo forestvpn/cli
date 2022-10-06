@@ -8,9 +8,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
-	"runtime"
-	"strings"
 	"time"
 
 	"github.com/fatih/color"
@@ -410,30 +407,43 @@ func LoadDevice(user_id string) (*forestvpn_api.Device, error) {
 // BuyPremiumDialog is a function that prompts the user to by premium subscrition on Forest VPN.
 // If the user prompts 'yes', then it opens https://forestvpn.com/pricing/ page in the default browser.
 func BuyPremiumDialog(city string) error {
-	var answer string
-	var openCommand string
-	os := runtime.GOOS
-	switch os {
-	case "windows":
-		openCommand = "start"
-	case "darwin":
-		openCommand = "open"
-	case "linux":
-		openCommand = "xdg-open"
-	}
+	// var answer string
+	// var openCommand string
+	const url = "https://forestvpn.com/checkout/"
+	// os := runtime.GOOS
+	// switch os {
+	// case "windows":
+	// 	openCommand = "start"
+	// case "darwin":
+	// 	openCommand = "open"
+	// case "linux":
+	// 	openCommand = "xdg-open"
+	// }
 
 	faint := color.New(color.Faint)
-	faint.Println(fmt.Sprintf("%s availble for premium plan subscribers.", city))
-	fmt.Println("Would you like to subscribe? ([Y]es/[N]o)")
-	fmt.Scanln(&answer)
+	fmt.Println("How to use FREE version")
+	fmt.Println()
+	fmt.Println("1. Install ForestVPN mobile app")
+	faint.Println("You can install it through out App Store or Google Play")
+	fmt.Println("2. Watch ad in mobile app")
+	faint.Println("Account in mobile app and here should be same as:- account@example.com")
+	fmt.Println("3. Connect to VPN")
+	faint.Println("30 minutes connection in exchange for 30 seconds Ad")
+	fmt.Println()
+	fmt.Println("OR")
+	fmt.Println()
+	// faint.Println(fmt.Sprintf("%s availble for premium plan subscribers.", city))
+	fmt.Printf("Go Premium: %s", url)
+	fmt.Println()
+	// fmt.Scanln(&answer)
 
-	if strings.Contains("YESyesYesYEsyEsyeSyES", answer) {
-		err := exec.Command(openCommand, "https://forestvpn.com/pricing/").Run()
+	// if strings.Contains("YESyesYesYEsyEsyeSyES", answer) {
+	// 	err := exec.Command(openCommand, url).Run()
 
-		if err != nil {
-			return err
-		}
-	}
+	// 	if err != nil {
+	// 		fmt.Println(url)
+	// 	}
+	// }
 	return nil
 }
 
@@ -623,7 +633,7 @@ func GetAccessTokenExpireDate(expireTime string) (time.Time, error) {
 
 func Date2Json(date time.Time) ([]byte, error) {
 	expireDate := make(map[string]string)
-	expireDate["expireDate"] = date.String()
+	expireDate["expireDate"] = date.Format(time.RFC3339)
 	return json.MarshalIndent(expireDate, "", "    ")
 }
 
@@ -635,7 +645,7 @@ func loadAccessTokenExpireDate(user_id string) (time.Time, error) {
 		return expireTime, err
 	}
 
-	expireTime, err = time.Parse(time.RFC3339, data["expireTime"])
+	expireTime, err = time.Parse(time.RFC3339, data["expireDate"])
 	return expireTime, err
 }
 
@@ -648,7 +658,7 @@ func IsAccessTokenExpired(user_id string) (bool, error) {
 		return expired, err
 	}
 
-	if expireDate.Before(now) {
+	if now.After(expireDate) {
 		expired = true
 	}
 	return expired, nil
