@@ -337,13 +337,18 @@ func main() {
 							}
 
 							state := actions.State{}
-							status := state.GetStatus()
 
-							if status {
+							if state.GetStatus() {
 								return errors.New("state is already up and running")
 							}
 
-							err = state.SetUp(auth.WireguardConfig)
+							user_id, err := auth.LoadUserID()
+
+							if err != nil {
+								return err
+							}
+
+							err = state.SetUp(user_id)
 
 							if err != nil {
 								return err
@@ -388,7 +393,13 @@ func main() {
 							state := actions.State{}
 
 							if state.GetStatus() {
-								err := state.SetDown(auth.WireguardConfig)
+								user_id, err := auth.LoadUserID()
+
+								if err != nil {
+									return err
+								}
+
+								err = state.SetDown(user_id)
 
 								if err != nil {
 									return err
@@ -454,7 +465,7 @@ func main() {
 				Subcommands: []*cli.Command{
 					{
 						Name:  "status",
-						Usage: "See the location is set as a default for establishing connection",
+						Usage: "See the location is set as default VPN connection",
 						Action: func(cCtx *cli.Context) error {
 							faint := color.New(color.Faint)
 
@@ -585,7 +596,7 @@ func main() {
 								return err
 							}
 
-							err = authClientWrapper.SetLocation(device)
+							err = authClientWrapper.SetLocation(device, user_id)
 
 							if err != nil {
 								return err

@@ -32,7 +32,7 @@ const DeviceFile string = "/device.json"
 // WireguardConfig is a Wireguard configuration file.
 //
 // It's being rewrittten per location change.
-var WireguardConfig = AppDir + "fvpn0.conf"
+const WireguardConfig = "/fvpn0.conf"
 
 // Deprecated: The SessionFile is a file for storing the last session information.
 //
