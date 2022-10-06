@@ -35,8 +35,9 @@ var (
 )
 
 const accountsMapFile = ".accounts.json"
+const url = "https://forestvpn.com/checkout/"
 
-func GetAuthClientWrapper() (actions.AuthClientWrapper, error) {
+func getAuthClientWrapper() (actions.AuthClientWrapper, error) {
 	accountmap := auth.GetAccountMap(accountsMapFile)
 	authClientWrapper := actions.AuthClientWrapper{AccountsMap: accountmap}
 	authClient := auth.AuthClient{ApiKey: firebaseApiKey}
@@ -132,7 +133,7 @@ func main() {
 								return err
 							}
 
-							authClientWrapper, err := GetAuthClientWrapper()
+							authClientWrapper, err := getAuthClientWrapper()
 
 							if err != nil {
 								return err
@@ -222,7 +223,7 @@ func main() {
 								return nil
 							}
 
-							authClientWrapper, err := GetAuthClientWrapper()
+							authClientWrapper, err := getAuthClientWrapper()
 
 							if err != nil {
 								return err
@@ -257,7 +258,7 @@ func main() {
 							},
 						},
 						Action: func(c *cli.Context) error {
-							authClientWrapper, err := GetAuthClientWrapper()
+							authClientWrapper, err := getAuthClientWrapper()
 
 							if err != nil {
 								return err
@@ -336,16 +337,73 @@ func main() {
 								return nil
 							}
 
-							state := actions.State{}
+							client, err := getAuthClientWrapper()
 
-							if state.GetStatus() {
-								return errors.New("state is already up and running")
+							if err != nil {
+								return err
 							}
 
 							user_id, err := auth.LoadUserID()
 
 							if err != nil {
 								return err
+							}
+
+							b, err := client.LoadOrGetBillingFeature(user_id)
+
+							if err != nil {
+								return err
+							}
+
+							device, err := auth.LoadDevice(user_id)
+
+							if err != nil {
+								return err
+							}
+
+							location := device.GetLocation()
+							locations, err := client.ApiClient.GetLocations()
+
+							if err != nil {
+								return err
+							}
+
+							w := actions.GetWrappedLocations(b, locations)
+							now := time.Now()
+							exp := b.GetExpiryDate()
+							left := exp.Sub(now)
+							bid := b.GetBundleId()
+							faint := color.New(color.Faint)
+
+							for _, l := range w {
+								if location.GetId() == l.Location.GetId() {
+									if now.After(exp) {
+										if l.Premium {
+											color.Yellow("The location you were using is now unavailable, as your paid subscription has ended.")
+											color.Yellow("You can keep using our VPN once you watch an ad in our iOS/Android apps.")
+											color.Yellow("Or you can go Premium at %s.", url)
+											return nil
+										} else {
+											color.Yellow("Your premium subscription is over, but you can keep using our VPN once you watch an ad in our iOS/Android apps.")
+											color.Yellow("Or you can go Premium at %s.", url)
+											return nil
+										}
+									} else if bid == "com.forestvpn.freemium" && int(left.Minutes()) < 5 {
+										faint.Println("You currently have 5 more minutes of freemium left.")
+									} else if int(left.Hours()/24) < 3 {
+										if bid == "com.forestvpn.premium" {
+											faint.Println("Your premium subscription will end in less than 3 days.")
+										} else {
+											faint.Println("Your free trial will end in less than 3 days.")
+										}
+									}
+								}
+							}
+
+							state := actions.State{}
+
+							if state.GetStatus() {
+								return errors.New("state is already up and running")
 							}
 
 							err = state.SetUp(user_id)
@@ -427,6 +485,24 @@ func main() {
 								color := color.New(color.Faint)
 								color.Println("Try 'forest account login'")
 								return nil
+							}
+
+							client, err := getAuthClientWrapper()
+
+							if err != nil {
+								return err
+							}
+
+							user_id, err := auth.LoadUserID()
+
+							if err != nil {
+								return err
+							}
+
+							_, err = client.LoadOrGetBillingFeature(user_id)
+
+							if err != nil {
+								return err
 							}
 
 							state := actions.State{}
@@ -519,7 +595,7 @@ func main() {
 								return errors.New("UUID or name required")
 							}
 
-							authClientWrapper, err := GetAuthClientWrapper()
+							authClientWrapper, err := getAuthClientWrapper()
 
 							if err != nil {
 								return err
@@ -575,7 +651,10 @@ func main() {
 							now := time.Now()
 
 							if now.After(expireDate) && location.Premium {
-								return auth.BuyPremiumDialog(location.Location.GetName())
+								color.Yellow("The location you want to use is now unavailable, as it requires a paid subscription.")
+								color.Yellow("You can keep using our VPN once you watch an ad in our iOS/Android apps.")
+								color.Yellow("Or you can go Premium at %s.", url)
+								return nil
 							}
 
 							device, err := auth.LoadDevice(user_id)
@@ -621,7 +700,7 @@ func main() {
 							},
 						},
 						Action: func(c *cli.Context) error {
-							authClientWrapper, err := GetAuthClientWrapper()
+							authClientWrapper, err := getAuthClientWrapper()
 
 							if err != nil {
 								return err

@@ -12,6 +12,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/urfave/cli/v2 v2.17.1
+	golang.org/x/sync v0.0.0-20200625203802-6e8e738ad208
 	golang.org/x/term v0.0.0-20220526004731-065cf7ba2467
 	golang.org/x/text v0.3.7
 	gopkg.in/ini.v1 v1.66.6
