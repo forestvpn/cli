@@ -182,7 +182,7 @@ func (w AuthClientWrapper) SetUpProfile(response *resty.Response) (string, error
 							return user_id, err
 						}
 
-						err = w.SetLocation(device)
+						err = w.SetLocation(device, user_id)
 
 						if err != nil {
 							return user_id, err
@@ -335,7 +335,7 @@ func (w AuthClientWrapper) ListLocations(country string) error {
 // If the user subscrition on the Forest VPN services is out of date, it calls BuyPremiumDialog.
 //
 // See https://github.com/forestvpn/api-client-go/blob/main/docs/BillingFeature.md for more information.
-func (w AuthClientWrapper) SetLocation(device *forestvpn_api.Device) error {
+func (w AuthClientWrapper) SetLocation(device *forestvpn_api.Device, user_id string) error {
 	os := runtime.GOOS
 	config := ini.Empty()
 	interfaceSection, err := config.NewSection("Interface")
@@ -419,7 +419,8 @@ func (w AuthClientWrapper) SetLocation(device *forestvpn_api.Device) error {
 		}
 	}
 
-	err = config.SaveTo(auth.WireguardConfig)
+	path := auth.ProfilesDir + user_id + auth.WireguardConfig
+	err = config.SaveTo(path)
 
 	if err != nil {
 		return err
