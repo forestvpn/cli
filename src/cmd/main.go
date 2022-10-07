@@ -278,6 +278,13 @@ func main() {
 						Name:  "logout",
 						Usage: "Log out from your ForestVPN account on this device",
 						Action: func(c *cli.Context) error {
+							if !auth.IsAuthenticated() {
+								fmt.Println("Are you logged in?")
+								color := color.New(color.Faint)
+								color.Println("Try 'forest account login'")
+								return nil
+							}
+
 							state := actions.State{}
 							status := state.GetStatus()
 
@@ -309,6 +316,13 @@ func main() {
 									}
 
 									err = auth.RemoveActiveUserLockFile()
+
+									if err != nil {
+										return err
+									}
+
+									m := auth.GetAccountMap(accountsMapFile)
+									err = m.RemoveAccount(user_id)
 
 									if err != nil {
 										return err
@@ -383,7 +397,7 @@ func main() {
 											color.Yellow("The location you were using is now unavailable, as your paid subscription has ended.")
 											color.Yellow("You can keep using ForestVPN once you watch an ad in our mobile app, or simply go Premium at %s.", url)
 											return nil
-										} else if bid == "com.forestvpn.freemium" {
+										} else if !l.Premium {
 											color.Yellow("Your 30-minute session is over.")
 											color.Yellow("You can keep using ForestVPN once you watch an ad in our mobile app, or simply go Premium at %s.", url)
 											return nil
