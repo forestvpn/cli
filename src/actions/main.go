@@ -163,10 +163,13 @@ func (w AuthClientWrapper) SetUpProfile(response *resty.Response) (string, error
 						}
 
 						path := auth.ProfilesDir + user_id
-						err = os.Mkdir(path, 0755)
 
-						if err != nil {
-							return user_id, err
+						if _, err := os.Stat(path); os.IsNotExist(err) {
+							err = os.Mkdir(path, 0755)
+
+							if err != nil {
+								return user_id, err
+							}
 						}
 
 						data, err := json.MarshalIndent(device, "", "    ")

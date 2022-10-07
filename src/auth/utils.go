@@ -56,6 +56,27 @@ func GetAccountMap(accountsMapFile string) AccountsMap {
 	return accountmap
 }
 
+func (a AccountsMap) RemoveAccount(user_id string) error {
+	m, err := a.loadMap()
+
+	if err != nil {
+		return err
+	}
+
+	for k, v := range m {
+		if v == user_id {
+			delete(m, k)
+		}
+	}
+	b, err := json.MarshalIndent(m, "", "    ")
+
+	if err != nil {
+		return err
+	}
+
+	return JsonDump(b, a.path)
+}
+
 func (a AccountsMap) loadMap() (map[string]string, error) {
 	m := make(map[string]string)
 
