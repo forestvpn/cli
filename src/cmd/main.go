@@ -25,13 +25,13 @@ var (
 	// DSN is a Data Source Name for Sentry. It is stored in an environment variable and assigned during the build with ldflags.
 	//
 	// See https://docs.sentry.io/product/sentry-basics/dsn-explainer/ for more information.
-	Dsn string
+	Dsn = os.Getenv("SENTRY_DSN")
 	// appVersion value is stored in an environment variable and assigned during the build with ldflags.
 	appVersion string
 	// firebaseApiKey is stored in an environment variable and assigned during the build with ldflags.
-	firebaseApiKey string
+	firebaseApiKey = os.Getenv("STAGING_FIREBASE_API_KEY")
 	// ApiHost is a hostname of Forest VPN back-end API that is stored in an environment variable and assigned during the build with ldflags.
-	apiHost string
+	apiHost = os.Getenv("STAGING_API_URL")
 )
 
 const accountsMapFile = ".accounts.json"
@@ -188,10 +188,9 @@ func main() {
 							color.Green("Logged-in as %s", email)
 							color.Green("Plan: %s", plan)
 
-							if plan == "premium" || days > 0 {
-								if days > 0 {
-									color.Green("%s days left", fmt.Sprint(int(days)))
-								}
+							if days > 0 {
+								color.Green("%s days left", fmt.Sprint(int(days)))
+							} else {
 								color.Red("Expired")
 							}
 
@@ -380,14 +379,13 @@ func main() {
 							for _, l := range w {
 								if location.GetId() == l.Location.GetId() {
 									if now.After(exp) {
-										if l.Premium {
+										if l.Premium && bid == "com.forestvpn.premium" {
 											color.Yellow("The location you were using is now unavailable, as your paid subscription has ended.")
-											color.Yellow("You can keep using our VPN once you watch an ad in our iOS/Android apps.")
-											color.Yellow("Or you can go Premium at %s.", url)
+											color.Yellow("You can keep using ForestVPN once you watch an ad in our mobile app, or simply go Premium at %s.", url)
 											return nil
-										} else {
-											color.Yellow("Your premium subscription is over, but you can keep using our VPN once you watch an ad in our iOS/Android apps.")
-											color.Yellow("Or you can go Premium at %s.", url)
+										} else if bid == "com.forestvpn.freemium" {
+											color.Yellow("Your 30-minute session is over.")
+											color.Yellow("You can keep using ForestVPN once you watch an ad in our mobile app, or simply go Premium at %s.", url)
 											return nil
 										}
 									} else if bid == "com.forestvpn.freemium" && int(left.Minutes()) < 5 {
@@ -651,8 +649,7 @@ func main() {
 
 							if time.Now().After(b.GetExpiryDate()) && location.Premium {
 								color.Yellow("The location you want to use is now unavailable, as it requires a paid subscription.")
-								color.Yellow("You can keep using our VPN once you watch an ad in our iOS/Android apps.")
-								color.Yellow("Or you can go Premium at %s.", url)
+								color.Yellow("You can keep using ForestVPN once you watch an ad in our mobile app, or simply go Premium at %s.", url)
 								return nil
 							}
 
