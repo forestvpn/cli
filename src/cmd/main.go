@@ -139,13 +139,12 @@ func main() {
 								return err
 							}
 
-							billingFeature, err := authClientWrapper.LoadOrGetBillingFeature(user_id)
+							b, err := authClientWrapper.GetUnexpiredOrMostRecentBillingFeature(user_id)
 
 							if err != nil {
 								return err
 							}
-
-							expiryDate := billingFeature.GetExpiryDate()
+							expiryDate := b.GetExpiryDate()
 							now := time.Now()
 							left := expiryDate.Sub(now)
 							days := left.Hours() / 24
@@ -184,13 +183,16 @@ func main() {
 								}
 							}
 
-							plan := strings.Split(billingFeature.GetBundleId(), ".")[2]
+							plan := strings.Split(b.GetBundleId(), ".")[2]
 
 							color.Green("Logged-in as %s", email)
 							color.Green("Plan: %s", plan)
 
 							if plan == "premium" || days > 0 {
-								color.Green("%s days left", fmt.Sprint(int(days)))
+								if days > 0 {
+									color.Green("%s days left", fmt.Sprint(int(days)))
+								}
+								color.Red("Expired")
 							}
 
 							return nil
@@ -349,7 +351,7 @@ func main() {
 								return err
 							}
 
-							b, err := client.LoadOrGetBillingFeature(user_id)
+							b, err := client.GetUnexpiredOrMostRecentBillingFeature(user_id)
 
 							if err != nil {
 								return err
@@ -499,7 +501,7 @@ func main() {
 								return err
 							}
 
-							_, err = client.LoadOrGetBillingFeature(user_id)
+							_, err = client.GetUnexpiredOrMostRecentBillingFeature(user_id)
 
 							if err != nil {
 								return err
@@ -607,7 +609,7 @@ func main() {
 								return err
 							}
 
-							billingFeature, err := authClientWrapper.LoadOrGetBillingFeature(user_id)
+							b, err := authClientWrapper.GetUnexpiredOrMostRecentBillingFeature(user_id)
 
 							if err != nil {
 								return err
@@ -619,7 +621,7 @@ func main() {
 								return err
 							}
 
-							wrappedLocations := actions.GetWrappedLocations(billingFeature, locations)
+							wrappedLocations := actions.GetWrappedLocations(b, locations)
 							var location actions.LocationWrapper
 							id, err := uuid.Parse(arg)
 							found := false
@@ -647,10 +649,7 @@ func main() {
 								return err
 							}
 
-							expireDate := billingFeature.GetExpiryDate()
-							now := time.Now()
-
-							if now.After(expireDate) && location.Premium {
+							if time.Now().After(b.GetExpiryDate()) && location.Premium {
 								color.Yellow("The location you want to use is now unavailable, as it requires a paid subscription.")
 								color.Yellow("You can keep using our VPN once you watch an ad in our iOS/Android apps.")
 								color.Yellow("Or you can go Premium at %s.", url)

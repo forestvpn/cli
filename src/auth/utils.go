@@ -681,27 +681,27 @@ func DumpAccessTokenExpireDate(user_id string, expires_in string) error {
 	return JsonDump(data, path)
 }
 
-func LoadBillingFeature(user_id string) (forestvpn_api.BillingFeature, error) {
-	var billingFeature forestvpn_api.BillingFeature
+func LoadBillingFeatures(user_id string) ([]forestvpn_api.BillingFeature, error) {
+	var billingFeatures []forestvpn_api.BillingFeature
 	path := ProfilesDir + user_id + BillingFeatureFile
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return billingFeature, err
+		return billingFeatures, err
 	}
 
 	data, err := readFile(path)
 
 	if err != nil {
-		return billingFeature, err
+		return billingFeatures, err
 	}
 
-	err = json.Unmarshal(data, &billingFeature)
+	err = json.Unmarshal(data, &billingFeatures)
 
 	if err != nil {
-		return billingFeature, err
+		return billingFeatures, err
 	}
 
-	return billingFeature, nil
+	return billingFeatures, nil
 }
 
 func BillingFeautureExists(user_id string) bool {

@@ -429,45 +429,55 @@ func (w AuthClientWrapper) SetLocation(device *forestvpn_api.Device, user_id str
 	return nil
 }
 
-func (w AuthClientWrapper) LoadOrGetBillingFeature(user_id string) (forestvpn_api.BillingFeature, error) {
-	var billingFeature forestvpn_api.BillingFeature
+func (w AuthClientWrapper) GetUnexpiredOrMostRecentBillingFeature(user_id string) (forestvpn_api.BillingFeature, error) {
+	var billingFeatures []forestvpn_api.BillingFeature
 	var err error
-	update := false
+	foundUnexpiredBillingFeature := false
+	var b forestvpn_api.BillingFeature
 
-	if auth.BillingFeautureExists(user_id) {
-		billingFeature, err = auth.LoadBillingFeature(user_id)
+	for i := 0; i < 2; i++ {
+		if auth.BillingFeautureExists(user_id) && !foundUnexpiredBillingFeature {
+			billingFeatures, err = auth.LoadBillingFeatures(user_id)
 
-		if err != nil {
-			return billingFeature, err
+			if err != nil {
+				return b, err
+			}
+
+			for _, b := range billingFeatures {
+				if !auth.BillingFeatureExpired(b) {
+					foundUnexpiredBillingFeature = true
+					break
+				}
+			}
 		}
 
-		if auth.BillingFeatureExpired(billingFeature) {
-			update = true
+		if !foundUnexpiredBillingFeature && i < 2 {
+			resp, err := w.ApiClient.GetBillingFeatures()
+
+			if err != nil {
+				return b, err
+			}
+
+			data, err := json.MarshalIndent(resp, "", "    ")
+
+			if err != nil {
+				return b, err
+			}
+
+			path := auth.ProfilesDir + user_id + auth.BillingFeatureFile
+			err = auth.JsonDump(data, path)
+
+			if err != nil {
+				return b, err
+			}
 		}
-	} else {
-		update = true
 	}
 
-	if update {
-		resp, err := w.ApiClient.GetBillingFeatures()
-
-		if err != nil {
-			return billingFeature, err
-		}
-
-		billingFeature = resp[0]
-		data, err := json.MarshalIndent(billingFeature, "", "    ")
-
-		if err != nil {
-			return billingFeature, err
-		}
-
-		path := auth.ProfilesDir + user_id + auth.BillingFeatureFile
-		err = auth.JsonDump(data, path)
-
-		if err != nil {
-			return billingFeature, err
-		}
+	if !foundUnexpiredBillingFeature {
+		sort.Slice(billingFeatures, func(i, j int) bool {
+			return billingFeatures[i].GetExpiryDate().After(billingFeatures[j].GetExpiryDate())
+		})
 	}
-	return billingFeature, nil
+
+	return billingFeatures[0], nil
 }
