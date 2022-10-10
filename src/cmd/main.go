@@ -196,7 +196,8 @@ func main() {
 							tz, err := utils.GetLocalTimezone()
 
 							if err != nil {
-								return err
+								n, _ := now.Zone()
+								tz = n
 							}
 
 							if now.After(expiryDate) {
@@ -402,11 +403,11 @@ func main() {
 								if actions.IsPremiumLocation(b, location) && bid == "com.forestvpn.premium" {
 									fmt.Println("The location you were using is now unavailable, as your paid subscription has ended.")
 									fmt.Printf("You can keep using ForestVPN once you watch an ad in our mobile app, or simply go Premium at %s.\n", url)
-									return nil
+									os.Exit(1)
 								} else {
 									fmt.Println("Your 30-minute session is over.")
 									fmt.Printf("You can keep using ForestVPN once you watch an ad in our mobile app, or simply go Premium at %s.\n", url)
-									return nil
+									os.Exit(1)
 								}
 							} else if bid == "com.forestvpn.freemium" && int(left.Minutes()) < 5 {
 								fmt.Println("You currently have 5 more minutes of freemium left.")
