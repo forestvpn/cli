@@ -13,11 +13,11 @@ import (
 	"github.com/forestvpn/cli/actions"
 	"github.com/forestvpn/cli/api"
 	"github.com/forestvpn/cli/auth"
+	"github.com/forestvpn/cli/utils"
 	"github.com/google/uuid"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
-	"github.com/fatih/color"
 	"github.com/getsentry/sentry-go"
 	"github.com/urfave/cli/v2"
 )
@@ -26,13 +26,13 @@ var (
 	// DSN is a Data Source Name for Sentry. It is stored in an environment variable and assigned during the build with ldflags.
 	//
 	// See https://docs.sentry.io/product/sentry-basics/dsn-explainer/ for more information.
-	Dsn string
+	Dsn = os.Getenv("SENTRY_DSN")
 	// appVersion value is stored in an environment variable and assigned during the build with ldflags.
 	appVersion string
 	// firebaseApiKey is stored in an environment variable and assigned during the build with ldflags.
-	firebaseApiKey string
+	firebaseApiKey = os.Getenv("STAGING_FIREBASE_API_KEY")
 	// ApiHost is a hostname of Forest VPN back-end API that is stored in an environment variable and assigned during the build with ldflags.
-	apiHost string
+	apiHost = os.Getenv("STAGING_API_URL")
 )
 
 const accountsMapFile = ".accounts.json"
@@ -123,8 +123,7 @@ func main() {
 						Action: func(c *cli.Context) error {
 							if !auth.IsAuthenticated() {
 								fmt.Println("Are you logged in?")
-								color := color.New(color.Faint)
-								color.Println("Try 'forest account login'")
+								fmt.Println("Try 'forest account login'")
 								return nil
 							}
 
@@ -145,10 +144,10 @@ func main() {
 							if err != nil {
 								return err
 							}
+
 							expiryDate := b.GetExpiryDate()
 							now := time.Now()
 							left := expiryDate.Sub(now)
-							days := left.Hours() / 24
 							idToken, err := auth.LoadIdToken(user_id)
 
 							if err != nil {
@@ -184,15 +183,29 @@ func main() {
 								}
 							}
 
-							plan := strings.Split(b.GetBundleId(), ".")[2]
+							caser := cases.Title(language.English)
+							plan := caser.String(strings.Split(b.GetBundleId(), ".")[2])
+							fmt.Printf("Logged-in as %s\n", email)
+							fmt.Printf("Plan: %s\n", plan)
+							dt := fmt.Sprintf("%d-%d-%d %d:%d:%d",
+								expiryDate.Year(),
+								expiryDate.Month(),
+								expiryDate.Day(),
+								expiryDate.Hour(),
+								expiryDate.Minute(),
+								expiryDate.Second())
+							tz, err := utils.GetLocalTimezone()
 
-							color.Green("Logged-in as %s", email)
-							color.Green("Plan: %s", plan)
+							if err != nil {
+								return err
+							}
 
-							if days > 0 {
-								color.Green("%s days left", fmt.Sprint(int(days)))
+							if now.After(expiryDate) {
+								t := now.Sub(expiryDate)
+								fmt.Printf("Status: expired %s ago at %s %s\n", utils.HumanizeDuration(t), dt, tz)
 							} else {
-								color.Red("Expired")
+								fmt.Printf("Status: expires in %s at %s %s\n", utils.HumanizeDuration(left), dt, tz)
+
 							}
 
 							return nil
@@ -220,8 +233,7 @@ func main() {
 						Action: func(c *cli.Context) error {
 							if auth.IsAuthenticated() {
 								fmt.Println("Please, logout before attempting to register a new account.")
-								color := color.New(color.Faint)
-								color.Println("Try 'fvpn account logout'")
+								fmt.Println("Try 'fvpn account logout'")
 								return nil
 							}
 
@@ -234,7 +246,7 @@ func main() {
 							err = authClientWrapper.Register(email, password)
 
 							if err == nil {
-								color.Green("Registered")
+								fmt.Println("Registered")
 							}
 
 							return err
@@ -269,7 +281,7 @@ func main() {
 							err = authClientWrapper.Login(email, password)
 
 							if err == nil {
-								color.Green("Logged in")
+								fmt.Println("Logged in")
 							}
 
 							return err
@@ -281,8 +293,7 @@ func main() {
 						Action: func(c *cli.Context) error {
 							if !auth.IsAuthenticated() {
 								fmt.Println("Are you logged in?")
-								color := color.New(color.Faint)
-								color.Println("Try 'forest account login'")
+								fmt.Println("Try 'forest account login'")
 								return nil
 							}
 
@@ -291,8 +302,7 @@ func main() {
 
 							if status {
 								fmt.Println("Please, set down the connection before attempting to log out.")
-								color := color.New(color.Faint)
-								color.Println("Try 'forest state down'")
+								fmt.Println("Try 'forest state down'")
 								return nil
 							}
 
@@ -331,7 +341,7 @@ func main() {
 								}
 							}
 
-							color.Red("Logged out")
+							fmt.Println("Logged out")
 							return nil
 						},
 					},
@@ -348,8 +358,7 @@ func main() {
 						Action: func(c *cli.Context) error {
 							if !auth.IsAuthenticated() {
 								fmt.Println("Are you logged in?")
-								color := color.New(color.Faint)
-								color.Println("Try 'forest account login'")
+								fmt.Println("Try 'forest account login'")
 								return nil
 							}
 
@@ -375,7 +384,7 @@ func main() {
 									return err
 								}
 
-								return errors.New("state is already up and running")
+								cli.Exit("State is already down", 1)
 							}
 
 							device, err := auth.LoadDevice(user_id)
@@ -389,25 +398,24 @@ func main() {
 							now := time.Now()
 							exp := b.GetExpiryDate()
 							left := exp.Sub(now)
-							faint := color.New(color.Faint)
 
 							if now.After(exp) {
 								if actions.IsPremiumLocation(b, location) && bid == "com.forestvpn.premium" {
-									color.Yellow("The location you were using is now unavailable, as your paid subscription has ended.")
-									color.Yellow("You can keep using ForestVPN once you watch an ad in our mobile app, or simply go Premium at %s.", url)
+									fmt.Println("The location you were using is now unavailable, as your paid subscription has ended.")
+									fmt.Printf("You can keep using ForestVPN once you watch an ad in our mobile app, or simply go Premium at %s.\n", url)
 									return nil
 								} else {
-									color.Yellow("Your 30-minute session is over.")
-									color.Yellow("You can keep using ForestVPN once you watch an ad in our mobile app, or simply go Premium at %s.", url)
+									fmt.Println("Your 30-minute session is over.")
+									fmt.Printf("You can keep using ForestVPN once you watch an ad in our mobile app, or simply go Premium at %s.\n", url)
 									return nil
 								}
 							} else if bid == "com.forestvpn.freemium" && int(left.Minutes()) < 5 {
-								faint.Println("You currently have 5 more minutes of freemium left.")
+								fmt.Println("You currently have 5 more minutes of freemium left.")
 							} else if int(left.Hours()/24) < 3 {
 								if bid == "com.forestvpn.premium" {
-									faint.Println("Your premium subscription will end in less than 3 days.")
+									fmt.Println("Your premium subscription will end in less than 3 days.")
 								} else {
-									faint.Println("Your free trial will end in less than 3 days.")
+									fmt.Println("Your free trial will end in less than 3 days.")
 								}
 							}
 
@@ -419,7 +427,7 @@ func main() {
 
 							if state.GetStatus() {
 								country := location.GetCountry()
-								color.Green("Connected to %s, %s", location.GetName(), country.GetName())
+								fmt.Printf("Connected to %s, %s\n", location.GetName(), country.GetName())
 							} else {
 								return errors.New("unexpected error: state.status is false after state is up")
 							}
@@ -434,8 +442,7 @@ func main() {
 						Action: func(ctx *cli.Context) error {
 							if !auth.IsAuthenticated() {
 								fmt.Println("Are you logged in?")
-								color := color.New(color.Faint)
-								color.Println("Try 'forest account login'")
+								fmt.Println("Try 'forest account login'")
 								return nil
 							}
 
@@ -458,9 +465,9 @@ func main() {
 									return errors.New("unexpected error: state.status is true after state is down")
 								}
 
-								color.Red("Disconnected")
+								fmt.Println("Disconnected")
 							} else {
-								return errors.New("state is already down")
+								cli.Exit("State is already down", 1)
 							}
 
 							return nil
@@ -473,8 +480,7 @@ func main() {
 						Action: func(ctx *cli.Context) error {
 							if !auth.IsAuthenticated() {
 								fmt.Println("Are you signed in?")
-								color := color.New(color.Faint)
-								color.Println("Try 'forest account login'")
+								fmt.Println("Try 'forest account login'")
 								return nil
 							}
 
@@ -515,9 +521,9 @@ func main() {
 								location := device.GetLocation()
 								country := location.GetCountry()
 
-								color.Green("Connected to %s, %s", location.GetName(), country.GetName())
+								fmt.Printf("Connected to %s, %s\n", location.GetName(), country.GetName())
 							} else {
-								color.Red("Disconnected")
+								fmt.Println("Disconnected")
 							}
 
 							return nil
@@ -534,11 +540,9 @@ func main() {
 						Name:  "status",
 						Usage: "See the location is set as default VPN connection",
 						Action: func(cCtx *cli.Context) error {
-							faint := color.New(color.Faint)
-
 							if !auth.IsAuthenticated() {
 								fmt.Println("Are you logged in?")
-								faint.Println("Try 'fvpn account login'")
+								fmt.Println("Try 'fvpn account login'")
 								return nil
 							}
 
@@ -556,7 +560,7 @@ func main() {
 
 							location := device.GetLocation()
 							country := location.GetCountry()
-							color.New(color.FgGreen).Println(fmt.Sprintf("Default location is set to %s, %s", location.GetName(), country.GetName()))
+							fmt.Printf("Default location is set to %s, %s\n", location.GetName(), country.GetName())
 							return nil
 						},
 					},
@@ -564,11 +568,9 @@ func main() {
 						Name:  "set",
 						Usage: "Set the default location by specifying `UUID` or `Name`",
 						Action: func(cCtx *cli.Context) error {
-							faint := color.New(color.Faint)
-
 							if !auth.IsAuthenticated() {
 								fmt.Println("Are you logged in?")
-								faint.Println("Try 'fvpn account login'")
+								fmt.Println("Try 'fvpn account login'")
 								return nil
 							}
 
@@ -576,7 +578,7 @@ func main() {
 
 							if state.GetStatus() {
 								fmt.Println("Please, set down the connection before setting a new location.")
-								faint.Println("Try 'fvpn state down'")
+								fmt.Println("Try 'fvpn state down'")
 								return nil
 							}
 
@@ -639,8 +641,8 @@ func main() {
 							}
 
 							if time.Now().After(b.GetExpiryDate()) && location.Premium {
-								color.Yellow("The location you want to use is now unavailable, as it requires a paid subscription.")
-								color.Yellow("You can keep using ForestVPN once you watch an ad in our mobile app, or simply go Premium at %s.", url)
+								fmt.Println("The location you want to use is now unavailable, as it requires a paid subscription.")
+								fmt.Printf("You can keep using ForestVPN once you watch an ad in our mobile app, or simply go Premium at %s.\n", url)
 								return nil
 							}
 
@@ -669,7 +671,7 @@ func main() {
 							}
 
 							country := location.Location.GetCountry()
-							color.New(color.FgGreen).Println(fmt.Sprintf("Default location is set to %s, %s", location.Location.GetName(), country.GetName()))
+							fmt.Printf("Default location is set to %s, %s\n", location.Location.GetName(), country.GetName())
 							return nil
 						},
 					},
@@ -714,6 +716,6 @@ func main() {
 		caser := cases.Title(language.AmericanEnglish)
 		msg := strings.Split(err.Error(), " ")
 		msg[0] = caser.String(msg[0])
-		color.Red(strings.Join(msg, " "))
+		fmt.Println(strings.Join(msg, " "))
 	}
 }
