@@ -480,33 +480,14 @@ func main() {
 						Usage:       "Check the status of the connection",
 						Action: func(ctx *cli.Context) error {
 							if !auth.IsAuthenticated() {
-								fmt.Println("Are you signed in?")
+								fmt.Println("Are you logged in?")
 								fmt.Println("Try 'forest account login'")
 								return nil
 							}
 
-							client, err := getAuthClientWrapper()
-
-							if err != nil {
-								return err
-							}
-
-							user_id, err := auth.LoadUserID()
-
-							if err != nil {
-								return err
-							}
-
-							_, err = client.GetUnexpiredOrMostRecentBillingFeature(user_id)
-
-							if err != nil {
-								return err
-							}
-
 							state := actions.State{}
-							status := state.GetStatus()
 
-							if status {
+							if state.GetStatus() {
 								user_id, err := auth.LoadUserID()
 
 								if err != nil {
