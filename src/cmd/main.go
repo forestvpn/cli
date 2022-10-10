@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	forestvpn_api "github.com/forestvpn/api-client-go"
 	"github.com/forestvpn/cli/actions"
 	"github.com/forestvpn/cli/api"
 	"github.com/forestvpn/cli/auth"
@@ -375,17 +374,16 @@ func main() {
 							}
 
 							state := actions.State{}
-							var b forestvpn_api.BillingFeature
 
 							if state.GetStatus() {
-								b, err = client.GetUnexpiredOrMostRecentBillingFeature(user_id)
-
-								if err != nil {
-									return err
-								}
-
-								fmt.Println("State is already down")
+								fmt.Println("State is already up and running")
 								os.Exit(1)
+							}
+
+							b, err := client.GetUnexpiredOrMostRecentBillingFeature(user_id)
+
+							if err != nil {
+								return err
 							}
 
 							device, err := auth.LoadDevice(user_id)
