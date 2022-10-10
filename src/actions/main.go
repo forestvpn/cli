@@ -283,13 +283,6 @@ func (w AuthClientWrapper) Login(email string, password string) error {
 // See https://github.com/forestvpn/api-client-go/blob/main/docs/GeoApi.md#listlocations for more information.
 func (w AuthClientWrapper) ListLocations(country string) error {
 	var data [][]string
-	resp, err := w.ApiClient.GetBillingFeatures()
-
-	if err != nil {
-		return err
-	}
-
-	billingFeature := resp[0]
 	locations, err := w.ApiClient.GetLocations()
 
 	if err != nil {
@@ -314,7 +307,19 @@ func (w AuthClientWrapper) ListLocations(country string) error {
 		return locations[i].GetName() < locations[j].GetName() && locations[i].Country.GetName() < locations[j].Country.GetName()
 	})
 
-	wrappedLocations := GetWrappedLocations(billingFeature, locations)
+	user_id, err := auth.LoadUserID()
+
+	if err != nil {
+		return err
+	}
+
+	b, err := w.GetUnexpiredOrMostRecentBillingFeature(user_id)
+
+	if err != nil {
+		return err
+	}
+
+	wrappedLocations := GetLocationWrappers(b, locations)
 
 	for _, loc := range wrappedLocations {
 		premiumMark := ""

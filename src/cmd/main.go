@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	forestvpn_api "github.com/forestvpn/api-client-go"
 	"github.com/forestvpn/cli/actions"
 	"github.com/forestvpn/cli/api"
 	"github.com/forestvpn/cli/auth"
@@ -364,10 +365,17 @@ func main() {
 								return err
 							}
 
-							b, err := client.GetUnexpiredOrMostRecentBillingFeature(user_id)
+							state := actions.State{}
+							var b forestvpn_api.BillingFeature
 
-							if err != nil {
-								return err
+							if state.GetStatus() {
+								b, err = client.GetUnexpiredOrMostRecentBillingFeature(user_id)
+
+								if err != nil {
+									return err
+								}
+
+								return errors.New("state is already up and running")
 							}
 
 							device, err := auth.LoadDevice(user_id)
@@ -376,48 +384,31 @@ func main() {
 								return err
 							}
 
+							bid := b.GetBundleId()
 							location := device.GetLocation()
-							locations, err := client.ApiClient.GetLocations()
-
-							if err != nil {
-								return err
-							}
-
-							w := actions.GetWrappedLocations(b, locations)
 							now := time.Now()
 							exp := b.GetExpiryDate()
 							left := exp.Sub(now)
-							bid := b.GetBundleId()
 							faint := color.New(color.Faint)
 
-							for _, l := range w {
-								if location.GetId() == l.Location.GetId() {
-									if now.After(exp) {
-										if l.Premium && bid == "com.forestvpn.premium" {
-											color.Yellow("The location you were using is now unavailable, as your paid subscription has ended.")
-											color.Yellow("You can keep using ForestVPN once you watch an ad in our mobile app, or simply go Premium at %s.", url)
-											return nil
-										} else if !l.Premium {
-											color.Yellow("Your 30-minute session is over.")
-											color.Yellow("You can keep using ForestVPN once you watch an ad in our mobile app, or simply go Premium at %s.", url)
-											return nil
-										}
-									} else if bid == "com.forestvpn.freemium" && int(left.Minutes()) < 5 {
-										faint.Println("You currently have 5 more minutes of freemium left.")
-									} else if int(left.Hours()/24) < 3 {
-										if bid == "com.forestvpn.premium" {
-											faint.Println("Your premium subscription will end in less than 3 days.")
-										} else {
-											faint.Println("Your free trial will end in less than 3 days.")
-										}
-									}
+							if now.After(exp) {
+								if actions.IsPremiumLocation(b, location) && bid == "com.forestvpn.premium" {
+									color.Yellow("The location you were using is now unavailable, as your paid subscription has ended.")
+									color.Yellow("You can keep using ForestVPN once you watch an ad in our mobile app, or simply go Premium at %s.", url)
+									return nil
+								} else {
+									color.Yellow("Your 30-minute session is over.")
+									color.Yellow("You can keep using ForestVPN once you watch an ad in our mobile app, or simply go Premium at %s.", url)
+									return nil
 								}
-							}
-
-							state := actions.State{}
-
-							if state.GetStatus() {
-								return errors.New("state is already up and running")
+							} else if bid == "com.forestvpn.freemium" && int(left.Minutes()) < 5 {
+								faint.Println("You currently have 5 more minutes of freemium left.")
+							} else if int(left.Hours()/24) < 3 {
+								if bid == "com.forestvpn.premium" {
+									faint.Println("Your premium subscription will end in less than 3 days.")
+								} else {
+									faint.Println("Your free trial will end in less than 3 days.")
+								}
 							}
 
 							err = state.SetUp(user_id)
@@ -427,21 +418,7 @@ func main() {
 							}
 
 							if state.GetStatus() {
-								user_id, err := auth.LoadUserID()
-
-								if err != nil {
-									return err
-								}
-
-								device, err := auth.LoadDevice(user_id)
-
-								if err != nil {
-									return err
-								}
-
-								location := device.GetLocation()
 								country := location.GetCountry()
-
 								color.Green("Connected to %s, %s", location.GetName(), country.GetName())
 							} else {
 								return errors.New("unexpected error: state.status is false after state is up")
@@ -633,7 +610,7 @@ func main() {
 								return err
 							}
 
-							wrappedLocations := actions.GetWrappedLocations(b, locations)
+							wrappedLocations := actions.GetLocationWrappers(b, locations)
 							var location actions.LocationWrapper
 							id, err := uuid.Parse(arg)
 							found := false
@@ -710,6 +687,12 @@ func main() {
 							},
 						},
 						Action: func(c *cli.Context) error {
+							if !auth.IsAuthenticated() {
+								fmt.Println("Are you logged in?")
+								fmt.Println("Try 'fvpn account login'")
+								return nil
+							}
+
 							authClientWrapper, err := getAuthClientWrapper()
 
 							if err != nil {
