@@ -384,7 +384,8 @@ func main() {
 									return err
 								}
 
-								cli.Exit("State is already down", 1)
+								fmt.Println("State is already down")
+								os.Exit(1)
 							}
 
 							device, err := auth.LoadDevice(user_id)
@@ -467,7 +468,8 @@ func main() {
 
 								fmt.Println("Disconnected")
 							} else {
-								cli.Exit("State is already down", 1)
+								fmt.Println("State is already down")
+								os.Exit(1)
 							}
 
 							return nil
