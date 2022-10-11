@@ -14,6 +14,7 @@ import (
 	forestvpn_api "github.com/forestvpn/api-client-go"
 	"github.com/getsentry/sentry-go"
 	"github.com/go-resty/resty/v2"
+	"github.com/olekukonko/tablewriter"
 )
 
 var home, _ = os.UserHomeDir()
@@ -54,6 +55,26 @@ func GetAccountMap(accountsMapFile string) AccountsMap {
 	path := AppDir + accountsMapFile
 	accountmap := AccountsMap{path: path}
 	return accountmap
+}
+
+func (a AccountsMap) ListLocalAccounts() error {
+	var data [][]string
+	m, err := a.loadMap()
+
+	if err != nil {
+		return err
+	}
+
+	for k, v := range m {
+		data = append(data, []string{k, v})
+	}
+
+	t := tablewriter.NewWriter(os.Stdout)
+	t.SetHeader([]string{"Email", "UUID"})
+	t.SetBorder(false)
+	t.AppendBulk(data)
+	t.Render()
+	return nil
 }
 
 func (a AccountsMap) RemoveAccount(user_id string) error {

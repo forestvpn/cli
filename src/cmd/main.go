@@ -82,6 +82,8 @@ func main() {
 
 	if err != nil {
 		sentry.CaptureException(err)
+		log.Fatal(err)
+		os.Exit(1)
 	}
 
 	err = sentry.Init(sentry.ClientOptions{
@@ -90,6 +92,7 @@ func main() {
 
 	if err != nil {
 		log.Fatalf("sentry.Init: %s", err)
+		os.Exit(1)
 	}
 
 	defer sentry.Flush(2 * time.Second)
@@ -113,7 +116,14 @@ func main() {
 						Name:  "ls",
 						Usage: "See local accounts ever logged in",
 						Action: func(c *cli.Context) error {
-							return nil
+							if !auth.IsAuthenticated() {
+								fmt.Println("Are you logged in?")
+								fmt.Println("Try 'forest account login'")
+								return nil
+							}
+
+							m := auth.GetAccountMap(accountsMapFile)
+							return m.ListLocalAccounts()
 						},
 					},
 					{
