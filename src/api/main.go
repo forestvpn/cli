@@ -7,6 +7,7 @@ import (
 	"context"
 
 	forestvpn_api "github.com/forestvpn/api-client-go"
+	"github.com/hashicorp/go-retryablehttp"
 )
 
 // ApiClientWrapper is a structure that wraps forestvpn_api.APIClient to extend it.
@@ -62,6 +63,10 @@ func (w ApiClientWrapper) GetBillingFeatures() ([]forestvpn_api.BillingFeature, 
 func GetApiClient(accessToken string, apiHost string) ApiClientWrapper {
 	configuration := forestvpn_api.NewConfiguration()
 	configuration.Host = apiHost
+	retryClient := retryablehttp.NewClient()
+	retryClient.RetryMax = 10
+	standardClient := retryClient.StandardClient()
+	configuration.HTTPClient = standardClient
 	client := forestvpn_api.NewAPIClient(configuration)
 	wrapper := ApiClientWrapper{APIClient: client, AccessToken: accessToken}
 	return wrapper
