@@ -10,9 +10,9 @@ require (
 	github.com/glendc/go-external-ip v0.1.0
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/google/uuid v1.3.0
+	github.com/hashicorp/go-retryablehttp v0.7.1
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/urfave/cli/v2 v2.17.1
-	golang.org/x/sync v0.0.0-20200625203802-6e8e738ad208
 	golang.org/x/term v0.0.0-20220526004731-065cf7ba2467
 	golang.org/x/text v0.3.7
 	gopkg.in/ini.v1 v1.66.6
@@ -20,17 +20,14 @@ require (
 
 require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
-	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.1 // indirect
-	github.com/hashicorp/go-retryablehttp v0.7.1 // indirect
 	github.com/mattn/go-colorable v0.1.11 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/stretchr/testify v1.5.1 // indirect
-	github.com/tkuchiki/go-timezone v0.2.2 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	golang.org/x/net v0.0.0-20211029224645-99673261e6eb // indirect
 	golang.org/x/oauth2 v0.0.0-20210323180902-22b0adad7558 // indirect
