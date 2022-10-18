@@ -63,6 +63,7 @@ func (w ApiClientWrapper) GetBillingFeatures() ([]forestvpn_api.BillingFeature, 
 func GetApiClient(accessToken string, apiHost string) ApiClientWrapper {
 	configuration := forestvpn_api.NewConfiguration()
 	configuration.Host = apiHost
+	configuration.Debug = false
 	retryClient := retryablehttp.NewClient()
 	retryClient.RetryMax = 10
 	standardClient := retryClient.StandardClient()
