@@ -179,7 +179,7 @@ func (a AccountsMap) GetEmail(user_id string) string {
 	return ""
 }
 
-func loadFirebaseAuthFile(user_id string) (map[string]any, error) {
+func LoadFirebaseAuthFile(user_id string) (map[string]any, error) {
 	var firebaseAuthFile map[string]any
 
 	path := ProfilesDir + user_id + FirebaseAuthFile
@@ -195,7 +195,7 @@ func loadFirebaseAuthFile(user_id string) (map[string]any, error) {
 
 func LoadAccessToken(user_id string) (string, error) {
 	var accessToken string
-	firebaseAuthFile, err := loadFirebaseAuthFile(user_id)
+	firebaseAuthFile, err := LoadFirebaseAuthFile(user_id)
 
 	if err != nil {
 		return accessToken, err
@@ -262,7 +262,7 @@ func LoadUserID() (string, error) {
 		return id, err
 	}
 
-	auth, err := loadFirebaseAuthFile(user_id)
+	auth, err := LoadFirebaseAuthFile(user_id)
 
 	if err != nil {
 		return id, err
@@ -393,7 +393,7 @@ func LoadRefreshToken() (string, error) {
 		return refreshToken, err
 	}
 
-	firebaseAuthFile, err := loadFirebaseAuthFile(user_id)
+	firebaseAuthFile, err := LoadFirebaseAuthFile(user_id)
 
 	if err != nil {
 		return "", err
@@ -619,7 +619,7 @@ func UpdateProfileDevice(device *forestvpn_api.Device) error {
 
 func LoadIdToken(user_id string) (string, error) {
 	var idToken string
-	firebaseAuthFile, err := loadFirebaseAuthFile(user_id)
+	firebaseAuthFile, err := LoadFirebaseAuthFile(user_id)
 
 	if err != nil {
 		return idToken, err

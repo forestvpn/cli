@@ -694,6 +694,32 @@ func main() {
 								return err
 							}
 
+							// fmt.Println(authClientWrapper.ApiClient.AccessToken)
+							// uid, err := auth.LoadUserID()
+
+							// if err != nil {
+							// 	return err
+							// }
+
+							// m, err := auth.LoadFirebaseAuthFile(uid)
+
+							// if err != nil {
+							// 	return err
+							// }
+
+							// var exp time.Time
+							// var y interface{} = m["expires_in"]
+							// switch v := y.(type) {
+							// case string:
+							// 	exp, err = auth.GetAccessTokenExpireDate(v)
+
+							// 	if err != nil {
+							// 		return err
+							// 	}
+							// }
+
+							// fmt.Println(exp)
+
 							return authClientWrapper.ListLocations(country)
 						},
 					},
