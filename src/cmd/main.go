@@ -196,13 +196,6 @@ func main() {
 							plan := caser.String(strings.Split(b.GetBundleId(), ".")[2])
 							fmt.Printf("Logged-in as %s\n", email)
 							fmt.Printf("Plan: %s\n", plan)
-							dt := fmt.Sprintf("%d-%d-%d %d:%d:%d",
-								expiryDate.Year(),
-								expiryDate.Month(),
-								expiryDate.Day(),
-								expiryDate.Hour(),
-								expiryDate.Minute(),
-								expiryDate.Second())
 							tz, err := utils.GetLocalTimezone()
 
 							if err != nil {
@@ -213,9 +206,9 @@ func main() {
 
 							if now.After(expiryDate) {
 								t := now.Sub(expiryDate)
-								fmt.Printf("Status: expired %s ago at %s %s\n", utils.HumanizeDuration(t), dt, tz)
+								fmt.Printf("Status: expired %s ago at %s %s\n", utils.HumanizeDuration(t), expiryDate.String(), tz)
 							} else {
-								fmt.Printf("Status: expires in %s at %s %s\n", utils.HumanizeDuration(left), dt, tz)
+								fmt.Printf("Status: expires in %s at %s %s\n", utils.HumanizeDuration(left), expiryDate.String(), tz)
 
 							}
 
