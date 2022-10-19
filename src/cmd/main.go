@@ -206,9 +206,9 @@ func main() {
 
 							if now.After(expiryDate) {
 								t := now.Sub(expiryDate)
-								fmt.Printf("Status: expired %s ago at %s %s\n", utils.HumanizeDuration(t), expiryDate.String(), tz)
+								fmt.Printf("Status: expired %s ago at %s %s\n", utils.HumanizeDuration(t), expiryDate.Format("2006-01-02 15:04:05"), tz)
 							} else {
-								fmt.Printf("Status: expires in %s at %s %s\n", utils.HumanizeDuration(left), expiryDate.String(), tz)
+								fmt.Printf("Status: expires in %s at %s %s\n", utils.HumanizeDuration(left), expiryDate.Format("2006-01-02 15:04:05"), tz)
 
 							}
 
