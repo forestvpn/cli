@@ -80,33 +80,37 @@ func (w AuthClientWrapper) SetUpProfile(response *resty.Response) (string, error
 							}
 						}
 
-						device, err := w.ApiClient.CreateDevice()
+						device, _ := auth.LoadDevice(user_id)
 
-						if err != nil {
-							return user_id, err
-						}
-
-						path := auth.ProfilesDir + user_id
-
-						if _, err := os.Stat(path); os.IsNotExist(err) {
-							err = os.Mkdir(path, 0755)
+						if len(device.GetId()) == 0 {
+							device, err = w.ApiClient.CreateDevice()
 
 							if err != nil {
 								return user_id, err
 							}
-						}
 
-						data, err := json.MarshalIndent(device, "", "    ")
+							path := auth.ProfilesDir + user_id
 
-						if err != nil {
-							return user_id, err
-						}
+							if _, err := os.Stat(path); os.IsNotExist(err) {
+								err = os.Mkdir(path, 0755)
 
-						path = auth.ProfilesDir + user_id + auth.DeviceFile
-						err = auth.JsonDump(data, path)
+								if err != nil {
+									return user_id, err
+								}
+							}
 
-						if err != nil {
-							return user_id, err
+							data, err := json.MarshalIndent(device, "", "    ")
+
+							if err != nil {
+								return user_id, err
+							}
+
+							path = auth.ProfilesDir + user_id + auth.DeviceFile
+							err = auth.JsonDump(data, path)
+
+							if err != nil {
+								return user_id, err
+							}
 						}
 
 						err = w.SetLocation(device, user_id)
