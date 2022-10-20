@@ -34,12 +34,11 @@ var (
 	apiHost string
 )
 
-const accountsMapFile = ".accounts.json"
 const url = "https://forestvpn.com/checkout/"
 
 func getAuthClientWrapper() (actions.AuthClientWrapper, error) {
-	accountmap := auth.GetAccountMap(accountsMapFile)
-	authClientWrapper := actions.AuthClientWrapper{AccountsMap: accountmap}
+	accountsmap := auth.GetAccountsMap(auth.AccountsMapFile)
+	authClientWrapper := actions.AuthClientWrapper{AccountsMap: accountsmap}
 	authClient := auth.AuthClient{ApiKey: firebaseApiKey}
 
 	user_id, _ := auth.LoadUserID()
@@ -122,7 +121,7 @@ func main() {
 								return nil
 							}
 
-							m := auth.GetAccountMap(accountsMapFile)
+							m := auth.GetAccountsMap(auth.AccountsMapFile)
 							return m.ListLocalAccounts()
 						},
 					},
@@ -336,7 +335,7 @@ func main() {
 										return err
 									}
 
-									m := auth.GetAccountMap(accountsMapFile)
+									m := auth.GetAccountsMap(auth.AccountsMapFile)
 									err = m.RemoveAccount(user_id)
 
 									if err != nil {
@@ -414,8 +413,8 @@ func main() {
 									os.Exit(1)
 								}
 							} else if bid == "com.forestvpn.freemium" && int(left.Minutes()) == 5 {
-								fmt.Println("You currently have 5 more minutes of freemium left.")
-							} else if int(left.Hours()/24) == 3 {
+								fmt.Println("You currently have 5 more minutes of free trial left.")
+							} else if int(left.Hours()/24) <= 3 {
 								if bid == "com.forestvpn.premium" {
 									fmt.Println("Your premium subscription will end in less than 3 days.")
 								} else {
@@ -686,32 +685,6 @@ func main() {
 							if err != nil {
 								return err
 							}
-
-							// fmt.Println(authClientWrapper.ApiClient.AccessToken)
-							// uid, err := auth.LoadUserID()
-
-							// if err != nil {
-							// 	return err
-							// }
-
-							// m, err := auth.LoadFirebaseAuthFile(uid)
-
-							// if err != nil {
-							// 	return err
-							// }
-
-							// var exp time.Time
-							// var y interface{} = m["expires_in"]
-							// switch v := y.(type) {
-							// case string:
-							// 	exp, err = auth.GetAccessTokenExpireDate(v)
-
-							// 	if err != nil {
-							// 		return err
-							// 	}
-							// }
-
-							// fmt.Println(exp)
 
 							return authClientWrapper.ListLocations(country)
 						},
