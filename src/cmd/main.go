@@ -414,12 +414,8 @@ func main() {
 								}
 							} else if bid == "com.forestvpn.freemium" && int(left.Minutes()) == 5 {
 								fmt.Println("You currently have 5 more minutes of free trial left.")
-							} else if int(left.Hours()/24) <= 3 {
-								if bid == "com.forestvpn.premium" {
-									fmt.Println("Your premium subscription will end in less than 3 days.")
-								} else {
-									fmt.Println("Your free trial will end in less than 3 days.")
-								}
+							} else if int(left.Hours()/24) <= 3 && bid == "com.forestvpn.premium" {
+								fmt.Println("Your premium subscription will end in less than 3 days.")
 							}
 
 							err = state.SetUp(user_id)
