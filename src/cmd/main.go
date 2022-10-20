@@ -413,9 +413,9 @@ func main() {
 									fmt.Printf("You can keep using ForestVPN once you watch an ad in our mobile app, or simply go Premium at %s.\n", url)
 									os.Exit(1)
 								}
-							} else if bid == "com.forestvpn.freemium" && int(left.Minutes()) < 5 {
+							} else if bid == "com.forestvpn.freemium" && int(left.Minutes()) == 5 {
 								fmt.Println("You currently have 5 more minutes of freemium left.")
-							} else if int(left.Hours()/24) < 3 {
+							} else if int(left.Hours()/24) == 3 {
 								if bid == "com.forestvpn.premium" {
 									fmt.Println("Your premium subscription will end in less than 3 days.")
 								} else {
