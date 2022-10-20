@@ -7,7 +7,6 @@ package actions
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"os"
 	"sort"
 
@@ -175,8 +174,6 @@ func (w AuthClientWrapper) GetUnexpiredOrMostRecentBillingFeature(user_id string
 			if err != nil {
 				return b, err
 			}
-
-			fmt.Println(w.ApiClient.AccessToken)
 
 			data, err := json.MarshalIndent(resp, "", "    ")
 
