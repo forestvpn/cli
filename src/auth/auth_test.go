@@ -1,7 +1,6 @@
 package auth_test
 
 import (
-	"bytes"
 	"encoding/json"
 	"os"
 	"strings"
@@ -14,21 +13,47 @@ import (
 
 const filepath = "/tmp/test.json"
 
-var data = make(map[string]string)
-var email = os.Getenv("STAGING_EMAIL")
-var password = os.Getenv("STAGING_PASSWORD")
-var apiKey = os.Getenv("STAGING_FIREBASE_API_KEY")
-var apiHost = os.Getenv("STAGING_API_URL")
+var (
+	email    = os.Getenv("STAGING_EMAIL")
+	password = os.Getenv("STAGING_PASSWORD")
+	apiKey   = os.Getenv("STAGING_FIREBASE_API_KEY")
+	apiHost  = os.Getenv("STAGING_API_URL")
+)
 
 func logout() error {
-	authClient := auth.AuthClient{ApiKey: apiKey}
-	accessToken, _ := auth.LoadAccessToken()
-	wrapper := api.GetApiClient(accessToken, apiHost)
-	apiClient := actions.AuthClientWrapper{AuthClient: authClient, ApiClient: wrapper}
-	err := apiClient.Logout()
+	exists, err := auth.IsRefreshTokenExists()
 
 	if err != nil {
 		return err
+	}
+
+	if exists {
+		user_id, err := auth.LoadUserID()
+
+		if err != nil {
+			return err
+		}
+
+		if len(user_id) > 0 {
+			err = auth.RemoveFirebaseAuthFile(user_id)
+
+			if err != nil {
+				return err
+			}
+
+			err = auth.RemoveActiveUserLockFile()
+
+			if err != nil {
+				return err
+			}
+
+			m := auth.GetAccountMap(auth.AccountsMapFile)
+			err = m.RemoveAccount(user_id)
+
+			if err != nil {
+				return err
+			}
+		}
 	}
 	return nil
 }
@@ -46,8 +71,10 @@ func TestInit(t *testing.T) {
 		t.Error(err)
 	}
 
-	if _, err := os.Stat(auth.AppDir); os.IsNotExist(err) {
-		t.Error(err)
+	for _, dir := range []string{auth.AppDir, auth.ProfilesDir} {
+		if _, err := os.Stat(dir); os.IsNotExist(err) {
+			t.Error(err)
+		}
 	}
 
 	err = auth.Init()
@@ -58,6 +85,8 @@ func TestInit(t *testing.T) {
 }
 
 func TestJsonDump(t *testing.T) {
+	var data = map[string]string{"test": "data"}
+
 	if _, err := os.Stat(filepath); os.IsExist(err) {
 		err = os.Remove(filepath)
 
@@ -66,7 +95,6 @@ func TestJsonDump(t *testing.T) {
 		}
 	}
 
-	data["test"] = "data"
 	jsonData, err := json.Marshal(data)
 
 	if err != nil {
@@ -81,32 +109,6 @@ func TestJsonDump(t *testing.T) {
 
 	if _, err := os.Stat(filepath); os.IsNotExist(err) {
 		t.Error(err.Error())
-	}
-
-}
-
-func TestJsonLoad(t *testing.T) {
-	data["test"] = "data"
-	loadedData, err := auth.JsonLoad(filepath)
-
-	if err != nil {
-		t.Error(err.Error())
-	}
-
-	jsonData1, err := json.Marshal(loadedData)
-
-	if err != nil {
-		t.Error(err.Error())
-	}
-
-	jsonData2, err := json.Marshal(data)
-
-	if err != nil {
-		t.Error(err.Error())
-	}
-
-	if !bytes.Equal(jsonData1, jsonData2) {
-		t.Errorf("%b != %b; want ==", jsonData1, jsonData2)
 	}
 }
 
