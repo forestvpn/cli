@@ -163,12 +163,11 @@ func (w AuthClientWrapper) GetUnexpiredOrMostRecentBillingFeature(user_id string
 			for _, b := range billingFeatures {
 				if !auth.BillingFeatureExpired(b) {
 					foundUnexpiredBillingFeature = true
-					break
 				}
 			}
 		}
 
-		if !foundUnexpiredBillingFeature && i < 2 {
+		if !foundUnexpiredBillingFeature && i == 0 {
 			resp, err := w.ApiClient.GetBillingFeatures()
 
 			if err != nil {
