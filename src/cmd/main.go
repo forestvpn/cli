@@ -25,13 +25,13 @@ var (
 	// DSN is a Data Source Name for Sentry. It is stored in an environment variable and assigned during the build with ldflags.
 	//
 	// See https://docs.sentry.io/product/sentry-basics/dsn-explainer/ for more information.
-	Dsn string
+	Dsn = os.Getenv("SENTRY_DSN")
 	// appVersion value is stored in an environment variable and assigned during the build with ldflags.
 	appVersion string
 	// firebaseApiKey is stored in an environment variable and assigned during the build with ldflags.
-	firebaseApiKey string
+	firebaseApiKey = os.Getenv("STAGING_FIREBASE_API_KEY")
 	// ApiHost is a hostname of Forest VPN back-end API that is stored in an environment variable and assigned during the build with ldflags.
-	apiHost string
+	apiHost = os.Getenv("STAGING_API_URL")
 )
 
 const url = "https://forestvpn.com/checkout/"
@@ -195,19 +195,24 @@ func main() {
 							plan := caser.String(strings.Split(b.GetBundleId(), ".")[2])
 							fmt.Printf("Logged-in as %s\n", email)
 							fmt.Printf("Plan: %s\n", plan)
-							tz, err := utils.GetLocalTimezone()
+							timezone, err := utils.GetLocalTimezone()
 
 							if err != nil {
 								sentry.CaptureException(err)
-								n, _ := now.Zone()
-								tz = n
+								name, offset := now.Zone()
+
+								if offset > 0 {
+									timezone = fmt.Sprintf("%s +%d", name, offset)
+								} else {
+									timezone = fmt.Sprintf("%s %d", name, offset)
+								}
 							}
 
 							if now.After(expiryDate) {
 								t := now.Sub(expiryDate)
-								fmt.Printf("Status: expired %s ago at %s %s\n", utils.HumanizeDuration(t), expiryDate.Format("2006-01-02 15:04:05"), tz)
+								fmt.Printf("Status: expired %s ago at %s %s\n", utils.HumanizeDuration(t), expiryDate.Format("2006-01-02 15:04:05"), timezone)
 							} else {
-								fmt.Printf("Status: expires in %s at %s %s\n", utils.HumanizeDuration(left), expiryDate.Format("2006-01-02 15:04:05"), tz)
+								fmt.Printf("Status: expires in %s at %s %s\n", utils.HumanizeDuration(left), expiryDate.Format("2006-01-02 15:04:05"), timezone)
 
 							}
 
