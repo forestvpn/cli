@@ -9,13 +9,14 @@ import (
 
 	"encoding/json"
 
+	"github.com/forestvpn/cli/utils"
 	"github.com/go-resty/resty/v2"
 )
 
 // Client is a REST client for Go.
 //
 // See https://github.com/go-resty/resty for more information.
-var Client = resty.New()
+var Client = resty.NewWithClient(utils.GetHttpClient(10))
 
 // AuthClient is a structure used as a Firebase REST client.
 //

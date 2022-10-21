@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"math"
 	"net"
+	"net/http"
 	"os/exec"
 	"regexp"
 	"strings"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/c-robinson/iplib"
 	externalip "github.com/glendc/go-external-ip"
+	"github.com/hashicorp/go-retryablehttp"
 )
 
 // ip2Net is a function for converting an IP address value, e.g. 127.0.0.1, into a network with mask of 24 bits, e.g. 127.0.0.0/24.
@@ -186,7 +188,7 @@ func GetActiveSshClients() ([]string, error) {
 }
 
 // humanizeDuration humanizes time.Duration output to a meaningful value,
-// golang's default ``time.Duration`` output is badly formatted and unreadable.
+// golang's default “time.Duration“ output is badly formatted and unreadable.
 func HumanizeDuration(duration time.Duration) string {
 	if duration.Seconds() < 60.0 {
 		return fmt.Sprintf("%d seconds", int64(duration.Seconds()))
@@ -217,4 +219,11 @@ func GetLocalTimezone() (string, error) {
 	}
 
 	return strings.TrimSpace(string(b)), nil
+}
+
+// GetHttpClient is a factory function to get http client with provided retries number.
+func GetHttpClient(retries int) *http.Client {
+	retryClient := retryablehttp.NewClient()
+	retryClient.RetryMax = retries
+	return retryClient.StandardClient()
 }
