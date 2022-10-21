@@ -225,6 +225,6 @@ func GetLocalTimezone() (string, error) {
 func GetHttpClient(retries int) *http.Client {
 	retryClient := retryablehttp.NewClient()
 	retryClient.RetryMax = retries
-	retryClient.Logger = nil
+	// retryClient.Logger = nil
 	return retryClient.StandardClient()
 }
