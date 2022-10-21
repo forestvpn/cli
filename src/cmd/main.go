@@ -409,7 +409,7 @@ func main() {
 							days := int64(left.Hours() / 24)
 
 							if now.After(exp) {
-								if actions.IsPremiumLocation(b, location) && bid == "com.forestvpn.premium" {
+								if actions.IsPremiumLocation(location) && bid == "com.forestvpn.premium" {
 									fmt.Println("The location you were using is now unavailable, as your paid subscription has ended.")
 									fmt.Printf("You can keep using ForestVPN once you watch an ad in our mobile app, or simply go Premium at %s.\n", url)
 									os.Exit(1)
@@ -581,25 +581,13 @@ func main() {
 								return err
 							}
 
-							user_id, err := auth.LoadUserID()
-
-							if err != nil {
-								return err
-							}
-
-							b, err := authClientWrapper.GetUnexpiredOrMostRecentBillingFeature(user_id)
-
-							if err != nil {
-								return err
-							}
-
 							locations, err := authClientWrapper.ApiClient.GetLocations()
 
 							if err != nil {
 								return err
 							}
 
-							wrappedLocations := actions.GetLocationWrappers(b, locations)
+							wrappedLocations := actions.GetLocationWrappers(locations)
 							var location actions.LocationWrapper
 							id, err := uuid.Parse(arg)
 							found := false
@@ -624,6 +612,18 @@ func main() {
 
 							if !found {
 								err := fmt.Errorf("no such location: %s", arg)
+								return err
+							}
+
+							user_id, err := auth.LoadUserID()
+
+							if err != nil {
+								return err
+							}
+
+							b, err := authClientWrapper.GetUnexpiredOrMostRecentBillingFeature(user_id)
+
+							if err != nil {
 								return err
 							}
 

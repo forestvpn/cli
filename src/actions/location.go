@@ -42,19 +42,7 @@ func (w AuthClientWrapper) ListLocations(country string) error {
 		return locations[i].GetName() < locations[j].GetName() && locations[i].Country.GetName() < locations[j].Country.GetName()
 	})
 
-	user_id, err := auth.LoadUserID()
-
-	if err != nil {
-		return err
-	}
-
-	b, err := w.GetUnexpiredOrMostRecentBillingFeature(user_id)
-
-	if err != nil {
-		return err
-	}
-
-	wrappedLocations := GetLocationWrappers(b, locations)
+	wrappedLocations := GetLocationWrappers(locations)
 
 	for _, loc := range wrappedLocations {
 		premiumMark := ""
@@ -177,33 +165,20 @@ type LocationWrapper struct {
 	Premium  bool
 }
 
-func IsPremiumLocation(billingFeature forestvpn_api.BillingFeature, location forestvpn_api.Location) bool {
-	constraint := billingFeature.GetConstraints()[0]
-	subject := constraint.GetSubject()
-	bid := billingFeature.GetBundleId()
-	premium := false
-
-	for _, s := range subject {
-		if s == location.GetId() {
-			if location.GetId() == "7fc5b17c-eddf-413f-8b37-9d36eb5e33ec" || location.GetId() == "b134d679-8697-4dc6-b629-c4c189392fca" {
-				premium = false
-			} else if bid == "com.forestvpn.premium" {
-				premium = true
-			}
-			break
-		}
-	}
-
-	return premium
-}
-
-func GetLocationWrappers(billingFeature forestvpn_api.BillingFeature, locations []forestvpn_api.Location) []LocationWrapper {
+func GetLocationWrappers(locations []forestvpn_api.Location) []LocationWrapper {
 	var wrappers []LocationWrapper
 
-	for _, l := range locations {
-		wrapper := LocationWrapper{Location: l, Premium: IsPremiumLocation(billingFeature, l)}
+	for _, location := range locations {
+		wrapper := LocationWrapper{Location: location, Premium: IsPremiumLocation(location)}
 		wrappers = append(wrappers, wrapper)
 	}
 
 	return wrappers
+}
+
+func IsPremiumLocation(location forestvpn_api.Location) bool {
+	if location.GetId() == "7fc5b17c-eddf-413f-8b37-9d36eb5e33ec" || location.GetId() == "b134d679-8697-4dc6-b629-c4c189392fca" {
+		return false
+	}
+	return true
 }
