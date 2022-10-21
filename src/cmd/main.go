@@ -12,6 +12,7 @@ import (
 	"github.com/forestvpn/cli/actions"
 	"github.com/forestvpn/cli/api"
 	"github.com/forestvpn/cli/auth"
+	"github.com/forestvpn/cli/timezone"
 	"github.com/forestvpn/cli/utils"
 	"github.com/google/uuid"
 	"golang.org/x/text/cases"
@@ -195,24 +196,20 @@ func main() {
 							plan := caser.String(strings.Split(b.GetBundleId(), ".")[2])
 							fmt.Printf("Logged-in as %s\n", email)
 							fmt.Printf("Plan: %s\n", plan)
-							timezone, err := utils.GetLocalTimezone()
+							tz, err := utils.GetLocalTimezone()
 
 							if err != nil {
 								sentry.CaptureException(err)
-								name, offset := now.Zone()
+								_, offset := now.Zone()
 
-								if offset > 0 {
-									timezone = fmt.Sprintf("%s +%d", name, offset)
-								} else {
-									timezone = fmt.Sprintf("%s %d", name, offset)
-								}
+								tz = timezone.GetGmtTimezone(offset)
 							}
 
 							if now.After(expiryDate) {
 								t := now.Sub(expiryDate)
-								fmt.Printf("Status: expired %s ago at %s %s\n", utils.HumanizeDuration(t), expiryDate.Format("2006-01-02 15:04:05"), timezone)
+								fmt.Printf("Status: expired %s ago at %s %s\n", utils.HumanizeDuration(t), expiryDate.Format("2006-01-02 15:04:05"), tz)
 							} else {
-								fmt.Printf("Status: expires in %s at %s %s\n", utils.HumanizeDuration(left), expiryDate.Format("2006-01-02 15:04:05"), timezone)
+								fmt.Printf("Status: expires in %s at %s %s\n", utils.HumanizeDuration(left), expiryDate.Format("2006-01-02 15:04:05"), tz)
 
 							}
 
