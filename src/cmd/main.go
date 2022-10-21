@@ -406,6 +406,7 @@ func main() {
 							now := time.Now()
 							exp := b.GetExpiryDate()
 							left := exp.Sub(now)
+							days := int64(left.Hours() / 24)
 
 							if now.After(exp) {
 								if actions.IsPremiumLocation(b, location) && bid == "com.forestvpn.premium" {
@@ -419,7 +420,7 @@ func main() {
 								}
 							} else if bid == "com.forestvpn.freemium" && int(left.Minutes()) == 5 {
 								fmt.Println("You currently have 5 more minutes of free trial left.")
-							} else if int(left.Hours()/24) <= 3 && bid == "com.forestvpn.premium" {
+							} else if days == 3 && left.Hours() == 0 || days < 3 && bid == "com.forestvpn.premium" {
 								fmt.Println("Your premium subscription will end in less than 3 days.")
 							}
 
