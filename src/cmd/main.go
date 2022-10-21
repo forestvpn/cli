@@ -624,7 +624,10 @@ func main() {
 								return err
 							}
 
-							if time.Now().After(b.GetExpiryDate()) && location.Premium {
+							bid := b.GetBundleId()
+							expired := time.Now().After(b.GetExpiryDate())
+
+							if location.Premium && !expired && bid == "com.forestvpn.freemium" || location.Premium && expired && bid == "com.forestvpn.premium" || expired {
 								fmt.Println("The location you want to use is now unavailable, as it requires a paid subscription.")
 								fmt.Printf("You can keep using ForestVPN once you watch an ad in our mobile app, or simply go Premium at %s.\n", url)
 								return nil
