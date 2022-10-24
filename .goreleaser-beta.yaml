@@ -1,18 +1,19 @@
 builds:
   - 
+    main: cmd/
     id: fvpn-bin
     env:
       - CGO_ENABLED=0
     goos:
       - linux
-      - freebsd
-      - darwin
+      # - freebsd
+      # - darwin
     goarch:
-      - amd64
+      # - amd64
       - arm64
     binary: fvpn
     ldflags:
-      - "-X main.appVersion={{.Env.VERSION}} -X main.Dsn={{.Env.SENTRY_DSN}} -X actions.main.firebaseApiKey={{.Env.STAGING_FIREBASE_API_KEY}} -X actions.main.apiHost={{.Env.STAGING_API_URL}}"
+      - "-X github.com/forestvpn/cli/cmd/main.appVersion={{.Env.VERSION}} -X github.com/forestvpn/cli/cmd/main.Dsn={{.Env.SENTRY_DSN}} -X github.com/forestvpn/cli/actions/main.firebaseApiKey={{.Env.STAGING_FIREBASE_API_KEY}} -X github.com/forestvpn/cli/actions/main.apiHost={{.Env.STAGING_API_URL}}"
 checksum:
   name_template: 'checksums.txt'
 changelog:

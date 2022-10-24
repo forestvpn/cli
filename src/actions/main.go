@@ -7,6 +7,7 @@ package actions
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"sort"
 
@@ -206,6 +207,8 @@ func (w AuthClientWrapper) GetUnexpiredOrMostRecentBillingFeature(user_id string
 }
 
 func GetAuthClientWrapper() (AuthClientWrapper, error) {
+	fmt.Println(firebaseApiKey)
+	fmt.Println(apiHost)
 	accountsmap := auth.GetAccountsMap(auth.AccountsMapFile)
 	authClientWrapper := AuthClientWrapper{AccountsMap: accountsmap}
 	authClient := auth.AuthClient{ApiKey: firebaseApiKey}
