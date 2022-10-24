@@ -13,7 +13,7 @@ builds:
       - arm64
     binary: fvpn
     ldflags:
-      - "-X github.com/forestvpn/cli/cmd/main.appVersion={{.Env.VERSION}} -X github.com/forestvpn/cli/cmd/main.Dsn={{.Env.SENTRY_DSN}} -X github.com/forestvpn/cli/actions/main.firebaseApiKey={{.Env.STAGING_FIREBASE_API_KEY}} -X github.com/forestvpn/cli/actions/main.apiHost={{.Env.STAGING_API_URL}}"
+      - "-s -w -X main.appVersion={{.Env.VERSION}} -X main.Dsn={{.Env.SENTRY_DSN}} -X main.firebaseApiKey={{.Env.STAGING_FIREBASE_API_KEY}} -X main.apiHost={{.Env.STAGING_API_URL}}"
 checksum:
   name_template: 'checksums.txt'
 changelog:

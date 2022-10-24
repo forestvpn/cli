@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/forestvpn/cli/actions"
+	"github.com/forestvpn/cli/api"
 	"github.com/forestvpn/cli/auth"
 	"github.com/forestvpn/cli/timezone"
 	"github.com/forestvpn/cli/utils"
@@ -28,9 +29,46 @@ var (
 	Dsn string
 	// appVersion value is stored in an environment variable and assigned during the build with ldflags.
 	appVersion string
+	// firebaseApiKey is stored in an environment variable and assigned during the build with ldflags.
+	firebaseApiKey = os.Getenv("STAGING_FIREBASE_API_KEY")
+	// ApiHost is a hostname of Forest VPN back-end API that is stored in an environment variable and assigned during the build with ldflags.
+	apiHost = os.Getenv("STAGING_API_URL")
 )
 
 const url = "https://forestvpn.com/checkout/"
+
+func GetAuthClientWrapper() (actions.AuthClientWrapper, error) {
+	accountsmap := auth.GetAccountsMap(auth.AccountsMapFile)
+	authClientWrapper := actions.AuthClientWrapper{AccountsMap: accountsmap}
+	authClient := auth.AuthClient{ApiKey: firebaseApiKey}
+
+	user_id, _ := auth.LoadUserID()
+	exists, _ := auth.IsRefreshTokenExists()
+
+	if exists {
+		expired, _ := auth.IsAccessTokenExpired(user_id)
+
+		if expired {
+			refreshToken, _ := auth.LoadRefreshToken()
+			response, err := authClient.GetAccessToken(refreshToken)
+
+			if err != nil {
+				return authClientWrapper, err
+			}
+
+			user_id, err = authClientWrapper.SetUpProfile(response)
+
+			if err != nil {
+				return authClientWrapper, err
+			}
+		}
+	}
+
+	accessToken, _ := auth.LoadAccessToken(user_id)
+	authClientWrapper.AuthClient = authClient
+	authClientWrapper.ApiClient = api.GetApiClient(accessToken, apiHost)
+	return authClientWrapper, nil
+}
 
 func main() {
 	// email is user's email address used to sign in or sign up on the Firebase.
@@ -104,7 +142,7 @@ func main() {
 								return err
 							}
 
-							authClientWrapper, err := actions.GetAuthClientWrapper()
+							authClientWrapper, err := GetAuthClientWrapper()
 
 							if err != nil {
 								return err
@@ -204,7 +242,7 @@ func main() {
 								return nil
 							}
 
-							authClientWrapper, err := actions.GetAuthClientWrapper()
+							authClientWrapper, err := GetAuthClientWrapper()
 
 							if err != nil {
 								return err
@@ -239,7 +277,7 @@ func main() {
 							},
 						},
 						Action: func(c *cli.Context) error {
-							authClientWrapper, err := actions.GetAuthClientWrapper()
+							authClientWrapper, err := GetAuthClientWrapper()
 
 							if err != nil {
 								return err
@@ -329,7 +367,7 @@ func main() {
 								return nil
 							}
 
-							client, err := actions.GetAuthClientWrapper()
+							client, err := GetAuthClientWrapper()
 
 							if err != nil {
 								return err
@@ -534,7 +572,7 @@ func main() {
 								return errors.New("UUID or name required")
 							}
 
-							authClientWrapper, err := actions.GetAuthClientWrapper()
+							authClientWrapper, err := GetAuthClientWrapper()
 
 							if err != nil {
 								return err
@@ -643,7 +681,7 @@ func main() {
 								return nil
 							}
 
-							authClientWrapper, err := actions.GetAuthClientWrapper()
+							authClientWrapper, err := GetAuthClientWrapper()
 
 							if err != nil {
 								return err
