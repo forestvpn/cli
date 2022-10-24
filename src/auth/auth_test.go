@@ -2,12 +2,14 @@ package auth_test
 
 import (
 	"encoding/json"
+	"fmt"
+	"math/rand"
 	"os"
-	"strings"
+	"strconv"
 	"testing"
+	"time"
 
 	"github.com/forestvpn/cli/actions"
-	"github.com/forestvpn/cli/api"
 	"github.com/forestvpn/cli/auth"
 )
 
@@ -16,46 +18,36 @@ const filepath = "/tmp/test.json"
 var (
 	email    = os.Getenv("STAGING_EMAIL")
 	password = os.Getenv("STAGING_PASSWORD")
-	apiKey   = os.Getenv("STAGING_FIREBASE_API_KEY")
-	apiHost  = os.Getenv("STAGING_API_URL")
 )
 
 func logout() error {
-	exists, err := auth.IsRefreshTokenExists()
+	userID, err := auth.LoadUserID()
+
+	if err != nil || len(userID) == 0 {
+		return nil
+	}
+
+	auth.RemoveFirebaseAuthFile(userID)
+	auth.RemoveActiveUserLockFile()
+	m := auth.GetAccountsMap(auth.AccountsMapFile)
+	m.RemoveAccount(userID)
+	return nil
+}
+
+func login() (actions.AuthClientWrapper, error) {
+	client, err := actions.GetAuthClientWrapper()
 
 	if err != nil {
-		return err
+		return client, err
 	}
 
-	if exists {
-		user_id, err := auth.LoadUserID()
+	err = client.Login(email, password)
 
-		if err != nil {
-			return err
-		}
-
-		if len(user_id) > 0 {
-			err = auth.RemoveFirebaseAuthFile(user_id)
-
-			if err != nil {
-				return err
-			}
-
-			err = auth.RemoveActiveUserLockFile()
-
-			if err != nil {
-				return err
-			}
-
-			m := auth.GetAccountMap(auth.AccountsMapFile)
-			err = m.RemoveAccount(user_id)
-
-			if err != nil {
-				return err
-			}
-		}
+	if err != nil {
+		return client, err
 	}
-	return nil
+
+	return client, nil
 }
 
 func TestInit(t *testing.T) {
@@ -112,89 +104,114 @@ func TestJsonDump(t *testing.T) {
 	}
 }
 
+func TestAccountMap(t *testing.T) {
+	client, err := actions.GetAuthClientWrapper()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = os.RemoveAll(auth.AppDir)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = auth.Init()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = client.Login(email, password)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	userID, err := auth.LoadUserID()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	accountsmap := auth.GetAccountsMap(auth.AccountsMapFile)
+	v := accountsmap.GetEmail(userID)
+
+	if len(v) == 0 {
+		t.Errorf("%s email not found in local accounts", email)
+	}
+
+	err = accountsmap.RemoveAccount(userID)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	v = accountsmap.GetEmail(email)
+
+	if len(v) != 0 {
+		t.Errorf("%s email is not removed from local accounts", email)
+	}
+
+}
+
 func TestLoadAccessTokenWhileLoggedIn(t *testing.T) {
-	emailfield := auth.EmailField{Value: email}
-	passwordfield := auth.PasswordField{Value: []byte(password)}
-	signinform := auth.SignInForm{EmailField: emailfield, PasswordField: passwordfield}
-	authClient := auth.AuthClient{ApiKey: apiKey}
-	response, err := authClient.SignIn(signinform)
+	_, err := login()
 
 	if err != nil {
 		t.Error(err)
 	}
 
-	err = auth.HandleFirebaseSignInResponse(response)
+	userID, err := auth.LoadUserID()
 
 	if err != nil {
 		t.Error(err)
 	}
 
-	refreshToken, err := auth.LoadRefreshToken()
+	accessToken, err := auth.LoadAccessToken(userID)
 
 	if err != nil {
 		t.Error(err)
 	}
 
-	response, err = authClient.GetAccessToken(refreshToken)
-
-	if err != nil {
-		t.Error(err)
-	}
-
-	err = auth.JsonDump(response.Body(), auth.FirebaseAuthFile)
-
-	if err != nil {
-		t.Error(err)
-	}
-
-	accessToken, err := auth.LoadAccessToken()
-
-	if err != nil {
-		t.Error(err)
-	}
-
-	var body map[string]string
-	json.Unmarshal(response.Body(), &body)
-	accessToken1 := body["access_token"]
-
-	if !strings.EqualFold(accessToken, accessToken1) {
-		t.Errorf("%s != %s; want ==", accessToken, accessToken1)
+	if len(accessToken) == 0 {
+		t.Error("access token not loaded while logged in")
 	}
 }
 
 func TestLoadAccessTokenWhileLoggedOut(t *testing.T) {
-	authClient := auth.AuthClient{ApiKey: apiKey}
-	accessToken, _ := auth.LoadAccessToken()
-	wrapper := api.GetApiClient(accessToken, apiHost)
-	apiClient := actions.AuthClientWrapper{AuthClient: authClient, ApiClient: wrapper}
-	err := apiClient.Logout()
+	_, err := login()
 
 	if err != nil {
 		t.Error(err)
 	}
 
-	accessToken, err = auth.LoadAccessToken()
+	userID, err := auth.LoadUserID()
 
-	if err == nil {
+	if err != nil {
 		t.Error(err)
 	}
 
-	tokenLength := len(accessToken)
+	err = logout()
 
-	if tokenLength > 0 {
-		t.Errorf("%d > 0; want <=", tokenLength)
+	if err != nil {
+		t.Error(err)
+	}
+
+	accessToken, err := auth.LoadAccessToken(userID)
+
+	if err == nil || len(accessToken) > 0 {
+		t.Error(err)
 	}
 }
 
 func TestHandleFirebaseSignInResponseWithNormalParams(t *testing.T) {
+	authclient := auth.AuthClient{ApiKey: os.Getenv("STAGING_FIREBASE_API_KEY")}
 	emailfield := auth.EmailField{Value: email}
 	passwordfield := auth.PasswordField{Value: []byte(password)}
 	signinform := auth.SignInForm{EmailField: emailfield, PasswordField: passwordfield}
-	authClient := auth.AuthClient{ApiKey: os.Getenv("STAGING_FIREBASE_API_KEY")}
-	accessToken, _ := auth.LoadAccessToken()
-	wrapper := api.GetApiClient(accessToken, apiHost)
-	apiClient := actions.AuthClientWrapper{AuthClient: authClient, ApiClient: wrapper}
-	response, err := apiClient.AuthClient.SignIn(signinform)
+	response, err := authclient.SignIn(signinform)
 
 	if err != nil {
 		t.Error(err)
@@ -206,30 +223,22 @@ func TestHandleFirebaseSignInResponseWithNormalParams(t *testing.T) {
 		t.Error(err)
 	}
 
-	if _, err := os.Stat(auth.FirebaseAuthFile); os.IsNotExist(err) {
-		t.Error(err)
-	}
 }
 
 func TestHandleFirebaseSignInResponseWithBlankParams(t *testing.T) {
 	email := ""
 	password := ""
+	authclient := auth.AuthClient{ApiKey: os.Getenv("STAGING_FIREBASE_API_KEY")}
 	emailfield := auth.EmailField{Value: email}
 	passwordfield := auth.PasswordField{Value: []byte(password)}
 	signinform := auth.SignInForm{EmailField: emailfield, PasswordField: passwordfield}
-	authClient := auth.AuthClient{ApiKey: apiKey}
-	accessToken, _ := auth.LoadAccessToken()
-	wrapper := api.GetApiClient(accessToken, apiHost)
-	apiClient := actions.AuthClientWrapper{AuthClient: authClient, ApiClient: wrapper}
-	response, err := apiClient.AuthClient.SignIn(signinform)
+	response, err := authclient.SignIn(signinform)
 
 	if err != nil {
 		t.Error(err)
 	}
 
 	if err != nil {
-		t.Error(err)
-	} else if _, err := os.Stat(auth.FirebaseAuthFile); os.IsNotExist(err) {
 		t.Error(err)
 	}
 
@@ -241,77 +250,23 @@ func TestHandleFirebaseSignInResponseWithBlankParams(t *testing.T) {
 
 }
 
-// func TestLoadRefreshTokenWhileLoggedIn(t *testing.T) {
-// 	authClient := auth.AuthClient{ApiKey: apiKey}
-// 	emailfield := auth.EmailField{Value: email}
-// 	passwordfield := auth.PasswordField{Value: []byte(password)}
-// 	signinform := auth.SignInForm{EmailField: emailfield, PasswordField: passwordfield}
-// 	response, err := authClient.SignIn(signinform)
+func TestLoadRefreshTokenWhileLoggedIn(t *testing.T) {
+	_, err := login()
 
-// 	if err != nil {
-// 		t.Error(err)
-// 	}
+	if err != nil {
+		t.Error(err)
+	}
 
-// 	jsonresponse := make(map[string]string)
-// 	err = json.Unmarshal(response.Body(), &jsonresponse)
+	refreshToken, err := auth.LoadRefreshToken()
 
-// 	if err != nil {
-// 		t.Error(err)
-// 	}
+	if err != nil {
+		t.Error(err)
+	}
 
-// 	refreshToken := jsonresponse["refresh_token"]
-
-// 	if len(refreshToken) == 0 {
-// 		t.Error("empty refresh token")
-// 	}
-
-// 	response, err = authClient.ExchangeRefreshForIdToken(refreshToken)
-
-// 	if err != nil {
-// 		t.Error(err)
-// 	}
-
-// 	jsonresponse = make(map[string]string)
-// 	err = json.Unmarshal(response.Body(), &jsonresponse)
-
-// 	if err != nil {
-// 		t.Error(err)
-// 	}
-
-// 	accessToken := jsonresponse["access_token"]
-
-// 	if len(accessToken) == 0 {
-// 		t.Error("empty access token")
-// 	}
-
-// 	deviceID, err := auth.LoadDeviceID()
-
-// 	if err != nil {
-// 		t.Error(err)
-// 	}
-
-// 	wrapper := api.GetApiClient(accessToken, apiHost)
-// 	apiClient := actions.AuthClientWrapper{AuthClient: authClient, ApiClient: wrapper}
-// 	err = apiClient.Login(email, password, deviceID)
-
-// 	if err != nil {
-// 		t.Error(err)
-// 	}
-
-// 	if _, err := os.Stat(auth.FirebaseAuthFile); os.IsNotExist(err) {
-// 		t.Error(err)
-// 	}
-
-// 	refreshToken, err = auth.LoadRefreshToken()
-
-// 	if err != nil {
-// 		t.Error(err)
-// 	}
-
-// 	if len(refreshToken) == 0 {
-// 		t.Error("failed to load refresh token")
-// 	}
-// }
+	if len(refreshToken) == 0 {
+		t.Error("failed to load refresh token")
+	}
+}
 
 func TestLoadRefreshTokenWhileLoggedOut(t *testing.T) {
 	err := logout()
@@ -338,17 +293,10 @@ func TestIsRefreshTokenExistsWhileLoggedOut(t *testing.T) {
 		t.Error(err)
 	}
 
-	if auth.IsRefreshTokenExists() {
+	exists, _ := auth.IsRefreshTokenExists()
+
+	if exists {
 		t.Error("refresh token exists")
-	}
-
-}
-
-func TestIsDeviceCreatedWhileLoggedOut(t *testing.T) {
-	os.Remove(auth.DeviceFile)
-
-	if auth.IsDeviceCreated() {
-		t.Errorf("device exists: %s", auth.DeviceFile)
 	}
 
 }
@@ -367,15 +315,17 @@ func TestIsAuthenticatedWhileLoggedOut(t *testing.T) {
 	}
 }
 
-func TestEmailFieldValidateWithWrongValue(t *testing.T) {
-	emailfield := auth.EmailField{Value: "wrongemail.com"}
+func TestEmailFieldValidateWithIncorrectValue(t *testing.T) {
+	email = ""
+	emailfield := auth.EmailField{Value: email}
 
 	if emailfield.Validate() == nil {
 		t.Error("emailfield.Validate() == nil; want error")
 	}
 }
 
-func TestEmailFieldValidateWithRightValue(t *testing.T) {
+func TestEmailFieldValidateWithCorrectValue(t *testing.T) {
+	email = os.Getenv("STAGING_EMAIL")
 	emailfield := auth.EmailField{Value: email}
 
 	if emailfield.Validate() != nil {
@@ -383,7 +333,7 @@ func TestEmailFieldValidateWithRightValue(t *testing.T) {
 	}
 }
 
-func TestPasswordFieldValidateWithWrongValue(t *testing.T) {
+func TestPasswordFieldValidateWithIncorrectValue(t *testing.T) {
 	passwordfield := auth.PasswordField{Value: []byte("12345")}
 
 	if passwordfield.Validate() == nil {
@@ -422,5 +372,437 @@ func TestValidatePasswordConfirmationWhileNotMatch(t *testing.T) {
 
 	if err == nil {
 		t.Error("signupform.ValidatePasswordConfirmation() == nil; want error")
+	}
+}
+
+func TestBillingFeatureExpired(t *testing.T) {
+	client, err := login()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	userID, err := auth.LoadUserID()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	billingFeature, err := client.GetUnexpiredOrMostRecentBillingFeature(userID)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	now := time.Now()
+	expiryDate := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()-1, now.Minute(), now.Second(), now.Nanosecond(), now.Location())
+	billingFeature.SetExpiryDate(expiryDate)
+
+	if !auth.BillingFeatureExpired(billingFeature) {
+		t.Error("billing feature is not expired; want expired")
+	}
+}
+
+func TestBillingFeautureExists(t *testing.T) {
+	_, err := login()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	userID, err := auth.LoadUserID()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if !auth.BillingFeautureExists(userID) {
+		t.Error("billing feature file not found after login.")
+	}
+}
+
+func TestLoadBillingFeatures(t *testing.T) {
+	_, err := login()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	userID, err := auth.LoadUserID()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	billingFeatures, err := auth.LoadBillingFeatures(userID)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(billingFeatures) == 0 {
+		t.Error("billing features not loaded while logged in")
+	}
+
+}
+
+func TestDumpAccessTokenExpireDate(t *testing.T) {
+	var expiresIn string
+	_, err := login()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	userID, err := auth.LoadUserID()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	data, err := auth.LoadFirebaseAuthFile(userID)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	var y interface{} = data["expires_in"]
+	switch v := y.(type) {
+	case string:
+		expiresIn = v
+	}
+
+	expireDate, err := auth.GetAccessTokenExpireDate(expiresIn)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = auth.DumpAccessTokenExpireDate(userID, expiresIn)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	expireDateLoaded, err := auth.LoadAccessTokenExpireDate(userID)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if expireDateLoaded.Year() != expireDate.Year() || expireDateLoaded.Month() != expireDate.Month() || expireDateLoaded.Day() != expireDate.Day() || expireDateLoaded.Hour() != expireDate.Hour() || expireDateLoaded.Minute() != expireDate.Minute() {
+		t.Error("wrong access token expire date dump")
+	}
+}
+
+func TestIsAccessTokenExpiredWithExpiredToken(t *testing.T) {
+	_, err := login()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	now := time.Now()
+	expiryDate := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()-1, now.Minute(), now.Second(), now.Nanosecond(), now.Location())
+	userID, err := auth.LoadUserID()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	b, err := auth.Date2Json(expiryDate)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	path := auth.ProfilesDir + userID + auth.FirebaseExtensionFile
+	err = auth.JsonDump(b, path)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	expired, err := auth.IsAccessTokenExpired(userID)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if !expired {
+		t.Error("access token not expired; want expired")
+	}
+
+}
+
+func TestIsAccessTokenExpiredWithUnExpiredToken(t *testing.T) {
+	_, err := login()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	now := time.Now()
+	expiryDate := time.Date(now.Year()+1, now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second(), now.Nanosecond(), now.Location())
+	userID, err := auth.LoadUserID()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	b, err := auth.Date2Json(expiryDate)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	path := auth.ProfilesDir + userID + auth.FirebaseExtensionFile
+	err = auth.JsonDump(b, path)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	expired, err := auth.IsAccessTokenExpired(userID)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if expired {
+		t.Error("access token is expired; want not expired")
+	}
+
+}
+
+func TestGetAccessTokenExpireDate(t *testing.T) {
+	var seconds int
+	_, err := login()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	userID, err := auth.LoadUserID()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	data, err := auth.LoadFirebaseAuthFile(userID)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	var z interface{} = data["expires_in"]
+	switch v := z.(type) {
+	case string:
+		seconds, err = strconv.Atoi(v)
+
+		if err != nil {
+			t.Error(err)
+		}
+	}
+
+	now := time.Now()
+	expireDate, err := auth.GetAccessTokenExpireDate(fmt.Sprint(seconds))
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	expireDate1 := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second()+seconds, now.Nanosecond(), now.Location())
+
+	// t.Error(expireDate.String(), expireDate1.String())
+
+	if expireDate.Year() != expireDate1.Year() || expireDate.Month() != expireDate1.Month() || expireDate.Day() != expireDate1.Day() || expireDate.Hour() != expireDate1.Hour() || expireDate.Minute() != expireDate1.Minute() {
+		t.Error("wrong expire date")
+	}
+}
+
+func TestLoadIdTokenWhileLoggedIn(t *testing.T) {
+	_, err := login()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	userID, err := auth.LoadUserID()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	idToken, err := auth.LoadIdToken(userID)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(idToken) == 0 {
+		t.Error("empty id token")
+	}
+}
+
+func TestLoadIdTokenWhileLoggedOut(t *testing.T) {
+	_, err := login()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	userID, err := auth.LoadUserID()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = logout()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	idToken, err := auth.LoadIdToken(userID)
+
+	if err == nil {
+		t.Error("error is not nil")
+	}
+
+	if len(idToken) > 0 {
+		t.Error("not empty id token")
+	}
+
+}
+
+func TestUpdateProfileDevice(t *testing.T) {
+	client, err := login()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	locations, err := client.ApiClient.GetLocations()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	location := locations[rand.Intn(len(locations))]
+	userID, err := auth.LoadUserID()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	device, err := auth.LoadDevice(userID)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	device, err = client.ApiClient.UpdateDevice(device.GetId(), location.GetId())
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = auth.UpdateProfileDevice(device)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	device, err = auth.LoadDevice(userID)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if device.Location.GetId() != location.GetId() {
+		t.Error("wrong device id")
+	}
+}
+
+func TestRemoveActiveUserLockFile(t *testing.T) {
+	_, err := login()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	userID, err := auth.LoadUserID()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	path := auth.ProfilesDir + userID + auth.ActiveUserLockFile
+	_, err = os.Stat(path)
+
+	if os.IsNotExist(err) {
+		t.Error(err)
+	}
+
+	err = auth.RemoveActiveUserLockFile()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if os.IsExist(err) {
+		t.Error(err)
+	}
+
+}
+
+func TestRemoveFirebaseAuthFile(t *testing.T) {
+	_, err := login()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	userID, err := auth.LoadUserID()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	path := auth.ProfilesDir + userID + auth.FirebaseAuthFile
+
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		t.Error(err)
+	}
+
+	err = auth.RemoveFirebaseAuthFile(userID)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if _, err := os.Stat(path); os.IsExist(err) {
+		t.Error(err)
+	}
+}
+
+func TestSetActiveProfile(t *testing.T) {
+	_, err := login()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	userID, err := auth.LoadUserID()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = auth.SetActiveProfile(userID)
+
+	if err != nil {
+		t.Error(err)
 	}
 }

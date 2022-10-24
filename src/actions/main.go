@@ -17,6 +17,13 @@ import (
 	"github.com/forestvpn/cli/auth"
 )
 
+var (
+	// firebaseApiKey is stored in an environment variable and assigned during the build with ldflags.
+	firebaseApiKey = os.Getenv("STAGING_FIREBASE_API_KEY")
+	// ApiHost is a hostname of Forest VPN back-end API that is stored in an environment variable and assigned during the build with ldflags.
+	apiHost = os.Getenv("STAGING_API_URL")
+)
+
 // AuthClientWrapper is a structure that is used as a high-level wrapper for both AuthClient and ApiClient.
 // It is used as main wgrest and Firebase REST API client as both of wrapped structures share the same AccessToken for authentication purposes.
 type AuthClientWrapper struct {
@@ -196,4 +203,37 @@ func (w AuthClientWrapper) GetUnexpiredOrMostRecentBillingFeature(user_id string
 	}
 
 	return billingFeatures[0], nil
+}
+
+func GetAuthClientWrapper() (AuthClientWrapper, error) {
+	accountsmap := auth.GetAccountsMap(auth.AccountsMapFile)
+	authClientWrapper := AuthClientWrapper{AccountsMap: accountsmap}
+	authClient := auth.AuthClient{ApiKey: firebaseApiKey}
+
+	user_id, _ := auth.LoadUserID()
+	exists, _ := auth.IsRefreshTokenExists()
+
+	if exists {
+		expired, _ := auth.IsAccessTokenExpired(user_id)
+
+		if expired {
+			refreshToken, _ := auth.LoadRefreshToken()
+			response, err := authClient.GetAccessToken(refreshToken)
+
+			if err != nil {
+				return authClientWrapper, err
+			}
+
+			user_id, err = authClientWrapper.SetUpProfile(response)
+
+			if err != nil {
+				return authClientWrapper, err
+			}
+		}
+	}
+
+	accessToken, _ := auth.LoadAccessToken(user_id)
+	authClientWrapper.AuthClient = authClient
+	authClientWrapper.ApiClient = api.GetApiClient(accessToken, apiHost)
+	return authClientWrapper, nil
 }

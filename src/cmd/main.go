@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/forestvpn/cli/actions"
-	"github.com/forestvpn/cli/api"
 	"github.com/forestvpn/cli/auth"
 	"github.com/forestvpn/cli/timezone"
 	"github.com/forestvpn/cli/utils"
@@ -29,46 +28,9 @@ var (
 	Dsn string
 	// appVersion value is stored in an environment variable and assigned during the build with ldflags.
 	appVersion string
-	// firebaseApiKey is stored in an environment variable and assigned during the build with ldflags.
-	firebaseApiKey string
-	// ApiHost is a hostname of Forest VPN back-end API that is stored in an environment variable and assigned during the build with ldflags.
-	apiHost string
 )
 
 const url = "https://forestvpn.com/checkout/"
-
-func getAuthClientWrapper() (actions.AuthClientWrapper, error) {
-	accountsmap := auth.GetAccountsMap(auth.AccountsMapFile)
-	authClientWrapper := actions.AuthClientWrapper{AccountsMap: accountsmap}
-	authClient := auth.AuthClient{ApiKey: firebaseApiKey}
-
-	user_id, _ := auth.LoadUserID()
-	exists, _ := auth.IsRefreshTokenExists()
-
-	if exists {
-		expired, _ := auth.IsAccessTokenExpired(user_id)
-
-		if expired {
-			refreshToken, _ := auth.LoadRefreshToken()
-			response, err := authClient.GetAccessToken(refreshToken)
-
-			if err != nil {
-				return authClientWrapper, err
-			}
-
-			user_id, err = authClientWrapper.SetUpProfile(response)
-
-			if err != nil {
-				return authClientWrapper, err
-			}
-		}
-	}
-
-	accessToken, _ := auth.LoadAccessToken(user_id)
-	authClientWrapper.AuthClient = authClient
-	authClientWrapper.ApiClient = api.GetApiClient(accessToken, apiHost)
-	return authClientWrapper, nil
-}
 
 func main() {
 	// email is user's email address used to sign in or sign up on the Firebase.
@@ -142,7 +104,7 @@ func main() {
 								return err
 							}
 
-							authClientWrapper, err := getAuthClientWrapper()
+							authClientWrapper, err := actions.GetAuthClientWrapper()
 
 							if err != nil {
 								return err
@@ -242,7 +204,7 @@ func main() {
 								return nil
 							}
 
-							authClientWrapper, err := getAuthClientWrapper()
+							authClientWrapper, err := actions.GetAuthClientWrapper()
 
 							if err != nil {
 								return err
@@ -277,7 +239,7 @@ func main() {
 							},
 						},
 						Action: func(c *cli.Context) error {
-							authClientWrapper, err := getAuthClientWrapper()
+							authClientWrapper, err := actions.GetAuthClientWrapper()
 
 							if err != nil {
 								return err
@@ -367,7 +329,7 @@ func main() {
 								return nil
 							}
 
-							client, err := getAuthClientWrapper()
+							client, err := actions.GetAuthClientWrapper()
 
 							if err != nil {
 								return err
@@ -415,8 +377,8 @@ func main() {
 									fmt.Printf("You can keep using ForestVPN once you watch an ad in our mobile app, or simply go Premium at %s.\n", url)
 									os.Exit(1)
 								}
-							} else if bid == "com.forestvpn.freemium" && int(left.Minutes()) == 5 {
-								fmt.Println("You currently have 5 more minutes of free trial left.")
+							} else if bid == "com.forestvpn.freemium" && int(left.Minutes()) < 5 {
+								fmt.Println("You currently have less than 5 minutes of free trial left.")
 							} else if days == 3 && left.Hours() == 0 || days < 3 && bid == "com.forestvpn.premium" {
 								fmt.Println("Your premium subscription will end in less than 3 days.")
 							}
@@ -572,7 +534,7 @@ func main() {
 								return errors.New("UUID or name required")
 							}
 
-							authClientWrapper, err := getAuthClientWrapper()
+							authClientWrapper, err := actions.GetAuthClientWrapper()
 
 							if err != nil {
 								return err
@@ -628,8 +590,7 @@ func main() {
 							expired := time.Now().After(b.GetExpiryDate())
 
 							if location.Premium && bid == "com.forestvpn.freemium" || expired {
-								fmt.Println("The location you want to use is now unavailable, as it requires a paid subscription.")
-								fmt.Printf("You can keep using ForestVPN once you watch an ad in our mobile app, or simply go Premium at %s.\n", url)
+								fmt.Printf("The location you want to use is now unavailable, as it requires a paid subscription. You can unlock it by going Premium at %s.\n", url)
 								return nil
 							}
 
@@ -682,7 +643,7 @@ func main() {
 								return nil
 							}
 
-							authClientWrapper, err := getAuthClientWrapper()
+							authClientWrapper, err := actions.GetAuthClientWrapper()
 
 							if err != nil {
 								return err

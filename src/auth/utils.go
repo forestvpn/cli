@@ -157,8 +157,8 @@ func (a AccountsMap) GetEmail(user_id string) string {
 	return ""
 }
 
-// loadFirebaseAuthFile is a function to get local firebase authentication response per user by the user ID.
-func loadFirebaseAuthFile(user_id string) (map[string]any, error) {
+// LoadFirebaseAuthFile is a function to get local firebase authentication response per user by the user ID.
+func LoadFirebaseAuthFile(user_id string) (map[string]any, error) {
 	var firebaseAuthFile map[string]any
 
 	path := ProfilesDir + user_id + FirebaseAuthFile
@@ -175,7 +175,7 @@ func loadFirebaseAuthFile(user_id string) (map[string]any, error) {
 // LoadAccessToken is a helper function to quickly read and return access token of specific user by user ID from the firebase login response avalable locally.
 func LoadAccessToken(user_id string) (string, error) {
 	var accessToken string
-	firebaseAuthFile, err := loadFirebaseAuthFile(user_id)
+	firebaseAuthFile, err := LoadFirebaseAuthFile(user_id)
 
 	if err != nil {
 		return accessToken, err
@@ -199,7 +199,7 @@ func LoadUserID() (string, error) {
 		return id, err
 	}
 
-	auth, err := loadFirebaseAuthFile(user_id)
+	auth, err := LoadFirebaseAuthFile(user_id)
 
 	if err != nil {
 		return id, err
@@ -333,7 +333,7 @@ func LoadRefreshToken() (string, error) {
 		return refreshToken, err
 	}
 
-	firebaseAuthFile, err := loadFirebaseAuthFile(user_id)
+	firebaseAuthFile, err := LoadFirebaseAuthFile(user_id)
 
 	if err != nil {
 		return "", err
@@ -365,12 +365,6 @@ func IsRefreshTokenExists() (bool, error) {
 	}
 
 	return len(refreshToken) > 0, err
-}
-
-// IsDeviceCreated is a function that checks if the DeviceFile exist, i.e device is created.
-func IsDeviceCreated(user_id string) bool {
-	_, err := os.Stat(ProfilesDir + user_id + DeviceFile)
-	return !os.IsNotExist(err)
 }
 
 // LoadDevice is a function that reads local device file depending on the user ID provided and returns it as a forestvpn_api.Device.
@@ -524,7 +518,7 @@ func UpdateProfileDevice(device *forestvpn_api.Device) error {
 // LoadIdToken is a function to load id token of the user with id value of given user id from the local firebase login response.
 func LoadIdToken(user_id string) (string, error) {
 	var idToken string
-	firebaseAuthFile, err := loadFirebaseAuthFile(user_id)
+	firebaseAuthFile, err := LoadFirebaseAuthFile(user_id)
 
 	if err != nil {
 		return idToken, err
@@ -568,11 +562,11 @@ func loadActiveUserId() (string, error) {
 	return user_id, nil
 }
 
-// getAccessTokenExpireDate is a function to create a time.Time object from numeric string value.
+// GetAccessTokenExpireDate is a function to create a time.Time object from numeric string value.
 // The numeric string values is a value that comes from the firebase login response and indicates the duration of an access token exparation period in seconds.
 // The numeric string value is added to the current local time right after the firebase login response.
-// Thus, getAccessTokenExpireDate returns the time object with exparation date of an access token.
-func getAccessTokenExpireDate(expireTime string) (time.Time, error) {
+// Thus, GetAccessTokenExpireDate returns the time object with exparation date of an access token.
+func GetAccessTokenExpireDate(expireTime string) (time.Time, error) {
 	now := time.Now()
 	h, err := time.ParseDuration(expireTime + "s")
 
@@ -590,10 +584,10 @@ func Date2Json(date time.Time) ([]byte, error) {
 	return json.MarshalIndent(expireDate, "", "    ")
 }
 
-// loadAccessTokenExpireDate is a function to load the exparation date of an access token for user with id value of given user id.
-func loadAccessTokenExpireDate(user_id string) (time.Time, error) {
+// LoadAccessTokenExpireDate is a function to load the exparation date of an access token for user with id value of given user id.
+func LoadAccessTokenExpireDate(user_id string) (time.Time, error) {
 	var expireTime time.Time
-	data, err := loadFirebaseExtensionFile(user_id)
+	data, err := LoadFirebaseExtensionFile(user_id)
 
 	if err != nil {
 		return expireTime, err
@@ -607,7 +601,7 @@ func loadAccessTokenExpireDate(user_id string) (time.Time, error) {
 func IsAccessTokenExpired(user_id string) (bool, error) {
 	expired := false
 	now := time.Now()
-	expireDate, err := loadAccessTokenExpireDate(user_id)
+	expireDate, err := LoadAccessTokenExpireDate(user_id)
 
 	if err != nil {
 		return expired, err
@@ -621,7 +615,7 @@ func IsAccessTokenExpired(user_id string) (bool, error) {
 
 // DumpAccessTokenExpireDate is a function to write access token exparation date into the FirebaseExtensionFile for the user with id value of given user id.
 func DumpAccessTokenExpireDate(user_id string, expires_in string) error {
-	expireTime, err := getAccessTokenExpireDate(expires_in)
+	expireTime, err := GetAccessTokenExpireDate(expires_in)
 
 	if err != nil {
 		return err
@@ -676,8 +670,8 @@ func BillingFeatureExpired(billingFeature forestvpn_api.BillingFeature) bool {
 	return time.Now().After(billingFeature.GetExpiryDate())
 }
 
-// loadFirebaseExtensionFile is a function to read FirebaseExtensionFile and return an access token expire date it contains for the user with id value of given user id.
-func loadFirebaseExtensionFile(user_id string) (map[string]string, error) {
+// LoadFirebaseExtensionFile is a function to read FirebaseExtensionFile and return an access token expire date it contains for the user with id value of given user id.
+func LoadFirebaseExtensionFile(user_id string) (map[string]string, error) {
 	var data map[string]string
 	path := ProfilesDir + user_id + FirebaseExtensionFile
 
