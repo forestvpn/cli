@@ -1,15 +1,14 @@
 builds:
   - 
-    main: cmd/
     id: fvpn-bin
     env:
       - CGO_ENABLED=0
     goos:
       - linux
-      # - freebsd
-      # - darwin
+      - freebsd
+      - darwin
     goarch:
-      # - amd64
+      - amd64
       - arm64
     binary: fvpn
     ldflags:
