@@ -30,9 +30,9 @@ var (
 	// appVersion value is stored in an environment variable and assigned during the build with ldflags.
 	appVersion string
 	// firebaseApiKey is stored in an environment variable and assigned during the build with ldflags.
-	firebaseApiKey = os.Getenv("STAGING_FIREBASE_API_KEY")
+	firebaseApiKey string
 	// ApiHost is a hostname of Forest VPN back-end API that is stored in an environment variable and assigned during the build with ldflags.
-	apiHost = os.Getenv("STAGING_API_URL")
+	apiHost string
 )
 
 const url = "https://forestvpn.com/checkout/"
