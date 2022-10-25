@@ -19,9 +19,9 @@ import (
 
 var (
 	// firebaseApiKey is stored in an environment variable and assigned during the build with ldflags.
-	firebaseApiKey string
+	firebaseApiKey = os.Getenv("STAGING_FIREBASE_API_KEY")
 	// ApiHost is a hostname of Forest VPN back-end API that is stored in an environment variable and assigned during the build with ldflags.
-	apiHost string
+	apiHost = os.Getenv("STAGING_API_URL")
 )
 
 func GetAuthClientWrapper() (AuthClientWrapper, error) {
