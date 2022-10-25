@@ -48,8 +48,8 @@ steps:
       - export VERSION=${DRONE_TAG}
       - apk add git
       - go install github.com/goreleaser/goreleaser@latest
-      - cd ./src/cmd/
-      - goreleaser release -f ../../.goreleaser-stable.yaml
+      - cd ./src/
+      - goreleaser release -f ../.goreleaser-stable.yaml
     depends_on:
       - fetch
     when:
@@ -77,8 +77,8 @@ steps:
       - apk add git
       - export VERSION=${DRONE_TAG}
       - go install github.com/goreleaser/goreleaser@latest
-      - cd ./src/cmd/
-      - goreleaser release -f ../../.goreleaser-beta.yaml
+      - cd ./src/
+      - goreleaser release -f ../.goreleaser-beta.yaml
     depends_on:
       - fetch
     when:
