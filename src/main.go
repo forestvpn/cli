@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -119,41 +118,7 @@ func main() {
 							expiryDate := b.GetExpiryDate()
 							now := time.Now()
 							left := expiryDate.Sub(now)
-							idToken, err := auth.LoadIdToken(user_id)
-
-							if err != nil {
-								return err
-							}
-
-							response, err := authClientWrapper.AuthClient.GetUserData(idToken)
-
-							if err != nil {
-								return err
-							}
-
-							data := make(map[string]any)
-							err = json.Unmarshal(response.Body(), &data)
-
-							if err != nil {
-								return err
-							}
-
-							var email string
-
-							var x interface{} = data["users"]
-							switch users := x.(type) {
-							case []interface{}:
-								var y interface{} = users[0]
-								switch data := y.(type) {
-								case map[string]any:
-									var z interface{} = data["email"]
-									switch v := z.(type) {
-									case string:
-										email = v
-									}
-								}
-							}
-
+							email := authClientWrapper.AccountsMap.GetEmail(user_id)
 							caser := cases.Title(language.English)
 							plan := caser.String(strings.Split(b.GetBundleId(), ".")[2])
 							fmt.Printf("Logged-in as %s\n", email)
@@ -626,6 +591,7 @@ func main() {
 					{
 						Name:        "ls",
 						Description: "List locations",
+						Usage:       "Show available locations",
 						Flags: []cli.Flag{
 							&cli.StringFlag{
 								Name:        "country",
