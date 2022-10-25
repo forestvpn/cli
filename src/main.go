@@ -68,14 +68,23 @@ func main() {
 		Suggest:              true,
 		Name:                 "fvpn",
 		Usage:                "fast, secure, and modern VPN",
+		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:        "verbose",
+				Aliases:     []string{"V"},
+				Usage:       "make commands more talkative",
+				Value:       false,
+				Destination: &utils.Verbose,
+			},
+		},
 		Commands: []*cli.Command{
 			{
 				Name:  "account",
-				Usage: "Manage your account",
+				Usage: "manage ForestVPN accounts",
 				Subcommands: []*cli.Command{
 					{
 						Name:  "ls",
-						Usage: "See local accounts ever logged in",
+						Usage: "see local accounts ever logged in",
 						Action: func(c *cli.Context) error {
 							if !auth.IsAuthenticated() {
 								fmt.Println("Are you logged in?")
@@ -89,7 +98,7 @@ func main() {
 					},
 					{
 						Name:  "status",
-						Usage: "See logged-in account info",
+						Usage: "see logged-in account info",
 						Action: func(c *cli.Context) error {
 							if !auth.IsAuthenticated() {
 								fmt.Println("Are you logged in?")
@@ -145,19 +154,19 @@ func main() {
 					},
 					{
 						Name:  "register",
-						Usage: "Sign up to use ForestVPN",
+						Usage: "create a new ForestVPN account",
 						Flags: []cli.Flag{
 							&cli.StringFlag{
 								Name:        "email",
 								Destination: &email,
-								Usage:       "Your email address",
+								Usage:       "your email address",
 								Value:       "",
 								Aliases:     []string{"e"},
 							},
 							&cli.StringFlag{
 								Name:        "password",
 								Destination: &password,
-								Usage:       "Password must be at least 8 characters long",
+								Usage:       "password must be at least 8 characters long",
 								Value:       "",
 								Aliases:     []string{"p"},
 							},
@@ -186,19 +195,19 @@ func main() {
 					},
 					{
 						Name:  "login",
-						Usage: "Log into your ForestVPN account",
+						Usage: "log into your ForestVPN account",
 						Flags: []cli.Flag{
 							&cli.StringFlag{
 								Name:        "email",
 								Destination: &email,
-								Usage:       "Your email address",
+								Usage:       "your email address",
 								Value:       "",
 								Aliases:     []string{"e"},
 							},
 							&cli.StringFlag{
 								Name:        "password",
 								Destination: &password,
-								Usage:       "Your password",
+								Usage:       "your password",
 								Value:       "",
 								Aliases:     []string{"p"},
 							},
@@ -221,7 +230,7 @@ func main() {
 					},
 					{
 						Name:  "logout",
-						Usage: "Log out from your ForestVPN account on this device",
+						Usage: "unlink this device from your ForstVPN account",
 						Action: func(c *cli.Context) error {
 							if !auth.IsAuthenticated() {
 								fmt.Println("Are you logged in?")
@@ -281,12 +290,12 @@ func main() {
 			},
 			{
 				Name:  "state",
-				Usage: "Control the state of connection",
+				Usage: "control the state of the ForestVPN connection",
 				Subcommands: []*cli.Command{
 					{
 
 						Name:  "up",
-						Usage: "Connect to the ForestVPN",
+						Usage: "connect to the ForestVPN location",
 						Action: func(c *cli.Context) error {
 							if !auth.IsAuthenticated() {
 								fmt.Println("Are you logged in?")
@@ -366,8 +375,7 @@ func main() {
 					},
 					{
 						Name:        "down",
-						Description: "Disconnect from ForestVPN",
-						Usage:       "Shut down the connection",
+						Description: "disconnect from the ForestVPN location",
 						Action: func(ctx *cli.Context) error {
 							if !auth.IsAuthenticated() {
 								fmt.Println("Are you logged in?")
@@ -404,9 +412,8 @@ func main() {
 						},
 					},
 					{
-						Name:        "status",
-						Description: "See wether connection is active",
-						Usage:       "Check the status of the connection",
+						Name:  "status",
+						Usage: "see wether connection is active",
 						Action: func(ctx *cli.Context) error {
 							if !auth.IsAuthenticated() {
 								fmt.Println("Are you logged in?")
@@ -445,11 +452,11 @@ func main() {
 			},
 			{
 				Name:  "location",
-				Usage: "Manage locations",
+				Usage: "manage ForestVPN locations",
 				Subcommands: []*cli.Command{
 					{
 						Name:  "status",
-						Usage: "See the location is set as default VPN connection",
+						Usage: "see the location is set as default location to connect",
 						Action: func(cCtx *cli.Context) error {
 							if !auth.IsAuthenticated() {
 								fmt.Println("Are you logged in?")
@@ -477,7 +484,7 @@ func main() {
 					},
 					{
 						Name:  "set",
-						Usage: "Set the default location by specifying `UUID` or `Name`",
+						Usage: "set the default location by specifying `UUID` or `Name`",
 						Action: func(cCtx *cli.Context) error {
 							if !auth.IsAuthenticated() {
 								fmt.Println("Are you logged in?")
@@ -589,14 +596,13 @@ func main() {
 						},
 					},
 					{
-						Name:        "ls",
-						Description: "List locations",
-						Usage:       "Show available locations",
+						Name:  "ls",
+						Usage: "show available ForestVPN locations",
 						Flags: []cli.Flag{
 							&cli.StringFlag{
 								Name:        "country",
 								Destination: &country,
-								Usage:       "Show locations by country",
+								Usage:       "show locations by specific country",
 								Value:       "",
 								Aliases:     []string{"c"},
 								Required:    false,
@@ -627,9 +633,12 @@ func main() {
 
 	if err != nil {
 		sentry.CaptureException(err)
-		caser := cases.Title(language.AmericanEnglish)
-		msg := strings.Split(err.Error(), " ")
-		msg[0] = caser.String(msg[0])
-		fmt.Println(strings.Join(msg, " "))
+
+		if utils.Verbose {
+			caser := cases.Title(language.AmericanEnglish)
+			msg := strings.Split(err.Error(), " ")
+			msg[0] = caser.String(msg[0])
+			fmt.Println(strings.Join(msg, " "))
+		}
 	}
 }
