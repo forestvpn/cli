@@ -382,7 +382,28 @@ func TestBillingFeatureExpired(t *testing.T) {
 		t.Error(err)
 	}
 
+	t.Error(client.ApiClient.AccessToken)
+
 	userID, err := auth.LoadUserID()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	billingFeatures, err := client.ApiClient.GetBillingFeatures()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	data, err := json.Marshal(billingFeatures)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	path := auth.ProfilesDir + userID + auth.BillingFeatureFile
+	err = auth.JsonDump(data, path)
 
 	if err != nil {
 		t.Error(err)

@@ -10,7 +10,7 @@ builds:
       - arm64
     binary: fvpn
     ldflags:
-      - "-s -w -X main.appVersion={{.Env.VERSION}} -X main.Dsn={{.Env.SENTRY_DSN}} -X main.firebaseApiKey={{.Env.PRODUCTION_FIREBASE_API_KEY}} -X main.apiHost={{.Env.PRODUCTION_API_URL}}"
+      - "-s -w -X main.appVersion={{.Env.VERSION}} -X main.Dsn={{.Env.SENTRY_DSN}} -X src/actions.firebaseApiKey={{.Env.PRODUCTION_FIREBASE_API_KEY}} -X src/actions.apiHost={{.Env.PRODUCTION_API_URL}}"
 checksum:
   name_template: 'checksums.txt'
 changelog:
