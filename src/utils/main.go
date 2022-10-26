@@ -18,6 +18,8 @@ import (
 	"github.com/hashicorp/go-retryablehttp"
 )
 
+var Verbose bool
+
 // ip2Net is a function for converting an IP address value, e.g. 127.0.0.1, into a network with mask of 24 bits, e.g. 127.0.0.0/24.
 func ip2Net(ip string) string {
 	return strings.Join(strings.Split(ip, ".")[:3], ".") + ".0/24"
@@ -225,6 +227,10 @@ func GetLocalTimezone() (string, error) {
 func GetHttpClient(retries int) *http.Client {
 	retryClient := retryablehttp.NewClient()
 	retryClient.RetryMax = retries
-	retryClient.Logger = nil
+
+	if !Verbose {
+		retryClient.Logger = nil
+	}
+
 	return retryClient.StandardClient()
 }
