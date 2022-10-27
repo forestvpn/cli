@@ -633,12 +633,10 @@ func main() {
 
 	if err != nil {
 		sentry.CaptureException(err)
+		caser := cases.Title(language.AmericanEnglish)
+		msg := strings.Split(err.Error(), " ")
+		msg[0] = caser.String(msg[0])
+		fmt.Println(strings.Join(msg, " "))
 
-		if utils.Verbose {
-			caser := cases.Title(language.AmericanEnglish)
-			msg := strings.Split(err.Error(), " ")
-			msg[0] = caser.String(msg[0])
-			fmt.Println(strings.Join(msg, " "))
-		}
 	}
 }
