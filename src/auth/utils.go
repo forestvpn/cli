@@ -263,8 +263,8 @@ func readFile(filepath string) ([]byte, error) {
 
 }
 
-// handleFirebaseAuthResponse is a function to extracts the error message from the Firebase REST API response when the status is ok.
-func handleFirebaseAuthResponse(response *resty.Response) (string, error) {
+// HandleFirebaseAuthResponse is a function to extracts the error message from the Firebase REST API response when the status is ok.
+func HandleFirebaseAuthResponse(response *resty.Response) (string, error) {
 	var body map[string]any
 	var message string
 
@@ -289,7 +289,7 @@ func handleFirebaseAuthResponse(response *resty.Response) (string, error) {
 
 // HandleFirebaseSignInResponse is a function that dumps the Firebase REST API response into FirebaseAuthFile.
 func HandleFirebaseSignInResponse(response *resty.Response) error {
-	message, err := handleFirebaseAuthResponse(response)
+	message, err := HandleFirebaseAuthResponse(response)
 
 	if err != nil {
 		return err
@@ -306,7 +306,7 @@ func HandleFirebaseSignInResponse(response *resty.Response) error {
 //
 // See https://firebase.google.com/docs/reference/rest/auth#section-create-email-password for more information.
 func HandleFirebaseSignUpResponse(response *resty.Response) error {
-	message, err := handleFirebaseAuthResponse(response)
+	message, err := HandleFirebaseAuthResponse(response)
 
 	if err != nil {
 		return err
