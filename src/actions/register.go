@@ -33,6 +33,10 @@ func (w AuthClientWrapper) Register(email string, password string) error {
 
 	message, err := auth.HandleFirebaseAuthResponse(response)
 
+	if err != nil {
+		return err
+	}
+
 	if message == "EMAIL_NOT_FOUND" {
 		validate := true
 		passwordfield, err := auth.GetPasswordField([]byte(password), validate)
