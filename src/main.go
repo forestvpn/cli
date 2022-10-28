@@ -24,7 +24,7 @@ var (
 	// DSN is a Data Source Name for Sentry. It is stored in an environment variable and assigned during the build with ldflags.
 	//
 	// See https://docs.sentry.io/product/sentry-basics/dsn-explainer/ for more information.
-	Dsn = os.Getenv("SENTRY_DSN")
+	Dsn = "https://ef875c1346ed49289812f9df5a44f03f@sentry.fvpn.uk/8"
 	// appVersion value is stored in an environment variable and assigned during the build with ldflags.
 	appVersion string
 )
