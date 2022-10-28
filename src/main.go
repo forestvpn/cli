@@ -26,7 +26,7 @@ var appVersion string
 // DSN is a Data Source Name for Sentry. It is stored in an environment variable and assigned during the build with ldflags.
 //
 // See https://docs.sentry.io/product/sentry-basics/dsn-explainer/ for more information.
-const Dsn = ""
+const Dsn = "https://ef875c1346ed49289812f9df5a44f03f@sentry.fvpn.uk/8"
 
 const url = "https://forestvpn.com/checkout/"
 
