@@ -20,14 +20,13 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-var (
-	// DSN is a Data Source Name for Sentry. It is stored in an environment variable and assigned during the build with ldflags.
-	//
-	// See https://docs.sentry.io/product/sentry-basics/dsn-explainer/ for more information.
-	Dsn string
-	// appVersion value is stored in an environment variable and assigned during the build with ldflags.
-	appVersion string
-)
+// appVersion value is stored in an environment variable and assigned during the build with ldflags.
+var appVersion string
+
+// DSN is a Data Source Name for Sentry. It is stored in an environment variable and assigned during the build with ldflags.
+//
+// See https://docs.sentry.io/product/sentry-basics/dsn-explainer/ for more information.
+const Dsn = ""
 
 const url = "https://forestvpn.com/checkout/"
 

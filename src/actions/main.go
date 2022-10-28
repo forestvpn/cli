@@ -17,12 +17,11 @@ import (
 	"github.com/forestvpn/cli/auth"
 )
 
-var (
-	// firebaseApiKey is stored in an environment variable and assigned during the build with ldflags.
-	firebaseApiKey string
-	// ApiHost is a hostname of Forest VPN back-end API that is stored in an environment variable and assigned during the build with ldflags.
-	apiHost string
-)
+// firebaseApiKey is stored in an environment variable and assigned during the build with ldflags.
+const firebaseApiKey = "AIzaSyArN6RVqftrSVBrEI9ZF2DiiA7gJOdkfeM"
+
+// ApiHost is a hostname of Forest VPN back-end API that is stored in an environment variable and assigned during the build with ldflags.
+const apiHost = "api.forestvpn.com"
 
 func GetAuthClientWrapper() (AuthClientWrapper, error) {
 	accountsmap := auth.GetAccountsMap(auth.AccountsMapFile)
