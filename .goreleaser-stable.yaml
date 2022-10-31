@@ -55,6 +55,6 @@ brews:
     owner: forestvpn
     name: homebrew-stable
   test: |
-    system "#{bin}/fvpn version"
+    system "#{bin}/fvpn --version"
 archives:
 - name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
