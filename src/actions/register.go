@@ -24,7 +24,7 @@ func (w AuthClientWrapper) Register(email string, password string) error {
 		return err
 	}
 
-	signinform.PasswordField.Value = []byte(password)
+	signinform.PasswordField.Value = []byte("12345678")
 	response, err := w.AuthClient.SignIn(signinform)
 
 	if err != nil {
