@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"time"
 
@@ -259,7 +259,7 @@ func readFile(filepath string) ([]byte, error) {
 	}
 
 	defer file.Close()
-	return ioutil.ReadAll(file)
+	return io.ReadAll(file)
 
 }
 
@@ -426,7 +426,7 @@ func IsActiveProfile(user_id string) bool {
 // ActiveUserLockFile - is a lock file. It's an empty file that only serves to indicate whether profile is active.
 // When profile X is diactivated, the lock file is removed from the X profile directory.
 func SetActiveProfile(user_id string) error {
-	files, err := ioutil.ReadDir(ProfilesDir)
+	files, err := os.ReadDir(ProfilesDir)
 
 	if err != nil {
 		return err
@@ -536,7 +536,7 @@ func LoadIdToken(user_id string) (string, error) {
 // loadActiveUserId is a helper function to quickly read and return an id of a currently active (logged in) user.
 func loadActiveUserId() (string, error) {
 	var user_id string
-	files, err := ioutil.ReadDir(ProfilesDir)
+	files, err := os.ReadDir(ProfilesDir)
 
 	if err != nil {
 		return user_id, err
@@ -545,7 +545,7 @@ func loadActiveUserId() (string, error) {
 	for _, profiledir := range files {
 		if profiledir.IsDir() {
 			path := ProfilesDir + profiledir.Name()
-			files, err := ioutil.ReadDir(path)
+			files, err := os.ReadDir(path)
 
 			if err != nil {
 				return user_id, err

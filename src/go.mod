@@ -6,7 +6,6 @@ require (
 	github.com/c-robinson/iplib v1.0.3
 	github.com/forestvpn/api-client-go v0.0.0-20220620154406-df8d11e880c3
 	github.com/getsentry/sentry-go v0.13.0
-	github.com/glendc/go-external-ip v0.1.0
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/go-retryablehttp v0.7.1

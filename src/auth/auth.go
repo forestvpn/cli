@@ -13,10 +13,10 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
-// Client is a REST client for Go.
+// client is a REST client for Go.
 //
 // See https://github.com/go-resty/resty for more information.
-var Client = resty.NewWithClient(utils.GetHttpClient(10))
+var client = resty.NewWithClient(utils.GetHttpClient(10))
 
 // AuthClient is a structure used as a Firebase REST client.
 //
@@ -48,7 +48,7 @@ func (c AuthClient) SignUp(form SignUpForm) (*resty.Response, error) {
 		return nil, err
 	}
 
-	return Client.R().
+	return client.R().
 		SetHeader("Content-Type", "application/json").
 		SetQueryParams(map[string]string{
 			"key": c.ApiKey,
@@ -73,7 +73,7 @@ func (c AuthClient) SignIn(form SignInForm) (*resty.Response, error) {
 		return nil, err
 	}
 
-	return Client.R().
+	return client.R().
 		SetHeader("Content-Type", "application/json").
 		SetQueryParams(map[string]string{
 			"key": c.ApiKey,
@@ -86,9 +86,9 @@ func (c AuthClient) SignIn(form SignInForm) (*resty.Response, error) {
 func (c AuthClient) exchangeRefreshForIdToken(refreshToken string) (*resty.Response, error) {
 	url := "https://securetoken.googleapis.com/v1/token"
 	body := fmt.Sprintf("grant_type=refresh_token&refresh_token=%s", refreshToken)
-	Client.SetTimeout(time.Duration(1 * time.Second))
+	client.SetTimeout(time.Duration(1 * time.Second))
 
-	return Client.R().
+	return client.R().
 		SetHeader("Content-Type", "application/x-www-form-urlencoded").
 		SetQueryParams(map[string]string{
 			"key": c.ApiKey,
@@ -121,7 +121,7 @@ func (c AuthClient) GetUserData(idToken string) (*resty.Response, error) {
 		return nil, err
 	}
 
-	return Client.R().
+	return client.R().
 		SetHeader("Content-Type", "application/json").
 		SetQueryParams(map[string]string{
 			"key": c.ApiKey,

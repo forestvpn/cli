@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/c-robinson/iplib"
-	externalip "github.com/glendc/go-external-ip"
 	"github.com/hashicorp/go-retryablehttp"
 )
 
@@ -70,13 +69,6 @@ func GetExistingRoutes() ([]string, error) {
 	}
 
 	return existingRoutes, nil
-}
-
-// GetHostIP returns the host's public IP address.
-//
-// See https://github.com/glendc/go-external-ip for more information.
-func GetHostIP() (net.IP, error) {
-	return externalip.DefaultConsensus(nil, nil).ExternalIP()
 }
 
 // ExcludeDisallowedIps is a function that expects two slices of a network values, e.g. [127.0.0.0/8,], where disallowed is a slice of networks to be excluded from the allowed slice.
