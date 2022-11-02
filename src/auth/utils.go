@@ -86,8 +86,8 @@ func (a AccountsMap) ListLocalAccounts() error {
 }
 
 // RemoveAccount is a method to remove knonw local account from AccountMap.
-// It loads AccountMap structure from the AccountMapFile, removes the key with value of user_id and dumps updated data using JsonDump.
-func (a AccountsMap) RemoveAccount(user_id string) error {
+// It loads AccountMap structure from the AccountMapFile, removes the key with value of userID and dumps updated data using JsonDump.
+func (a AccountsMap) RemoveAccount(userID string) error {
 	m, err := a.loadMap()
 
 	if err != nil {
@@ -95,7 +95,7 @@ func (a AccountsMap) RemoveAccount(user_id string) error {
 	}
 
 	for k, v := range m {
-		if v == user_id {
+		if v == userID {
 			delete(m, k)
 		}
 	}
@@ -127,9 +127,9 @@ func (a AccountsMap) loadMap() (map[string]string, error) {
 }
 
 // AddAccount is a method to add a new logged in account to the AccountMap.
-func (a AccountsMap) AddAccount(email string, user_id string) error {
+func (a AccountsMap) AddAccount(email string, userID string) error {
 	m, _ := a.loadMap()
-	m[email] = user_id
+	m[email] = userID
 	b, err := json.MarshalIndent(m, "", "    ")
 
 	if err != nil {
@@ -145,11 +145,11 @@ func (a AccountsMap) GetUserID(email string) string {
 	return m[email]
 }
 
-func (a AccountsMap) GetEmail(user_id string) string {
+func (a AccountsMap) GetEmail(userID string) string {
 	m, _ := a.loadMap()
 
 	for k, v := range m {
-		if v == user_id {
+		if v == userID {
 			return k
 		}
 	}
@@ -158,10 +158,10 @@ func (a AccountsMap) GetEmail(user_id string) string {
 }
 
 // LoadFirebaseAuthFile is a function to get local firebase authentication response per user by the user ID.
-func LoadFirebaseAuthFile(user_id string) (map[string]any, error) {
+func LoadFirebaseAuthFile(userID string) (map[string]any, error) {
 	var firebaseAuthFile map[string]any
 
-	path := ProfilesDir + user_id + FirebaseAuthFile
+	path := ProfilesDir + userID + FirebaseAuthFile
 	data, err := readFile(path)
 
 	if err != nil {
@@ -173,9 +173,9 @@ func LoadFirebaseAuthFile(user_id string) (map[string]any, error) {
 }
 
 // LoadAccessToken is a helper function to quickly read and return access token of specific user by user ID from the firebase login response avalable locally.
-func LoadAccessToken(user_id string) (string, error) {
+func LoadAccessToken(userID string) (string, error) {
 	var accessToken string
-	firebaseAuthFile, err := LoadFirebaseAuthFile(user_id)
+	firebaseAuthFile, err := LoadFirebaseAuthFile(userID)
 
 	if err != nil {
 		return accessToken, err
@@ -193,13 +193,13 @@ func LoadAccessToken(user_id string) (string, error) {
 // LoadUserID is a helper function to quickly read and return user ID of currently active user from the firebase login response avalable locally.
 func LoadUserID() (string, error) {
 	var id string
-	user_id, err := loadActiveUserId()
+	userID, err := loadActiveUserId()
 
 	if err != nil {
 		return id, err
 	}
 
-	auth, err := LoadFirebaseAuthFile(user_id)
+	auth, err := LoadFirebaseAuthFile(userID)
 
 	if err != nil {
 		return id, err
@@ -327,13 +327,13 @@ func HandleFirebaseSignUpResponse(response *resty.Response) error {
 // LoadRefreshToken is a function to quickly get the local refresh token from FirebaseAuthFile.
 func LoadRefreshToken() (string, error) {
 	var refreshToken string
-	user_id, err := loadActiveUserId()
+	userID, err := loadActiveUserId()
 
 	if err != nil {
 		return refreshToken, err
 	}
 
-	firebaseAuthFile, err := LoadFirebaseAuthFile(user_id)
+	firebaseAuthFile, err := LoadFirebaseAuthFile(userID)
 
 	if err != nil {
 		return "", err
@@ -368,9 +368,9 @@ func IsRefreshTokenExists() (bool, error) {
 }
 
 // LoadDevice is a function that reads local device file depending on the user ID provided and returns it as a forestvpn_api.Device.
-func LoadDevice(user_id string) (*forestvpn_api.Device, error) {
+func LoadDevice(userID string) (*forestvpn_api.Device, error) {
 	var device *forestvpn_api.Device
-	data, err := readFile(ProfilesDir + user_id + DeviceFile)
+	data, err := readFile(ProfilesDir + userID + DeviceFile)
 
 	if err != nil {
 		return device, err
@@ -384,13 +384,13 @@ func LoadDevice(user_id string) (*forestvpn_api.Device, error) {
 // IsAuthenticated is a helper function to quickly check wether user is authenticated by checking existance of an access token.
 func IsAuthenticated() bool {
 	authenticated := false
-	user_id, err := loadActiveUserId()
+	userID, err := loadActiveUserId()
 
 	if err != nil {
 		return authenticated
 	}
 
-	accessToken, _ := LoadAccessToken(user_id)
+	accessToken, _ := LoadAccessToken(userID)
 
 	if len(accessToken) > 0 {
 		authenticated = true
@@ -400,8 +400,8 @@ func IsAuthenticated() bool {
 }
 
 // IsActiveProfile is a function to check if the given user ID is an ID of currently active (logged in) user.
-func IsActiveProfile(user_id string) bool {
-	path := ProfilesDir + user_id + ActiveUserLockFile
+func IsActiveProfile(userID string) bool {
+	path := ProfilesDir + userID + ActiveUserLockFile
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return false
 	}
@@ -414,7 +414,7 @@ func IsActiveProfile(user_id string) bool {
 // To set the profile active:
 // 1. Find another active profile if exists
 // 2. Diactivate currently active profile if found on step 1.
-// 3. Activate profile with id of given user_id
+// 3. Activate profile with id of given userID
 //
 // How the profiles are activated or diactivated.
 //
@@ -425,7 +425,7 @@ func IsActiveProfile(user_id string) bool {
 //
 // ActiveUserLockFile - is a lock file. It's an empty file that only serves to indicate whether profile is active.
 // When profile X is diactivated, the lock file is removed from the X profile directory.
-func SetActiveProfile(user_id string) error {
+func SetActiveProfile(userID string) error {
 	files, err := os.ReadDir(ProfilesDir)
 
 	if err != nil {
@@ -446,7 +446,7 @@ func SetActiveProfile(user_id string) error {
 					sentry.CaptureException(err)
 				}
 				removed = true
-			} else if !created && f.Name() == user_id {
+			} else if !created && f.Name() == userID {
 				_, err := os.Create(ProfilesDir + f.Name() + ActiveUserLockFile)
 
 				if err != nil {
@@ -464,8 +464,8 @@ func SetActiveProfile(user_id string) error {
 
 // RemoveFirebaseAuthFile is a function to remove FirebaseAuthFile of the user with given user ID.
 // Used to log out the user.
-func RemoveFirebaseAuthFile(user_id string) error {
-	path := ProfilesDir + user_id + FirebaseAuthFile
+func RemoveFirebaseAuthFile(userID string) error {
+	path := ProfilesDir + userID + FirebaseAuthFile
 	if _, err := os.Stat(path); !os.IsNotExist(err) {
 		err = os.Remove(path)
 
@@ -479,13 +479,13 @@ func RemoveFirebaseAuthFile(user_id string) error {
 
 // RemoveActiveUserLockFile is a helper function to quickly diactivate currently active (logged in) user.
 func RemoveActiveUserLockFile() error {
-	user_id, err := loadActiveUserId()
+	userID, err := loadActiveUserId()
 
 	if err != nil {
 		return err
 	}
 
-	path := ProfilesDir + user_id + ActiveUserLockFile
+	path := ProfilesDir + userID + ActiveUserLockFile
 
 	if _, err := os.Stat(path); !os.IsNotExist(err) {
 		err = os.Remove(path)
@@ -506,19 +506,19 @@ func UpdateProfileDevice(device *forestvpn_api.Device) error {
 		return err
 	}
 
-	user_id, err := LoadUserID()
+	userID, err := LoadUserID()
 
 	if err != nil {
 		return err
 	}
 
-	return JsonDump(data, ProfilesDir+user_id+DeviceFile)
+	return JsonDump(data, ProfilesDir+userID+DeviceFile)
 }
 
 // LoadIdToken is a function to load id token of the user with id value of given user id from the local firebase login response.
-func LoadIdToken(user_id string) (string, error) {
+func LoadIdToken(userID string) (string, error) {
 	var idToken string
-	firebaseAuthFile, err := LoadFirebaseAuthFile(user_id)
+	firebaseAuthFile, err := LoadFirebaseAuthFile(userID)
 
 	if err != nil {
 		return idToken, err
@@ -535,11 +535,11 @@ func LoadIdToken(user_id string) (string, error) {
 
 // loadActiveUserId is a helper function to quickly read and return an id of a currently active (logged in) user.
 func loadActiveUserId() (string, error) {
-	var user_id string
+	var userID string
 	files, err := os.ReadDir(ProfilesDir)
 
 	if err != nil {
-		return user_id, err
+		return userID, err
 	}
 
 	for _, profiledir := range files {
@@ -548,18 +548,18 @@ func loadActiveUserId() (string, error) {
 			files, err := os.ReadDir(path)
 
 			if err != nil {
-				return user_id, err
+				return userID, err
 			}
 
 			for _, file := range files {
 				if file.Name() == ActiveUserLockFile[1:] {
-					user_id = profiledir.Name()
+					userID = profiledir.Name()
 				}
 			}
 		}
 	}
 
-	return user_id, nil
+	return userID, nil
 }
 
 // GetAccessTokenExpireDate is a function to create a time.Time object from numeric string value.
@@ -585,9 +585,9 @@ func Date2Json(date time.Time) ([]byte, error) {
 }
 
 // LoadAccessTokenExpireDate is a function to load the exparation date of an access token for user with id value of given user id.
-func LoadAccessTokenExpireDate(user_id string) (time.Time, error) {
+func LoadAccessTokenExpireDate(userID string) (time.Time, error) {
 	var expireTime time.Time
-	data, err := LoadFirebaseExtensionFile(user_id)
+	data, err := LoadFirebaseExtensionFile(userID)
 
 	if err != nil {
 		return expireTime, err
@@ -598,10 +598,10 @@ func LoadAccessTokenExpireDate(user_id string) (time.Time, error) {
 }
 
 // IsAccessTokenExpired is a function that reads an access token exparation date of the user with id value of given user id from the local firebase sign in response.
-func IsAccessTokenExpired(user_id string) (bool, error) {
+func IsAccessTokenExpired(userID string) (bool, error) {
 	expired := false
 	now := time.Now()
-	expireDate, err := LoadAccessTokenExpireDate(user_id)
+	expireDate, err := LoadAccessTokenExpireDate(userID)
 
 	if err != nil {
 		return expired, err
@@ -614,7 +614,7 @@ func IsAccessTokenExpired(user_id string) (bool, error) {
 }
 
 // DumpAccessTokenExpireDate is a function to write access token exparation date into the FirebaseExtensionFile for the user with id value of given user id.
-func DumpAccessTokenExpireDate(user_id string, expires_in string) error {
+func DumpAccessTokenExpireDate(userID string, expires_in string) error {
 	expireTime, err := GetAccessTokenExpireDate(expires_in)
 
 	if err != nil {
@@ -627,14 +627,14 @@ func DumpAccessTokenExpireDate(user_id string, expires_in string) error {
 		return err
 	}
 
-	path := ProfilesDir + user_id + FirebaseExtensionFile
+	path := ProfilesDir + userID + FirebaseExtensionFile
 	return JsonDump(data, path)
 }
 
 // LoadBillingFeatures is a function to read local billing features from file for the user with id value of given user id.
-func LoadBillingFeatures(user_id string) ([]forestvpn_api.BillingFeature, error) {
+func LoadBillingFeatures(userID string) ([]forestvpn_api.BillingFeature, error) {
 	var billingFeatures []forestvpn_api.BillingFeature
-	path := ProfilesDir + user_id + BillingFeatureFile
+	path := ProfilesDir + userID + BillingFeatureFile
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return billingFeatures, err
@@ -656,8 +656,8 @@ func LoadBillingFeatures(user_id string) ([]forestvpn_api.BillingFeature, error)
 }
 
 // BillingFeautureExists is a helper function to quickly check whether the local billing features exists for the user with id value of given user id.
-func BillingFeautureExists(user_id string) bool {
-	path := ProfilesDir + user_id + BillingFeatureFile
+func BillingFeautureExists(userID string) bool {
+	path := ProfilesDir + userID + BillingFeatureFile
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return false
@@ -671,9 +671,9 @@ func BillingFeatureExpired(billingFeature forestvpn_api.BillingFeature) bool {
 }
 
 // LoadFirebaseExtensionFile is a function to read FirebaseExtensionFile and return an access token expire date it contains for the user with id value of given user id.
-func LoadFirebaseExtensionFile(user_id string) (map[string]string, error) {
+func LoadFirebaseExtensionFile(userID string) (map[string]string, error) {
 	var data map[string]string
-	path := ProfilesDir + user_id + FirebaseExtensionFile
+	path := ProfilesDir + userID + FirebaseExtensionFile
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return data, err

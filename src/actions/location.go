@@ -13,6 +13,9 @@ import (
 	"gopkg.in/ini.v1"
 )
 
+const Falkenstein = "b134d679-8697-4dc6-b629-c4c189392fca"
+const Helsinki = "7fc5b17c-eddf-413f-8b37-9d36eb5e33ec"
+
 // ListLocations is a function to get the list of locations available for user.
 //
 // See https://github.com/forestvpn/api-client-go/blob/main/docs/GeoApi.md#listlocations for more information.
@@ -177,7 +180,7 @@ func GetLocationWrappers(locations []forestvpn_api.Location) []LocationWrapper {
 }
 
 func IsPremiumLocation(location forestvpn_api.Location) bool {
-	if location.GetId() == "7fc5b17c-eddf-413f-8b37-9d36eb5e33ec" || location.GetId() == "b134d679-8697-4dc6-b629-c4c189392fca" {
+	if location.GetId() == Helsinki || location.GetId() == Falkenstein {
 		return false
 	}
 	return true

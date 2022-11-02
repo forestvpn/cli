@@ -52,24 +52,3 @@ func TestExcludeDisallowedIpsExclude(t *testing.T) {
 		}
 	}
 }
-
-func TestGetExistingRoutes(t *testing.T) {
-	existingRoute := "172.17.0.0/24"
-	existingRoutes, err := utils.GetExistingRoutes()
-
-	if err != nil {
-		t.Error(err)
-	}
-
-	found := false
-
-	for _, v := range existingRoutes {
-		if v == existingRoute {
-			found = true
-		}
-	}
-
-	if !found {
-		t.Errorf("existing route %s not found", existingRoute)
-	}
-}

@@ -35,7 +35,14 @@ func logout() error {
 }
 
 func login() (actions.AuthClientWrapper, error) {
-	client, err := actions.GetAuthClientWrapper()
+	client := actions.AuthClientWrapper{}
+	err := auth.Init()
+
+	if err != nil {
+		return client, err
+	}
+
+	client, err = actions.GetAuthClientWrapper()
 
 	if err != nil {
 		return client, err
@@ -47,7 +54,7 @@ func login() (actions.AuthClientWrapper, error) {
 		return client, err
 	}
 
-	return client, nil
+	return actions.GetAuthClientWrapper()
 }
 
 func TestInit(t *testing.T) {
@@ -207,7 +214,7 @@ func TestLoadAccessTokenWhileLoggedOut(t *testing.T) {
 }
 
 func TestHandleFirebaseSignInResponseWithNormalParams(t *testing.T) {
-	authclient := auth.AuthClient{ApiKey: os.Getenv("STAGING_FIREBASE_API_KEY")}
+	authclient := auth.AuthClient{ApiKey: actions.FirebaseApiKey}
 	emailfield := auth.EmailField{Value: email}
 	passwordfield := auth.PasswordField{Value: []byte(password)}
 	signinform := auth.SignInForm{EmailField: emailfield, PasswordField: passwordfield}
@@ -382,14 +389,6 @@ func TestBillingFeatureExpired(t *testing.T) {
 		t.Error(err)
 	}
 
-	t.Error(client.ApiClient.AccessToken)
-
-	userID, err := auth.LoadUserID()
-
-	if err != nil {
-		t.Error(err)
-	}
-
 	billingFeatures, err := client.ApiClient.GetBillingFeatures()
 
 	if err != nil {
@@ -397,6 +396,12 @@ func TestBillingFeatureExpired(t *testing.T) {
 	}
 
 	data, err := json.Marshal(billingFeatures)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	userID, err := auth.LoadUserID()
 
 	if err != nil {
 		t.Error(err)

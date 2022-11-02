@@ -7,6 +7,7 @@ package actions
 import (
 	"encoding/json"
 	"errors"
+	"math/rand"
 	"os"
 	"sort"
 
@@ -17,8 +18,8 @@ import (
 	"github.com/forestvpn/cli/auth"
 )
 
-// firebaseApiKey is stored in an environment variable and assigned during the build with ldflags.
-const firebaseApiKey = "AIzaSyBLSD5qtCem7IVxB9aToqTXWgDsKMAXnt0"
+// FirebaseApiKey is stored in an environment variable and assigned during the build with ldflags.
+const FirebaseApiKey = "AIzaSyBLSD5qtCem7IVxB9aToqTXWgDsKMAXnt0"
 
 // ApiHost is a hostname of Forest VPN back-end API that is stored in an environment variable and assigned during the build with ldflags.
 const apiHost = "api.fvpn.dev"
@@ -26,13 +27,12 @@ const apiHost = "api.fvpn.dev"
 func GetAuthClientWrapper() (AuthClientWrapper, error) {
 	accountsmap := auth.GetAccountsMap(auth.AccountsMapFile)
 	authClientWrapper := AuthClientWrapper{AccountsMap: accountsmap}
-	authClient := auth.AuthClient{ApiKey: firebaseApiKey}
-
-	user_id, _ := auth.LoadUserID()
+	authClient := auth.AuthClient{ApiKey: FirebaseApiKey}
+	userID, _ := auth.LoadUserID()
 	exists, _ := auth.IsRefreshTokenExists()
 
 	if exists {
-		expired, _ := auth.IsAccessTokenExpired(user_id)
+		expired, _ := auth.IsAccessTokenExpired(userID)
 
 		if expired {
 			refreshToken, _ := auth.LoadRefreshToken()
@@ -42,7 +42,7 @@ func GetAuthClientWrapper() (AuthClientWrapper, error) {
 				return authClientWrapper, err
 			}
 
-			user_id, err = authClientWrapper.SetUpProfile(response)
+			userID, err = authClientWrapper.SetUpProfile(response)
 
 			if err != nil {
 				return authClientWrapper, err
@@ -50,7 +50,7 @@ func GetAuthClientWrapper() (AuthClientWrapper, error) {
 		}
 	}
 
-	accessToken, _ := auth.LoadAccessToken(user_id)
+	accessToken, _ := auth.LoadAccessToken(userID)
 	authClientWrapper.AuthClient = authClient
 	authClientWrapper.ApiClient = api.GetApiClient(accessToken, apiHost)
 	return authClientWrapper, nil
@@ -102,10 +102,10 @@ func (w AuthClientWrapper) SetUpProfile(response *resty.Response) (string, error
 	case string:
 		if len(refreshToken) > 0 {
 			var y interface{} = data["user_id"]
-			switch user_id := y.(type) {
+			switch userID := y.(type) {
 			case string:
-				if len(user_id) > 0 {
-					email := w.AccountsMap.GetEmail(user_id)
+				if len(userID) > 0 {
+					email := w.AccountsMap.GetEmail(userID)
 
 					if len(email) == 0 {
 						var y interface{} = data["access_token"]
@@ -114,66 +114,82 @@ func (w AuthClientWrapper) SetUpProfile(response *resty.Response) (string, error
 							if len(accessToken) > 0 {
 								w.ApiClient.AccessToken = accessToken
 							} else {
-								return user_id, errors.New("unexpected error: invalid access token")
+								return userID, errors.New("unexpected error: invalid access token")
 							}
 						}
 
-						device, _ := auth.LoadDevice(user_id)
+						device, _ := auth.LoadDevice(userID)
 
 						if len(device.GetId()) == 0 {
+							billingFeature, err := w.GetUnexpiredOrMostRecentBillingFeature(userID)
+
+							if err != nil {
+								return userID, err
+							}
+
+							location := device.GetLocation()
 							device, err = w.ApiClient.CreateDevice()
 
 							if err != nil {
-								return user_id, err
+								return userID, err
 							}
 
-							path := auth.ProfilesDir + user_id
+							if billingFeature.GetBundleId() == "com.forestvpn.freemium" && location.GetId() != Falkenstein || location.GetId() != Helsinki {
+								freeLocationsIds := []string{Helsinki, Falkenstein}
+								device, err = w.ApiClient.UpdateDevice(device.GetId(), freeLocationsIds[rand.Intn(len(freeLocationsIds))])
+
+								if err != nil {
+									return userID, err
+								}
+							}
+
+							path := auth.ProfilesDir + userID
 
 							if _, err := os.Stat(path); os.IsNotExist(err) {
 								err = os.Mkdir(path, 0755)
 
 								if err != nil {
-									return user_id, err
+									return userID, err
 								}
 							}
 
 							data, err := json.MarshalIndent(device, "", "    ")
 
 							if err != nil {
-								return user_id, err
+								return userID, err
 							}
 
-							path = auth.ProfilesDir + user_id + auth.DeviceFile
+							path = auth.ProfilesDir + userID + auth.DeviceFile
 							err = auth.JsonDump(data, path)
 
 							if err != nil {
-								return user_id, err
+								return userID, err
 							}
 						}
 
-						err = w.SetLocation(device, user_id)
+						err = w.SetLocation(device, userID)
 
 						if err != nil {
-							return user_id, err
+							return userID, err
 						}
 					}
 
-					path := auth.ProfilesDir + user_id + auth.FirebaseAuthFile
+					path := auth.ProfilesDir + userID + auth.FirebaseAuthFile
 					err = auth.JsonDump(response.Body(), path)
 
 					if err != nil {
-						return user_id, err
+						return userID, err
 					}
 
 					var z interface{} = data["expires_in"]
 					switch exp := z.(type) {
 					case string:
-						err = auth.DumpAccessTokenExpireDate(user_id, exp)
-						return user_id, err
+						err = auth.DumpAccessTokenExpireDate(userID, exp)
+						return userID, err
 					}
 
 				} else {
-					return user_id, errors.New("error parsing firebase sign in response: invalid user_id")
+					return userID, errors.New("error parsing firebase sign in response: invalid userID")
 				}
 			}
 		} else {
@@ -185,15 +201,15 @@ func (w AuthClientWrapper) SetUpProfile(response *resty.Response) (string, error
 
 }
 
-func (w AuthClientWrapper) GetUnexpiredOrMostRecentBillingFeature(user_id string) (forestvpn_api.BillingFeature, error) {
+func (w AuthClientWrapper) GetUnexpiredOrMostRecentBillingFeature(userID string) (forestvpn_api.BillingFeature, error) {
 	var billingFeatures []forestvpn_api.BillingFeature
 	var err error
 	foundUnexpiredBillingFeature := false
 	var b forestvpn_api.BillingFeature
 
 	for i := 0; i < 2; i++ {
-		if auth.BillingFeautureExists(user_id) && !foundUnexpiredBillingFeature {
-			billingFeatures, err = auth.LoadBillingFeatures(user_id)
+		if auth.BillingFeautureExists(userID) && !foundUnexpiredBillingFeature {
+			billingFeatures, err = auth.LoadBillingFeatures(userID)
 
 			if err != nil {
 				return b, err
@@ -219,7 +235,7 @@ func (w AuthClientWrapper) GetUnexpiredOrMostRecentBillingFeature(user_id string
 				return b, err
 			}
 
-			path := auth.ProfilesDir + user_id + auth.BillingFeatureFile
+			path := auth.ProfilesDir + userID + auth.BillingFeatureFile
 			err = auth.JsonDump(data, path)
 
 			if err != nil {

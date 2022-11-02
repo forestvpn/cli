@@ -105,7 +105,9 @@ func main() {
 								return nil
 							}
 
-							user_id, err := auth.LoadUserID()
+							userID, err := auth.LoadUserID()
+
+							fmt.Println(userID)
 
 							if err != nil {
 								return err
@@ -117,7 +119,7 @@ func main() {
 								return err
 							}
 
-							b, err := authClientWrapper.GetUnexpiredOrMostRecentBillingFeature(user_id)
+							b, err := authClientWrapper.GetUnexpiredOrMostRecentBillingFeature(userID)
 
 							if err != nil {
 								return err
@@ -126,7 +128,7 @@ func main() {
 							expiryDate := b.GetExpiryDate()
 							now := time.Now()
 							left := expiryDate.Sub(now)
-							email := authClientWrapper.AccountsMap.GetEmail(user_id)
+							email := authClientWrapper.AccountsMap.GetEmail(userID)
 							caser := cases.Title(language.English)
 							plan := caser.String(strings.Split(b.GetBundleId(), ".")[2])
 							fmt.Printf("Logged-in as %s\n", email)
@@ -253,14 +255,14 @@ func main() {
 							}
 
 							if exists {
-								user_id, err := auth.LoadUserID()
+								userID, err := auth.LoadUserID()
 
 								if err != nil {
 									return err
 								}
 
-								if len(user_id) > 0 {
-									err = auth.RemoveFirebaseAuthFile(user_id)
+								if len(userID) > 0 {
+									err = auth.RemoveFirebaseAuthFile(userID)
 
 									if err != nil {
 										return err
@@ -273,7 +275,7 @@ func main() {
 									}
 
 									m := auth.GetAccountsMap(auth.AccountsMapFile)
-									err = m.RemoveAccount(user_id)
+									err = m.RemoveAccount(userID)
 
 									if err != nil {
 										return err
@@ -308,7 +310,7 @@ func main() {
 								return err
 							}
 
-							user_id, err := auth.LoadUserID()
+							userID, err := auth.LoadUserID()
 
 							if err != nil {
 								return err
@@ -321,13 +323,13 @@ func main() {
 								os.Exit(1)
 							}
 
-							b, err := client.GetUnexpiredOrMostRecentBillingFeature(user_id)
+							b, err := client.GetUnexpiredOrMostRecentBillingFeature(userID)
 
 							if err != nil {
 								return err
 							}
 
-							device, err := auth.LoadDevice(user_id)
+							device, err := auth.LoadDevice(userID)
 
 							if err != nil {
 								return err
@@ -356,7 +358,7 @@ func main() {
 								fmt.Println("Your premium subscription will end in less than 3 days.")
 							}
 
-							err = state.SetUp(user_id)
+							err = state.SetUp(userID)
 
 							if err != nil {
 								return err
@@ -385,13 +387,13 @@ func main() {
 							state := actions.State{}
 
 							if state.GetStatus() {
-								user_id, err := auth.LoadUserID()
+								userID, err := auth.LoadUserID()
 
 								if err != nil {
 									return err
 								}
 
-								err = state.SetDown(user_id)
+								err = state.SetDown(userID)
 
 								if err != nil {
 									return err
@@ -423,13 +425,13 @@ func main() {
 							state := actions.State{}
 
 							if state.GetStatus() {
-								user_id, err := auth.LoadUserID()
+								userID, err := auth.LoadUserID()
 
 								if err != nil {
 									return err
 								}
 
-								device, err := auth.LoadDevice(user_id)
+								device, err := auth.LoadDevice(userID)
 
 								if err != nil {
 									return err
@@ -463,13 +465,13 @@ func main() {
 								return nil
 							}
 
-							user_id, err := auth.LoadUserID()
+							userID, err := auth.LoadUserID()
 
 							if err != nil {
 								return err
 							}
 
-							device, err := auth.LoadDevice(user_id)
+							device, err := auth.LoadDevice(userID)
 
 							if err != nil {
 								return err
@@ -545,13 +547,13 @@ func main() {
 								return err
 							}
 
-							user_id, err := auth.LoadUserID()
+							userID, err := auth.LoadUserID()
 
 							if err != nil {
 								return err
 							}
 
-							b, err := authClientWrapper.GetUnexpiredOrMostRecentBillingFeature(user_id)
+							b, err := authClientWrapper.GetUnexpiredOrMostRecentBillingFeature(userID)
 
 							if err != nil {
 								return err
@@ -565,7 +567,7 @@ func main() {
 								return nil
 							}
 
-							device, err := auth.LoadDevice(user_id)
+							device, err := auth.LoadDevice(userID)
 
 							if err != nil {
 								return err
@@ -583,7 +585,7 @@ func main() {
 								return err
 							}
 
-							err = authClientWrapper.SetLocation(device, user_id)
+							err = authClientWrapper.SetLocation(device, userID)
 
 							if err != nil {
 								return err

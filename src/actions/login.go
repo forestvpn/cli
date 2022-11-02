@@ -1,6 +1,8 @@
 package actions
 
-import "github.com/forestvpn/cli/auth"
+import (
+	"github.com/forestvpn/cli/auth"
+)
 
 // Login is a method for logging in a user on the Firebase.
 // Accepts the deviceID (coming from local file) which indicates wether the device was created on previous login.
@@ -8,7 +10,7 @@ import "github.com/forestvpn/cli/auth"
 //
 // See https://firebase.google.com/docs/reference/rest/auth#section-sign-in-email-password for more information.
 func (w AuthClientWrapper) Login(email string, password string) error {
-	var user_id string
+	var userID string
 	signinform := auth.SignInForm{}
 	emailfield, err := auth.GetEmailField(email)
 
@@ -17,9 +19,9 @@ func (w AuthClientWrapper) Login(email string, password string) error {
 	}
 
 	signinform.EmailField = emailfield
-	user_id = w.AccountsMap.GetUserID(emailfield.Value)
+	userID = w.AccountsMap.GetUserID(emailfield.Value)
 
-	if len(user_id) == 0 {
+	if len(userID) == 0 {
 		validate := false
 		passwordfield, err := auth.GetPasswordField([]byte(password), validate)
 
@@ -40,23 +42,23 @@ func (w AuthClientWrapper) Login(email string, password string) error {
 			return err
 		}
 
-		user_id, err = w.SetUpProfile(response)
+		userID, err = w.SetUpProfile(response)
 
 		if err != nil {
 			return err
 		}
 
-		err = w.AccountsMap.AddAccount(signinform.EmailField.Value, user_id)
+		err = w.AccountsMap.AddAccount(signinform.EmailField.Value, userID)
 
 		if err != nil {
 			return err
 		}
 	}
 
-	active := auth.IsActiveProfile(user_id)
+	active := auth.IsActiveProfile(userID)
 
 	if !active {
-		return auth.SetActiveProfile(user_id)
+		return auth.SetActiveProfile(userID)
 	}
 	return nil
 }
