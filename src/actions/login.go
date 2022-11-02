@@ -21,7 +21,7 @@ func (w AuthClientWrapper) Login(email string, password string) error {
 	signinform.EmailField = emailfield
 	userID = w.AccountsMap.GetUserID(emailfield.Value)
 
-	if len(userID) == 0 {
+	if len(userID) == 0 || !auth.IsAuthenticated() {
 		validate := false
 		passwordfield, err := auth.GetPasswordField([]byte(password), validate)
 

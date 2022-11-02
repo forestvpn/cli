@@ -15,11 +15,6 @@ import (
 
 const filepath = "/tmp/test.json"
 
-var (
-	email    = os.Getenv("STAGING_EMAIL")
-	password = os.Getenv("STAGING_PASSWORD")
-)
-
 func logout() error {
 	userID, err := auth.LoadUserID()
 
@@ -34,7 +29,7 @@ func logout() error {
 	return nil
 }
 
-func login() (actions.AuthClientWrapper, error) {
+func login(email string, password string) (actions.AuthClientWrapper, error) {
 	client := actions.AuthClientWrapper{}
 	err := auth.Init()
 
@@ -112,25 +107,9 @@ func TestJsonDump(t *testing.T) {
 }
 
 func TestAccountMap(t *testing.T) {
-	client, err := actions.GetAuthClientWrapper()
-
-	if err != nil {
-		t.Error(err)
-	}
-
-	err = os.RemoveAll(auth.AppDir)
-
-	if err != nil {
-		t.Error(err)
-	}
-
-	err = auth.Init()
-
-	if err != nil {
-		t.Error(err)
-	}
-
-	err = client.Login(email, password)
+	email := "x@x.xx"
+	password := "123456"
+	_, err := login(email, password)
 
 	if err != nil {
 		t.Error(err)
@@ -146,7 +125,7 @@ func TestAccountMap(t *testing.T) {
 	v := accountsmap.GetEmail(userID)
 
 	if len(v) == 0 {
-		t.Errorf("%s email not found in local accounts", email)
+		t.Errorf("%s not found in local accounts", email)
 	}
 
 	err = accountsmap.RemoveAccount(userID)
@@ -158,13 +137,14 @@ func TestAccountMap(t *testing.T) {
 	v = accountsmap.GetEmail(email)
 
 	if len(v) != 0 {
-		t.Errorf("%s email is not removed from local accounts", email)
+		t.Errorf("%s is not removed from local accounts", email)
 	}
-
 }
 
 func TestLoadAccessTokenWhileLoggedIn(t *testing.T) {
-	_, err := login()
+	email := "x@x.xx"
+	password := "123456"
+	_, err := login(email, password)
 
 	if err != nil {
 		t.Error(err)
@@ -188,7 +168,9 @@ func TestLoadAccessTokenWhileLoggedIn(t *testing.T) {
 }
 
 func TestLoadAccessTokenWhileLoggedOut(t *testing.T) {
-	_, err := login()
+	email := "x@x.xx"
+	password := "123456"
+	_, err := login(email, password)
 
 	if err != nil {
 		t.Error(err)
@@ -214,6 +196,8 @@ func TestLoadAccessTokenWhileLoggedOut(t *testing.T) {
 }
 
 func TestHandleFirebaseSignInResponseWithNormalParams(t *testing.T) {
+	email := "x@x.xx"
+	password := "123456"
 	authclient := auth.AuthClient{ApiKey: actions.FirebaseApiKey}
 	emailfield := auth.EmailField{Value: email}
 	passwordfield := auth.PasswordField{Value: []byte(password)}
@@ -258,7 +242,9 @@ func TestHandleFirebaseSignInResponseWithBlankParams(t *testing.T) {
 }
 
 func TestLoadRefreshTokenWhileLoggedIn(t *testing.T) {
-	_, err := login()
+	email := "x@x.xx"
+	password := "123456"
+	_, err := login(email, password)
 
 	if err != nil {
 		t.Error(err)
@@ -323,7 +309,7 @@ func TestIsAuthenticatedWhileLoggedOut(t *testing.T) {
 }
 
 func TestEmailFieldValidateWithIncorrectValue(t *testing.T) {
-	email = ""
+	email := ""
 	emailfield := auth.EmailField{Value: email}
 
 	if emailfield.Validate() == nil {
@@ -332,7 +318,7 @@ func TestEmailFieldValidateWithIncorrectValue(t *testing.T) {
 }
 
 func TestEmailFieldValidateWithCorrectValue(t *testing.T) {
-	email = os.Getenv("STAGING_EMAIL")
+	email := "x@x.xx"
 	emailfield := auth.EmailField{Value: email}
 
 	if emailfield.Validate() != nil {
@@ -349,7 +335,7 @@ func TestPasswordFieldValidateWithIncorrectValue(t *testing.T) {
 }
 
 func TestPasswordFieldValidateWithRightValue(t *testing.T) {
-	passwordfield := auth.PasswordField{Value: []byte(password)}
+	passwordfield := auth.PasswordField{Value: []byte("123456")}
 
 	if passwordfield.Validate() != nil {
 		t.Error("passwordfield.Validate() == error; want nil")
@@ -357,6 +343,8 @@ func TestPasswordFieldValidateWithRightValue(t *testing.T) {
 }
 
 func TestValidatePasswordConfirmationWhileMatch(t *testing.T) {
+	email := "x@x.xx"
+	password := "123456"
 	emailfield := auth.EmailField{Value: email}
 	passwordfield := auth.PasswordField{Value: []byte(password)}
 	confirmation := auth.PasswordConfirmationField{Value: []byte(password)}
@@ -370,6 +358,8 @@ func TestValidatePasswordConfirmationWhileMatch(t *testing.T) {
 }
 
 func TestValidatePasswordConfirmationWhileNotMatch(t *testing.T) {
+	email := "x@x.xx"
+	password := "123456"
 	emailfield := auth.EmailField{Value: email}
 	passwordfield := auth.PasswordField{Value: []byte(password)}
 	confirmation := auth.PasswordConfirmationField{Value: []byte("otherpass")}
@@ -383,7 +373,9 @@ func TestValidatePasswordConfirmationWhileNotMatch(t *testing.T) {
 }
 
 func TestBillingFeatureExpired(t *testing.T) {
-	client, err := login()
+	email := "x@x.xx"
+	password := "123456"
+	client, err := login(email, password)
 
 	if err != nil {
 		t.Error(err)
@@ -430,7 +422,9 @@ func TestBillingFeatureExpired(t *testing.T) {
 }
 
 func TestBillingFeautureExists(t *testing.T) {
-	_, err := login()
+	email := "x@x.xx"
+	password := "123456"
+	_, err := login(email, password)
 
 	if err != nil {
 		t.Error(err)
@@ -448,7 +442,9 @@ func TestBillingFeautureExists(t *testing.T) {
 }
 
 func TestLoadBillingFeatures(t *testing.T) {
-	_, err := login()
+	email := "x@x.xx"
+	password := "123456"
+	_, err := login(email, password)
 
 	if err != nil {
 		t.Error(err)
@@ -474,7 +470,9 @@ func TestLoadBillingFeatures(t *testing.T) {
 
 func TestDumpAccessTokenExpireDate(t *testing.T) {
 	var expiresIn string
-	_, err := login()
+	email := "x@x.xx"
+	password := "123456"
+	_, err := login(email, password)
 
 	if err != nil {
 		t.Error(err)
@@ -522,7 +520,9 @@ func TestDumpAccessTokenExpireDate(t *testing.T) {
 }
 
 func TestIsAccessTokenExpiredWithExpiredToken(t *testing.T) {
-	_, err := login()
+	email := "x@x.xx"
+	password := "123456"
+	_, err := login(email, password)
 
 	if err != nil {
 		t.Error(err)
@@ -562,7 +562,9 @@ func TestIsAccessTokenExpiredWithExpiredToken(t *testing.T) {
 }
 
 func TestIsAccessTokenExpiredWithUnExpiredToken(t *testing.T) {
-	_, err := login()
+	email := "x@x.xx"
+	password := "123456"
+	_, err := login(email, password)
 
 	if err != nil {
 		t.Error(err)
@@ -603,7 +605,9 @@ func TestIsAccessTokenExpiredWithUnExpiredToken(t *testing.T) {
 
 func TestGetAccessTokenExpireDate(t *testing.T) {
 	var seconds int
-	_, err := login()
+	email := "x@x.xx"
+	password := "123456"
+	_, err := login(email, password)
 
 	if err != nil {
 		t.Error(err)
@@ -648,7 +652,9 @@ func TestGetAccessTokenExpireDate(t *testing.T) {
 }
 
 func TestLoadIdTokenWhileLoggedIn(t *testing.T) {
-	_, err := login()
+	email := "x@x.xx"
+	password := "123456"
+	_, err := login(email, password)
 
 	if err != nil {
 		t.Error(err)
@@ -672,7 +678,9 @@ func TestLoadIdTokenWhileLoggedIn(t *testing.T) {
 }
 
 func TestLoadIdTokenWhileLoggedOut(t *testing.T) {
-	_, err := login()
+	email := "x@x.xx"
+	password := "123456"
+	_, err := login(email, password)
 
 	if err != nil {
 		t.Error(err)
@@ -703,7 +711,9 @@ func TestLoadIdTokenWhileLoggedOut(t *testing.T) {
 }
 
 func TestUpdateProfileDevice(t *testing.T) {
-	client, err := login()
+	email := "x@x.xx"
+	password := "123456"
+	client, err := login(email, password)
 
 	if err != nil {
 		t.Error(err)
@@ -752,7 +762,9 @@ func TestUpdateProfileDevice(t *testing.T) {
 }
 
 func TestRemoveActiveUserLockFile(t *testing.T) {
-	_, err := login()
+	email := "x@x.xx"
+	password := "123456"
+	_, err := login(email, password)
 
 	if err != nil {
 		t.Error(err)
@@ -784,7 +796,9 @@ func TestRemoveActiveUserLockFile(t *testing.T) {
 }
 
 func TestRemoveFirebaseAuthFile(t *testing.T) {
-	_, err := login()
+	email := "x@x.xx"
+	password := "123456"
+	_, err := login(email, password)
 
 	if err != nil {
 		t.Error(err)
@@ -814,7 +828,9 @@ func TestRemoveFirebaseAuthFile(t *testing.T) {
 }
 
 func TestSetActiveProfile(t *testing.T) {
-	_, err := login()
+	email := "x@x.xx"
+	password := "123456"
+	_, err := login(email, password)
 
 	if err != nil {
 		t.Error(err)
@@ -826,9 +842,66 @@ func TestSetActiveProfile(t *testing.T) {
 		t.Error(err)
 	}
 
-	err = auth.SetActiveProfile(userID)
+	email = "z@z.zz"
+	_, err = login(email, password)
 
 	if err != nil {
 		t.Error(err)
 	}
+
+	if auth.IsActiveProfile(userID) {
+		t.Errorf("logged out profile with uuid %s is active", userID)
+	}
+
+	inactiveUserId := userID
+	userID, err = auth.LoadUserID()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if !auth.IsActiveProfile(userID) {
+		t.Errorf("logged in profile with uuid %s is inactive", userID)
+	}
+
+	err = auth.SetActiveProfile(inactiveUserId)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if !auth.IsActiveProfile(inactiveUserId) {
+		t.Errorf("logged in profile with uuid %s is inactive", inactiveUserId)
+	}
+}
+
+func TestIsActiveProfile(t *testing.T) {
+	email := "x@x.xx"
+	password := "123456"
+	_, err := login(email, password)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	userID, err := auth.LoadUserID()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if !auth.IsActiveProfile(userID) {
+		t.Errorf("logged in profile with uuid %s is inactive", userID)
+	}
+
+	err = logout()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if auth.IsActiveProfile(userID) {
+		t.Errorf("logged out profile with uuid %s is active", userID)
+	}
+
 }

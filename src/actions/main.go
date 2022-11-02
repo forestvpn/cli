@@ -121,12 +121,7 @@ func (w AuthClientWrapper) SetUpProfile(response *resty.Response) (string, error
 						device, _ := auth.LoadDevice(userID)
 
 						if len(device.GetId()) == 0 {
-							billingFeature, err := w.GetUnexpiredOrMostRecentBillingFeature(userID)
-
-							if err != nil {
-								return userID, err
-							}
-
+							billingFeature, _ := w.GetUnexpiredOrMostRecentBillingFeature(userID)
 							location := device.GetLocation()
 							device, err = w.ApiClient.CreateDevice()
 
@@ -134,7 +129,7 @@ func (w AuthClientWrapper) SetUpProfile(response *resty.Response) (string, error
 								return userID, err
 							}
 
-							if billingFeature.GetBundleId() == "com.forestvpn.freemium" && location.GetId() != Falkenstein || location.GetId() != Helsinki {
+							if billingFeature.GetBundleId() == "com.forestvpn.freemium" && location.GetId() != Falkenstein && location.GetId() != Helsinki {
 								freeLocationsIds := []string{Helsinki, Falkenstein}
 								device, err = w.ApiClient.UpdateDevice(device.GetId(), freeLocationsIds[rand.Intn(len(freeLocationsIds))])
 
