@@ -22,8 +22,8 @@ steps:
         path: /cache
     commands:
       - apk --no-cache add git
-      - cd src
       - go get -t -d -v ./...
+      - cd ./src/
       - go build all
   - name: fetch
     image: docker:git
@@ -42,7 +42,6 @@ steps:
       - export VERSION=${DRONE_TAG}
       - apk add git
       - go install github.com/goreleaser/goreleaser@latest
-      - cd ./src/
       - goreleaser release -f ../.goreleaser-stable.yaml
     depends_on:
       - fetch
@@ -65,7 +64,6 @@ steps:
       - apk add git
       - export VERSION=${DRONE_TAG}
       - go install github.com/goreleaser/goreleaser@latest
-      - cd ./src/
       - goreleaser release -f ../.goreleaser-beta.yaml
     depends_on:
       - fetch
