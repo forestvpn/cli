@@ -107,8 +107,6 @@ func main() {
 
 							userID, err := auth.LoadUserID()
 
-							fmt.Println(userID)
-
 							if err != nil {
 								return err
 							}
