@@ -54,7 +54,7 @@ steps:
       - go install github.com/goreleaser/goreleaser@latest
       - goreleaser release -f ../.goreleaser-stable.yaml
     depends_on:
-      - fetch
+      - test
     when:
       ref:
         include:
@@ -80,7 +80,7 @@ steps:
       - go install github.com/goreleaser/goreleaser@latest
       - goreleaser release -f ../.goreleaser-beta.yaml
     depends_on:
-      - fetch
+      - test
     when:
       ref:
         - refs/tags/v*.*.*-beta*
