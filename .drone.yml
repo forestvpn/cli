@@ -29,6 +29,16 @@ steps:
     image: docker:git
     commands:
       - git fetch --tags
+  - name: test
+    image: golang:1.18.4-alpine3.15
+    volumes:
+      - name: cache
+        path: /cache
+    depends_on:
+      - deps
+    commands:
+      - cd ./src/
+      - go test ./...
   - name: release
     image: golang:1.18.4-alpine3.15
     environment:
@@ -51,6 +61,10 @@ steps:
           - refs/tags/v*.*.*
         exclude:
           - refs/tags/v*.*.*-beta*
+      event:
+        - tag
+      branch:
+        - main
   - name: beta-release
     image: golang:1.18.4-alpine3.15
     environment:
@@ -70,6 +84,13 @@ steps:
     when:
       ref:
         - refs/tags/v*.*.*-beta*
+      event:
+        - tag
+      branch:
+        - stage
 trigger:
+  branch:
+    - main
+    - stage
   event:
     - tag
