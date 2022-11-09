@@ -4,6 +4,7 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/c-robinson/iplib"
 	"github.com/forestvpn/cli/utils"
@@ -50,5 +51,19 @@ func TestExcludeDisallowedIpsExclude(t *testing.T) {
 			}
 
 		}
+	}
+}
+
+func TestHumanizeDuration(t *testing.T) {
+	d, err := time.ParseDuration("2h45m")
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	h := utils.HumanizeDuration(d)
+
+	if h != "2 hours 45 minutes 0 seconds" {
+		t.Error(h)
 	}
 }
