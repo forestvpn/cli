@@ -37,12 +37,8 @@ steps:
     depends_on:
       - deps
     commands:
-      - cd ./src/
+      - cd src
       - go test ./...
-    when:
-      branch:
-        - main
-        - stage
   - name: release
     image: golang:1.18.4-alpine3.15
     environment:
