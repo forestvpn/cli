@@ -22,8 +22,8 @@ steps:
         path: /cache
     commands:
       - apk --no-cache add git
+      - cd src
       - go get -t -d -v ./...
-      - cd ./src/
       - go build all
   - name: fetch
     image: docker:git
