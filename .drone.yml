@@ -65,6 +65,8 @@ steps:
           - refs/tags/v*.*.*
         exclude:
           - refs/tags/v*.*.*-beta*
+      branch:
+        - main
   - name: beta-release
     image: golang:1.18.4
     environment:
@@ -84,10 +86,9 @@ steps:
       - test
     when:
       ref:
-        exclude:
-          - refs/tags/v*.*.*
-        include:
-          - refs/tags/v*.*.*-beta*
+        - refs/tags/v*.*.*-beta*
+      branch:
+        - stage
 trigger:
   event:
     - tag
