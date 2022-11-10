@@ -37,6 +37,7 @@ steps:
     depends_on:
       - deps
     commands:
+      - apk add build-essential
       - cd src
       - go test ./...
   - name: release
