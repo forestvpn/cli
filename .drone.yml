@@ -39,6 +39,10 @@ steps:
     commands:
       - cd ./src/
       - go test ./...
+    when:
+      branch:
+        - main
+        - stage
   - name: release
     image: golang:1.18.4-alpine3.15
     environment:
@@ -61,8 +65,6 @@ steps:
           - refs/tags/v*.*.*
         exclude:
           - refs/tags/v*.*.*-beta*
-      event:
-        - tag
       branch:
         - main
   - name: beta-release
@@ -84,13 +86,8 @@ steps:
     when:
       ref:
         - refs/tags/v*.*.*-beta*
-      event:
-        - tag
       branch:
         - stage
 trigger:
-  branch:
-    - main
-    - stage
   event:
     - tag
