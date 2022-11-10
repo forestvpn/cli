@@ -22,7 +22,7 @@ steps:
         path: /cache
     commands:
       - apt update
-      - apt install git
+      - apt install git -y
       - cd src
       - go get -t -d -v ./...
       - go build all
@@ -39,7 +39,7 @@ steps:
       - deps
     commands:
       - apt update
-      - apt install build-essential
+      - apt install build-essential -y
       - cd src
       - go test ./...
   - name: release
@@ -54,7 +54,7 @@ steps:
     commands:
       - export VERSION=${DRONE_TAG}
       - apt update
-      - apt install git
+      - apt install git -y
       - go install github.com/goreleaser/goreleaser@latest
       - goreleaser release -f ../.goreleaser-stable.yaml
     depends_on:
@@ -78,7 +78,7 @@ steps:
         path: /cache
     commands:
       - apt update
-      - apt install git
+      - apt install git -y
       - export VERSION=${DRONE_TAG}
       - go install github.com/goreleaser/goreleaser@latest
       - goreleaser release -f ../.goreleaser-beta.yaml
