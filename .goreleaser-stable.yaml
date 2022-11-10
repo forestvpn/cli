@@ -3,8 +3,13 @@ builds:
       - CGO_ENABLED=0
     goos:
       - linux
-      - windows
+      - freebsd
       - darwin
+    goarch:
+      - amd64
+      - arm64
+      - arm
+      - 386
     binary: fvpn
     ldflags:
       - "-X main.appVersion={{.Env.VERSION}}"
