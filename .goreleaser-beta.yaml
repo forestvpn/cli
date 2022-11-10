@@ -7,9 +7,6 @@ builds:
       - linux
       - windows
       - darwin
-    goarch:
-      - amd64
-      - arm64
     binary: fvpn
     ldflags:
       - "-X main.appVersion={{.Env.VERSION}}"
