@@ -21,7 +21,7 @@ steps:
       - name: cache
         path: /cache
     commands:
-      - apk --no-cache add git
+      - apt install git
       - cd src
       - go get -t -d -v ./...
       - go build all
@@ -37,7 +37,7 @@ steps:
     depends_on:
       - deps
     commands:
-      - apk add build-base
+      - apt install build-essential
       - cd src
       - go test ./...
   - name: release
@@ -51,7 +51,7 @@ steps:
         path: /cache
     commands:
       - export VERSION=${DRONE_TAG}
-      - apk add git
+      - apt install git
       - go install github.com/goreleaser/goreleaser@latest
       - goreleaser release -f ../.goreleaser-stable.yaml
     depends_on:
@@ -74,7 +74,7 @@ steps:
       - name: cache
         path: /cache
     commands:
-      - apk add git
+      - apt install git
       - export VERSION=${DRONE_TAG}
       - go install github.com/goreleaser/goreleaser@latest
       - goreleaser release -f ../.goreleaser-beta.yaml
