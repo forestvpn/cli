@@ -6,6 +6,7 @@ import (
 	"os/exec"
 
 	"github.com/forestvpn/cli/auth"
+	"github.com/forestvpn/cli/utils"
 )
 
 // State is a structure representing Wireguard connection state.
@@ -37,13 +38,28 @@ func (s *State) GetStatus() bool {
 // SetUp is a method used to establish a Wireguard connection.
 // It executes 'wg-quick' shell command.
 func (s *State) SetUp(user_id string) error {
+	var command *exec.Cmd
 	path := auth.ProfilesDir + user_id + auth.WireguardConfig
-	return exec.Command("wg-quick", "up", path).Run()
+
+	if utils.Os == "windows" {
+		command = exec.Command("wireguard", "/installtunnelservice", path)
+	} else {
+		command = exec.Command("wg-quick", "up", path)
+	}
+
+	return command.Run()
 }
 
 // SetDown is used to terminate a Wireguard connection.
 // It executes 'wg-quick' shell command.
 func (s *State) SetDown(user_id string) error {
+	var command *exec.Cmd
 	path := auth.ProfilesDir + user_id + auth.WireguardConfig
-	return exec.Command("wg-quick", "down", path).Run()
+
+	if utils.Os == "windows" {
+		command = exec.Command("wireguard", "/uninstalltunnelservice", path)
+	} else {
+		command = exec.Command("wg-quick", "down", path)
+	}
+	return command.Run()
 }
