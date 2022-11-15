@@ -2,6 +2,7 @@ package actions
 
 import (
 	"os"
+	"runtime"
 	"sort"
 	"strings"
 
@@ -69,6 +70,7 @@ func (w AuthClientWrapper) ListLocations(country string) error {
 //
 // See https://github.com/forestvpn/api-client-go/blob/main/docs/BillingFeature.md for more information.
 func (w AuthClientWrapper) SetLocation(device *forestvpn_api.Device, user_id string) error {
+	os := runtime.GOOS
 	config := ini.Empty()
 	interfaceSection, err := config.NewSection("Interface")
 
@@ -103,7 +105,7 @@ func (w AuthClientWrapper) SetLocation(device *forestvpn_api.Device, user_id str
 
 		var allowedIps []string
 
-		if utils.Os == "darwin" || utils.Os == "windows" {
+		if os == "darwin" {
 			allowedIps = append(allowedIps, "0.0.0.0/0")
 		} else {
 			allowedIps = peer.GetAllowedIps()

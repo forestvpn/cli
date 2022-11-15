@@ -5,9 +5,11 @@ package utils
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"math"
 	"net"
 	"net/http"
+	"os"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -19,6 +21,7 @@ import (
 
 var Verbose bool
 var Os = runtime.GOOS
+var InfoLogger = log.New(os.Stdout, "[DEBUG] ", log.Ldate|log.Ltime|log.Lmsgprefix)
 
 // ip2Net is a function for converting an IP address value, e.g. 127.0.0.1, into a network with mask of 24 bits, e.g. 127.0.0.0/24.
 func ip2Net(ip string) string {
@@ -173,10 +176,6 @@ func GetLocalTimezone() (string, error) {
 func GetHttpClient(retries int) *http.Client {
 	retryClient := retryablehttp.NewClient()
 	retryClient.RetryMax = retries
-
-	if !Verbose {
-		retryClient.Logger = nil
-	}
-
+	retryClient.Logger = nil
 	return retryClient.StandardClient()
 }

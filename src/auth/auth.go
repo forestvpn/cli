@@ -48,13 +48,19 @@ func (c AuthClient) SignUp(form SignUpForm) (*resty.Response, error) {
 		return nil, err
 	}
 
-	return client.R().
+	resp, err := client.R().
 		SetHeader("Content-Type", "application/json").
 		SetQueryParams(map[string]string{
 			"key": c.ApiKey,
 		}).
 		SetBody(jsonRequest).
 		Post(url)
+
+	if utils.Verbose {
+		utils.InfoLogger.Printf("%s %s\n%s", resp.Request.Method, resp.Request.URL, resp.String())
+	}
+
+	return resp, err
 }
 
 // SignIn is a method to perform a Firebase sign in request. It accepts an instance of a SignInForm that holds validated data for request.
@@ -73,13 +79,20 @@ func (c AuthClient) SignIn(form SignInForm) (*resty.Response, error) {
 		return nil, err
 	}
 
-	return client.R().
+	resp, err := client.R().
 		SetHeader("Content-Type", "application/json").
 		SetQueryParams(map[string]string{
 			"key": c.ApiKey,
 		}).
 		SetBody(jsonRequest).
 		Post(url)
+
+	if utils.Verbose {
+		utils.InfoLogger.Printf("%s %s\n%s", resp.Request.Method, resp.Request.URL, resp.String())
+	}
+
+	return resp, err
+
 }
 
 // See https://firebase.google.com/docs/reference/rest/auth#section-refresh-token for more information.
@@ -88,24 +101,34 @@ func (c AuthClient) exchangeRefreshForIdToken(refreshToken string) (*resty.Respo
 	body := fmt.Sprintf("grant_type=refresh_token&refresh_token=%s", refreshToken)
 	client.SetTimeout(time.Duration(1 * time.Second))
 
-	return client.R().
+	resp, err := client.R().
 		SetHeader("Content-Type", "application/x-www-form-urlencoded").
 		SetQueryParams(map[string]string{
 			"key": c.ApiKey,
 		}).
 		SetBody(body).
 		Post(url)
+
+	if utils.Verbose {
+		utils.InfoLogger.Printf("%s %s\n%s", resp.Request.Method, resp.Request.URL, resp.String())
+	}
+
+	return resp, err
 }
 
 // GetAccessToken is a method to obtain a new access token from Firebase REST API and dump the response into FirebaseAuthFile.
 func (c AuthClient) GetAccessToken(refreshToken string) (*resty.Response, error) {
-	response, err := c.exchangeRefreshForIdToken(refreshToken)
+	resp, err := c.exchangeRefreshForIdToken(refreshToken)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return response, err
+	if utils.Verbose {
+		utils.InfoLogger.Printf("%s %s\n%s", resp.Request.Method, resp.Request.URL, resp.String())
+	}
+
+	return resp, err
 }
 
 // GetUserData is used to check if the user already exists in the Firebase database during the registration.
@@ -121,11 +144,17 @@ func (c AuthClient) GetUserData(idToken string) (*resty.Response, error) {
 		return nil, err
 	}
 
-	return client.R().
+	resp, err := client.R().
 		SetHeader("Content-Type", "application/json").
 		SetQueryParams(map[string]string{
 			"key": c.ApiKey,
 		}).
 		SetBody(body).
 		Post(url)
+
+	if utils.Verbose {
+		utils.InfoLogger.Printf("%s %s\n%s", resp.Request.Method, resp.Request.URL, resp.String())
+	}
+
+	return resp, err
 }
