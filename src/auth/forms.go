@@ -3,10 +3,10 @@ package auth
 
 import (
 	"bufio"
-	"bytes"
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"syscall"
 
 	"golang.org/x/term"
@@ -35,7 +35,7 @@ type InfoForm struct {
 
 // ValidatePasswordConfirmation is a method that compares password and the password confirmation values.
 func (s SignUpForm) ValidatePasswordConfirmation() error {
-	if !bytes.Equal(s.PasswordField.Value, s.PasswordConfirmationField.Value) {
+	if s.PasswordField.Value == s.PasswordConfirmationField.Value {
 		return errors.New("password confirmation doesn't match")
 	}
 	return nil
@@ -44,7 +44,7 @@ func (s SignUpForm) ValidatePasswordConfirmation() error {
 // GetPasswordField is a method that prompts the user a password and then validates it.
 // validate is a boolean that allows to enable or disable password validation.
 // E.g. when password validation is needed on registration but not on login.
-func GetPasswordField(password []byte, validate bool) (PasswordField, error) {
+func GetPasswordField(password string, validate bool) (PasswordField, error) {
 	passwordfield := PasswordField{Value: password}
 
 	for !(len(passwordfield.Value) > 0) {
@@ -56,7 +56,7 @@ func GetPasswordField(password []byte, validate bool) (PasswordField, error) {
 			return passwordfield, err
 		}
 
-		passwordfield.Value = password
+		passwordfield.Value = strings.TrimSuffix(string(password), "\r")
 	}
 
 	if validate {
