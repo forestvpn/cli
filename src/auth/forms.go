@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"syscall"
 
 	"golang.org/x/term"
 )
@@ -48,7 +49,7 @@ func GetPasswordField(password []byte, validate bool) (PasswordField, error) {
 
 	for !(len(passwordfield.Value) > 0) {
 		fmt.Print("Enter password: ")
-		password, err := term.ReadPassword(0)
+		password, err := term.ReadPassword(int(syscall.Stdin))
 		fmt.Println()
 
 		if err != nil {
