@@ -57,7 +57,13 @@ func (c AuthClient) SignUp(form SignUpForm) (*resty.Response, error) {
 		Post(url)
 
 	if utils.Verbose {
-		utils.InfoLogger.Printf("%s %s\n%s", resp.Request.Method, resp.Request.URL, resp.String())
+		var x interface{} = resp.Request.Body
+		switch body := x.(type) {
+		case []byte:
+			utils.InfoLogger.Printf("REQUEST: %s", string(body))
+		}
+		utils.InfoLogger.Printf("ENDPOINT: %s %s", resp.Request.Method, resp.Request.URL)
+		utils.InfoLogger.Printf("RESPONSE: %s", resp.String())
 	}
 
 	return resp, err
@@ -88,7 +94,13 @@ func (c AuthClient) SignIn(form SignInForm) (*resty.Response, error) {
 		Post(url)
 
 	if utils.Verbose {
-		utils.InfoLogger.Printf("%s %s\n%s", resp.Request.Method, resp.Request.URL, resp.String())
+		var x interface{} = resp.Request.Body
+		switch body := x.(type) {
+		case []byte:
+			utils.InfoLogger.Printf("REQUEST: %s", string(body))
+		}
+		utils.InfoLogger.Printf("ENDPOINT: %s %s", resp.Request.Method, resp.Request.URL)
+		utils.InfoLogger.Printf("RESPONSE: %s", resp.String())
 	}
 
 	return resp, err
@@ -110,7 +122,13 @@ func (c AuthClient) exchangeRefreshForIdToken(refreshToken string) (*resty.Respo
 		Post(url)
 
 	if utils.Verbose {
-		utils.InfoLogger.Printf("%s %s\n%s", resp.Request.Method, resp.Request.URL, resp.String())
+		var x interface{} = resp.Request.Body
+		switch body := x.(type) {
+		case []byte:
+			utils.InfoLogger.Printf("REQUEST: %s", string(body))
+		}
+		utils.InfoLogger.Printf("ENDPOINT: %s %s", resp.Request.Method, resp.Request.URL)
+		utils.InfoLogger.Printf("RESPONSE: %s", resp.String())
 	}
 
 	return resp, err
@@ -125,7 +143,13 @@ func (c AuthClient) GetAccessToken(refreshToken string) (*resty.Response, error)
 	}
 
 	if utils.Verbose {
-		utils.InfoLogger.Printf("%s %s\n%s", resp.Request.Method, resp.Request.URL, resp.String())
+		var x interface{} = resp.Request.Body
+		switch body := x.(type) {
+		case []byte:
+			utils.InfoLogger.Printf("REQUEST: %s", string(body))
+		}
+		utils.InfoLogger.Printf("ENDPOINT: %s %s", resp.Request.Method, resp.Request.URL)
+		utils.InfoLogger.Printf("RESPONSE: %s", resp.String())
 	}
 
 	return resp, err
@@ -153,7 +177,13 @@ func (c AuthClient) GetUserData(idToken string) (*resty.Response, error) {
 		Post(url)
 
 	if utils.Verbose {
-		utils.InfoLogger.Printf("%s %s\n%s", resp.Request.Method, resp.Request.URL, resp.String())
+		var x interface{} = resp.Request.Body
+		switch body := x.(type) {
+		case []byte:
+			utils.InfoLogger.Printf("REQUEST: %s", string(body))
+		}
+		utils.InfoLogger.Printf("ENDPOINT: %s %s", resp.Request.Method, resp.Request.URL)
+		utils.InfoLogger.Printf("RESPONSE: %s", resp.String())
 	}
 
 	return resp, err

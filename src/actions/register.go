@@ -3,6 +3,7 @@ package actions
 import (
 	"errors"
 	"fmt"
+	"syscall"
 
 	"github.com/forestvpn/cli/auth"
 	"golang.org/x/term"
@@ -48,7 +49,7 @@ func (w AuthClientWrapper) Register(email string, password string) error {
 		signinform.PasswordField = passwordfield
 		signupform := auth.SignUpForm{}
 		fmt.Print("Confirm password: ")
-		passwordConfirmation, err := term.ReadPassword(0)
+		passwordConfirmation, err := term.ReadPassword(int(syscall.Stdin))
 		fmt.Println()
 
 		if err != nil {
