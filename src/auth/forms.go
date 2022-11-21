@@ -40,7 +40,7 @@ func (s SignUpForm) ValidatePasswordConfirmation() error {
 	return nil
 }
 
-// getPasswordField is a method that prompts the user a password and then validates it.
+// GetPasswordField is a method that prompts the user a password and then validates it.
 // validate is a boolean that allows to enable or disable password validation.
 // E.g. when password validation is needed on registration but not on login.
 func GetPasswordField(password []byte, validate bool) (PasswordField, error) {
@@ -88,23 +88,3 @@ func GetEmailField(email string) (EmailField, error) {
 	err := emailfield.Validate()
 	return emailfield, err
 }
-
-// // GetSignInForm is a factory function that prompts user both email and password and returns the SignInForm.
-// func GetSignInForm(email string, password []byte, passwordValidation bool) (SignInForm, error) {
-// 	signinform := SignInForm{}
-// 	emailfield, err := GetEmailField(email)
-
-// 	if err != nil {
-// 		return signinform, err
-// 	}
-
-// 	signinform.EmailField = emailfield
-// 	passwordfield, err := getPasswordField(password, passwordValidation)
-
-// 	if err != nil {
-// 		return signinform, err
-// 	}
-
-// 	signinform.PasswordField = passwordfield
-// 	return signinform, err
-// }
