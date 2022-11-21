@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"syscall"
 
 	"golang.org/x/term"
@@ -83,7 +84,9 @@ func GetEmailField(email string) (EmailField, error) {
 			return emailfield, err
 		}
 
-		emailfield.Value = email[:len(email)-1]
+		email = strings.TrimSuffix(email, "\n")
+		email = strings.TrimSuffix(email, "\r")
+		emailfield.Value = strings.TrimSuffix(email, "\n")
 	}
 
 	err := emailfield.Validate()
