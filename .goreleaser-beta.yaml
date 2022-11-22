@@ -65,3 +65,37 @@ archives:
 - name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
 release:
   prerelease: true
+chocolateys:
+  -
+    name: fvpn
+    ids:
+      - "{{ .ProjectName }}_windows_386"
+      - "{{ .ProjectName }}_windows_amd64"
+      - "{{ .ProjectName }}_windows_386_arm"
+      - "{{ .ProjectName }}_windows_386_arm64"
+    owners: ForestVPN.com
+    title: ForestVPN CLI
+    authors: Anatolio Nikiforidis
+    project_url: https://forestvpn.com/
+
+    # Template for the url which is determined by the given Token (github,
+    # gitlab or gitea)
+    # Default depends on the client.
+    url_template: "https://github.com/forestvpn/cli/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    copyright: 2022 Anatolio Nikiforidis
+    license_url: https://github.com/forestvpn/cli/blob/main/LICENSE
+    require_license_acceptance: false
+    project_source_url: https://github.com/forestvpn/cli
+    docs_url: https://github.com/forestvpn/cli/blob/main/README.md
+    bug_tracker_url: https://github.com/forestvpn/cli/issues
+    tags: "vpn"
+    summary: ForestVPN - Fast, secure, and modern VPN.
+    description: |
+      {{ .ProjectName }} installer package.
+      ForestVPN - Fast, secure, and modern VPN.
+    dependencies:
+      - id: wireguard
+        version: 0.5.3
+    api_key: '{{ .Env.CHOCOLATEY_API_KEY }}'
+    source_repo: "https://push.chocolatey.org/"
+    skip_publish: true
