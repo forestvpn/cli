@@ -98,4 +98,4 @@ chocolateys:
         version: 0.5.3
     api_key: '{{ .Env.CHOCOLATEY_API_KEY }}'
     source_repo: "https://push.chocolatey.org/"
-    skip_publish: true
+    skip_publish: false
