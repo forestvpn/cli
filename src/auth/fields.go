@@ -13,12 +13,12 @@ type EmailField struct {
 
 // PasswordField is a structure that holds a password value that could be validated.
 type PasswordField struct {
-	Value []byte
+	Value string
 }
 
 // PasswordConfirmationField is used in the SignUpForm to store the confirmation of a password.
 type PasswordConfirmationField struct {
-	Value []byte
+	Value string
 }
 
 // Validate is a method to check user's email address.
