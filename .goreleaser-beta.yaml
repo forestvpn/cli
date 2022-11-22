@@ -62,7 +62,9 @@ brews:
   test: |
     system "#{bin}/fvpn --version"
 archives:
-- name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+  - 
+    format: binary
+    name_template: "{{ .Binary }}_{{ .Os }}_{{ .Arch }}"
 release:
   prerelease: true
 chocolateys:
