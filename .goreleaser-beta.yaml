@@ -70,11 +70,11 @@ release:
 chocolateys:
   -
     name: fvpn
-    ids:
-      - "{{ .ProjectName }}_windows_386"
-      - "{{ .ProjectName }}_windows_amd64"
-      - "{{ .ProjectName }}_windows_386_arm"
-      - "{{ .ProjectName }}_windows_386_arm64"
+    # ids:
+    #   - "{{ .ProjectName }}_windows_386"
+    #   - "{{ .ProjectName }}_windows_amd64"
+    #   - "{{ .ProjectName }}_windows_386_arm"
+    #   - "{{ .ProjectName }}_windows_386_arm64"
     owners: ForestVPN.com
     title: ForestVPN CLI
     authors: Anatolio Nikiforidis
