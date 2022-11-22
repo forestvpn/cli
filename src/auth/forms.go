@@ -35,7 +35,7 @@ type InfoForm struct {
 
 // ValidatePasswordConfirmation is a method that compares password and the password confirmation values.
 func (s SignUpForm) ValidatePasswordConfirmation() error {
-	if s.PasswordField.Value == s.PasswordConfirmationField.Value {
+	if s.PasswordField.Value != s.PasswordConfirmationField.Value {
 		return errors.New("password confirmation doesn't match")
 	}
 	return nil
