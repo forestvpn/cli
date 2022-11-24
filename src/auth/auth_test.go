@@ -14,6 +14,8 @@ import (
 )
 
 const filepath = "/tmp/test.json"
+const apiHost = "api.fvpn.dev"
+const firebaseApiKey = "AIzaSyBLSD5qtCem7IVxB9aToqTXWgDsKMAXnt0"
 
 func logout() error {
 	userID, err := auth.LoadUserID()
@@ -37,7 +39,7 @@ func login(email string, password string) (actions.AuthClientWrapper, error) {
 		return client, err
 	}
 
-	client, err = actions.GetAuthClientWrapper()
+	client, err = actions.GetAuthClientWrapper(apiHost, firebaseApiKey)
 
 	if err != nil {
 		return client, err
@@ -49,7 +51,7 @@ func login(email string, password string) (actions.AuthClientWrapper, error) {
 		return client, err
 	}
 
-	return actions.GetAuthClientWrapper()
+	return actions.GetAuthClientWrapper(apiHost, firebaseApiKey)
 }
 
 func TestInit(t *testing.T) {
@@ -198,7 +200,7 @@ func TestLoadAccessTokenWhileLoggedOut(t *testing.T) {
 func TestHandleFirebaseSignInResponseWithNormalParams(t *testing.T) {
 	email := "x@x.xx"
 	password := "123456"
-	authclient := auth.AuthClient{ApiKey: actions.FirebaseApiKey}
+	authclient := auth.AuthClient{ApiKey: firebaseApiKey}
 	emailfield := auth.EmailField{Value: email}
 	passwordfield := auth.PasswordField{Value: password}
 	signinform := auth.SignInForm{EmailField: emailfield, PasswordField: passwordfield}
