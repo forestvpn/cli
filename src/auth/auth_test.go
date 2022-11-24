@@ -40,7 +40,7 @@ func login(email string, password string) (actions.AuthClientWrapper, error) {
 		return client, err
 	}
 
-	client, err = actions.GetAuthClientWrapper(utils.ApiHost, utils.FirebaseApiKey)
+	client, err = actions.GetAuthClientWrapper(apiHost, firebaseApiKey)
 
 	if err != nil {
 		return client, err
@@ -52,7 +52,7 @@ func login(email string, password string) (actions.AuthClientWrapper, error) {
 		return client, err
 	}
 
-	return actions.GetAuthClientWrapper(utils.ApiHost, utils.FirebaseApiKey)
+	return actions.GetAuthClientWrapper(apiHost, firebaseApiKey)
 }
 
 func TestInit(t *testing.T) {
