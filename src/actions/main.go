@@ -19,7 +19,7 @@ import (
 )
 
 // FirebaseApiKey is stored in an environment variable and assigned during the build with ldflags.
-const FirebaseApiKey = "AIzaSyBLSD5qtCem7IVxB9aToqTXWgDsKMAXnt0"
+const FirebaseApiKey = "AIzaSyArN6RVqftrSVBrEI9ZF2DiiA7gJOdkfeM"
 
 // ApiHost is a hostname of Forest VPN back-end API that is stored in an environment variable and assigned during the build with ldflags.
 const apiHost = "api.fvpn.dev"
