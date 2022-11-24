@@ -117,7 +117,7 @@ func main() {
 								return err
 							}
 
-							authClientWrapper, err := actions.GetAuthClientWrapper(apiHost, firebaseApiKey)
+							authClientWrapper, err := actions.GetAuthClientWrapper(utils.ApiHost, utils.FirebaseApiKey)
 
 							if err != nil {
 								return err
@@ -183,7 +183,7 @@ func main() {
 								return nil
 							}
 
-							authClientWrapper, err := actions.GetAuthClientWrapper(apiHost, firebaseApiKey)
+							authClientWrapper, err := actions.GetAuthClientWrapper(utils.ApiHost, utils.FirebaseApiKey)
 
 							if err != nil {
 								return err
@@ -218,7 +218,7 @@ func main() {
 							},
 						},
 						Action: func(c *cli.Context) error {
-							authClientWrapper, err := actions.GetAuthClientWrapper(apiHost, firebaseApiKey)
+							authClientWrapper, err := actions.GetAuthClientWrapper(utils.ApiHost, utils.FirebaseApiKey)
 
 							if err != nil {
 								return err
@@ -308,7 +308,7 @@ func main() {
 								return nil
 							}
 
-							client, err := actions.GetAuthClientWrapper(apiHost, firebaseApiKey)
+							client, err := actions.GetAuthClientWrapper(utils.ApiHost, utils.FirebaseApiKey)
 
 							if err != nil {
 								return err
@@ -511,7 +511,7 @@ func main() {
 								return errors.New("UUID or name required")
 							}
 
-							authClientWrapper, err := actions.GetAuthClientWrapper(apiHost, firebaseApiKey)
+							authClientWrapper, err := actions.GetAuthClientWrapper(utils.ApiHost, utils.FirebaseApiKey)
 
 							if err != nil {
 								return err
@@ -620,7 +620,7 @@ func main() {
 								return nil
 							}
 
-							authClientWrapper, err := actions.GetAuthClientWrapper(apiHost, firebaseApiKey)
+							authClientWrapper, err := actions.GetAuthClientWrapper(utils.ApiHost, utils.FirebaseApiKey)
 
 							if err != nil {
 								return err
