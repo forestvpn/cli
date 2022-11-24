@@ -11,7 +11,6 @@ import (
 
 	"github.com/forestvpn/cli/actions"
 	"github.com/forestvpn/cli/auth"
-	"github.com/forestvpn/cli/utils"
 )
 
 const filepath = "/tmp/test.json"
@@ -201,7 +200,7 @@ func TestLoadAccessTokenWhileLoggedOut(t *testing.T) {
 func TestHandleFirebaseSignInResponseWithNormalParams(t *testing.T) {
 	email := "x@x.xx"
 	password := "123456"
-	authclient := auth.AuthClient{ApiKey: utils.FirebaseApiKey}
+	authclient := auth.AuthClient{ApiKey: firebaseApiKey}
 	emailfield := auth.EmailField{Value: email}
 	passwordfield := auth.PasswordField{Value: password}
 	signinform := auth.SignInForm{EmailField: emailfield, PasswordField: passwordfield}
