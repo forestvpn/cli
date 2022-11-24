@@ -20,7 +20,15 @@ import (
 )
 
 var Verbose bool
-var Os = runtime.GOOS
+
+const Os = runtime.GOOS
+
+// FirebaseApiKey is stored in an environment variable and assigned during the build with ldflags.
+const FirebaseApiKey = "AIzaSyBLSD5qtCem7IVxB9aToqTXWgDsKMAXnt0"
+
+// ApiHost is a hostname of Forest VPN back-end API that is stored in an environment variable and assigned during the build with ldflags.
+const ApiHost = "api.fvpn.dev"
+
 var InfoLogger = log.New(os.Stdout, "[DEBUG] ", log.Ldate|log.Ltime|log.Lmsgprefix)
 
 // ip2Net is a function for converting an IP address value, e.g. 127.0.0.1, into a network with mask of 24 bits, e.g. 127.0.0.0/24.
