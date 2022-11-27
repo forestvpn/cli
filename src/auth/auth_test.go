@@ -14,6 +14,8 @@ import (
 )
 
 const filepath = "/tmp/test.json"
+const apiHost = "api.fvpn.dev"
+const firebaseApiKey = "AIzaSyBLSD5qtCem7IVxB9aToqTXWgDsKMAXnt0"
 
 func logout() error {
 	userID, err := auth.LoadUserID()
@@ -37,7 +39,7 @@ func login(email string, password string) (actions.AuthClientWrapper, error) {
 		return client, err
 	}
 
-	client, err = actions.GetAuthClientWrapper()
+	client, err = actions.GetAuthClientWrapper(apiHost, firebaseApiKey)
 
 	if err != nil {
 		return client, err
@@ -49,7 +51,7 @@ func login(email string, password string) (actions.AuthClientWrapper, error) {
 		return client, err
 	}
 
-	return actions.GetAuthClientWrapper()
+	return actions.GetAuthClientWrapper(apiHost, firebaseApiKey)
 }
 
 func TestInit(t *testing.T) {
@@ -198,9 +200,9 @@ func TestLoadAccessTokenWhileLoggedOut(t *testing.T) {
 func TestHandleFirebaseSignInResponseWithNormalParams(t *testing.T) {
 	email := "x@x.xx"
 	password := "123456"
-	authclient := auth.AuthClient{ApiKey: actions.FirebaseApiKey}
+	authclient := auth.AuthClient{ApiKey: firebaseApiKey}
 	emailfield := auth.EmailField{Value: email}
-	passwordfield := auth.PasswordField{Value: []byte(password)}
+	passwordfield := auth.PasswordField{Value: password}
 	signinform := auth.SignInForm{EmailField: emailfield, PasswordField: passwordfield}
 	response, err := authclient.SignIn(signinform)
 
@@ -221,7 +223,7 @@ func TestHandleFirebaseSignInResponseWithBlankParams(t *testing.T) {
 	password := ""
 	authclient := auth.AuthClient{ApiKey: os.Getenv("STAGING_FIREBASE_API_KEY")}
 	emailfield := auth.EmailField{Value: email}
-	passwordfield := auth.PasswordField{Value: []byte(password)}
+	passwordfield := auth.PasswordField{Value: password}
 	signinform := auth.SignInForm{EmailField: emailfield, PasswordField: passwordfield}
 	response, err := authclient.SignIn(signinform)
 
@@ -327,7 +329,7 @@ func TestEmailFieldValidateWithCorrectValue(t *testing.T) {
 }
 
 func TestPasswordFieldValidateWithIncorrectValue(t *testing.T) {
-	passwordfield := auth.PasswordField{Value: []byte("12345")}
+	passwordfield := auth.PasswordField{Value: "12345"}
 
 	if passwordfield.Validate() == nil {
 		t.Error("passwordfield.Validate() == nil; want error")
@@ -335,7 +337,7 @@ func TestPasswordFieldValidateWithIncorrectValue(t *testing.T) {
 }
 
 func TestPasswordFieldValidateWithRightValue(t *testing.T) {
-	passwordfield := auth.PasswordField{Value: []byte("123456")}
+	passwordfield := auth.PasswordField{Value: "123456"}
 
 	if passwordfield.Validate() != nil {
 		t.Error("passwordfield.Validate() == error; want nil")
@@ -346,8 +348,8 @@ func TestValidatePasswordConfirmationWhileMatch(t *testing.T) {
 	email := "x@x.xx"
 	password := "123456"
 	emailfield := auth.EmailField{Value: email}
-	passwordfield := auth.PasswordField{Value: []byte(password)}
-	confirmation := auth.PasswordConfirmationField{Value: []byte(password)}
+	passwordfield := auth.PasswordField{Value: password}
+	confirmation := auth.PasswordConfirmationField{Value: password}
 	signinform := auth.SignInForm{EmailField: emailfield, PasswordField: passwordfield}
 	signupform := auth.SignUpForm{SignInForm: signinform, PasswordConfirmationField: confirmation}
 	err := signupform.ValidatePasswordConfirmation()
@@ -361,8 +363,8 @@ func TestValidatePasswordConfirmationWhileNotMatch(t *testing.T) {
 	email := "x@x.xx"
 	password := "123456"
 	emailfield := auth.EmailField{Value: email}
-	passwordfield := auth.PasswordField{Value: []byte(password)}
-	confirmation := auth.PasswordConfirmationField{Value: []byte("otherpass")}
+	passwordfield := auth.PasswordField{Value: password}
+	confirmation := auth.PasswordConfirmationField{Value: "otherpass"}
 	signinform := auth.SignInForm{EmailField: emailfield, PasswordField: passwordfield}
 	signupform := auth.SignUpForm{SignInForm: signinform, PasswordConfirmationField: confirmation}
 	err := signupform.ValidatePasswordConfirmation()

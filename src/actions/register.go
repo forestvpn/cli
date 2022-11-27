@@ -3,6 +3,8 @@ package actions
 import (
 	"errors"
 	"fmt"
+	"strings"
+	"syscall"
 
 	"github.com/forestvpn/cli/auth"
 	"golang.org/x/term"
@@ -24,7 +26,7 @@ func (w AuthClientWrapper) Register(email string, password string) error {
 		return err
 	}
 
-	signinform.PasswordField.Value = []byte("12345678")
+	signinform.PasswordField.Value = "12345678"
 	response, err := w.AuthClient.SignIn(signinform)
 
 	if err != nil {
@@ -39,7 +41,7 @@ func (w AuthClientWrapper) Register(email string, password string) error {
 
 	if message == "EMAIL_NOT_FOUND" {
 		validate := true
-		passwordfield, err := auth.GetPasswordField([]byte(password), validate)
+		passwordfield, err := auth.GetPasswordField(password, validate)
 
 		if err != nil {
 			return err
@@ -48,14 +50,14 @@ func (w AuthClientWrapper) Register(email string, password string) error {
 		signinform.PasswordField = passwordfield
 		signupform := auth.SignUpForm{}
 		fmt.Print("Confirm password: ")
-		passwordConfirmation, err := term.ReadPassword(0)
+		passwordConfirmation, err := term.ReadPassword(int(syscall.Stdin))
 		fmt.Println()
 
 		if err != nil {
 			return err
 		}
 
-		signupform.PasswordConfirmationField.Value = passwordConfirmation
+		signupform.PasswordConfirmationField.Value = strings.TrimSuffix(string(passwordConfirmation), "\r")
 		signupform.SignInForm = signinform
 		err = signupform.ValidatePasswordConfirmation()
 

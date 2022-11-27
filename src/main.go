@@ -30,6 +30,12 @@ const Dsn = "https://ef875c1346ed49289812f9df5a44f03f@sentry.fvpn.uk/8"
 
 const url = "https://forestvpn.com/checkout/"
 
+// FirebaseApiKey is stored in an environment variable and assigned during the build with ldflags.
+const firebaseApiKey = "AIzaSyArN6RVqftrSVBrEI9ZF2DiiA7gJOdkfeM"
+
+// ApiHost is a hostname of Forest VPN back-end API that is stored in an environment variable and assigned during the build with ldflags.
+const apiHost = "api.fvpn.dev"
+
 func main() {
 	// email is user's email address used to sign in or sign up on the Firebase.
 	var email string
@@ -111,7 +117,7 @@ func main() {
 								return err
 							}
 
-							authClientWrapper, err := actions.GetAuthClientWrapper()
+							authClientWrapper, err := actions.GetAuthClientWrapper(utils.ApiHost, utils.FirebaseApiKey)
 
 							if err != nil {
 								return err
@@ -177,7 +183,7 @@ func main() {
 								return nil
 							}
 
-							authClientWrapper, err := actions.GetAuthClientWrapper()
+							authClientWrapper, err := actions.GetAuthClientWrapper(utils.ApiHost, utils.FirebaseApiKey)
 
 							if err != nil {
 								return err
@@ -212,7 +218,7 @@ func main() {
 							},
 						},
 						Action: func(c *cli.Context) error {
-							authClientWrapper, err := actions.GetAuthClientWrapper()
+							authClientWrapper, err := actions.GetAuthClientWrapper(utils.ApiHost, utils.FirebaseApiKey)
 
 							if err != nil {
 								return err
@@ -302,7 +308,7 @@ func main() {
 								return nil
 							}
 
-							client, err := actions.GetAuthClientWrapper()
+							client, err := actions.GetAuthClientWrapper(utils.ApiHost, utils.FirebaseApiKey)
 
 							if err != nil {
 								return err
@@ -505,7 +511,7 @@ func main() {
 								return errors.New("UUID or name required")
 							}
 
-							authClientWrapper, err := actions.GetAuthClientWrapper()
+							authClientWrapper, err := actions.GetAuthClientWrapper(utils.ApiHost, utils.FirebaseApiKey)
 
 							if err != nil {
 								return err
@@ -614,7 +620,7 @@ func main() {
 								return nil
 							}
 
-							authClientWrapper, err := actions.GetAuthClientWrapper()
+							authClientWrapper, err := actions.GetAuthClientWrapper(utils.ApiHost, utils.FirebaseApiKey)
 
 							if err != nil {
 								return err

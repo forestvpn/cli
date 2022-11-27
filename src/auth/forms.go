@@ -3,10 +3,11 @@ package auth
 
 import (
 	"bufio"
-	"bytes"
 	"errors"
 	"fmt"
 	"os"
+	"strings"
+	"syscall"
 
 	"golang.org/x/term"
 )
@@ -34,28 +35,28 @@ type InfoForm struct {
 
 // ValidatePasswordConfirmation is a method that compares password and the password confirmation values.
 func (s SignUpForm) ValidatePasswordConfirmation() error {
-	if !bytes.Equal(s.PasswordField.Value, s.PasswordConfirmationField.Value) {
+	if s.PasswordField.Value != s.PasswordConfirmationField.Value {
 		return errors.New("password confirmation doesn't match")
 	}
 	return nil
 }
 
-// getPasswordField is a method that prompts the user a password and then validates it.
+// GetPasswordField is a method that prompts the user a password and then validates it.
 // validate is a boolean that allows to enable or disable password validation.
 // E.g. when password validation is needed on registration but not on login.
-func GetPasswordField(password []byte, validate bool) (PasswordField, error) {
+func GetPasswordField(password string, validate bool) (PasswordField, error) {
 	passwordfield := PasswordField{Value: password}
 
 	for !(len(passwordfield.Value) > 0) {
 		fmt.Print("Enter password: ")
-		password, err := term.ReadPassword(0)
+		password, err := term.ReadPassword(int(syscall.Stdin))
 		fmt.Println()
 
 		if err != nil {
 			return passwordfield, err
 		}
 
-		passwordfield.Value = password
+		passwordfield.Value = strings.TrimSuffix(string(password), "\r")
 	}
 
 	if validate {
@@ -82,29 +83,11 @@ func GetEmailField(email string) (EmailField, error) {
 			return emailfield, err
 		}
 
-		emailfield.Value = email[:len(email)-1]
+		email = strings.TrimSuffix(email, "\n")
+		email = strings.TrimSuffix(email, "\r")
+		emailfield.Value = strings.TrimSuffix(email, "\n")
 	}
 
 	err := emailfield.Validate()
 	return emailfield, err
 }
-
-// // GetSignInForm is a factory function that prompts user both email and password and returns the SignInForm.
-// func GetSignInForm(email string, password []byte, passwordValidation bool) (SignInForm, error) {
-// 	signinform := SignInForm{}
-// 	emailfield, err := GetEmailField(email)
-
-// 	if err != nil {
-// 		return signinform, err
-// 	}
-
-// 	signinform.EmailField = emailfield
-// 	passwordfield, err := getPasswordField(password, passwordValidation)
-
-// 	if err != nil {
-// 		return signinform, err
-// 	}
-
-// 	signinform.PasswordField = passwordfield
-// 	return signinform, err
-// }

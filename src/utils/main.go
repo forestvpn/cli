@@ -5,10 +5,13 @@ package utils
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"math"
 	"net"
 	"net/http"
+	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 	"time"
 
@@ -17,6 +20,16 @@ import (
 )
 
 var Verbose bool
+
+const Os = runtime.GOOS
+
+// FirebaseApiKey is stored in an environment variable and assigned during the build with ldflags.
+const FirebaseApiKey = "AIzaSyArN6RVqftrSVBrEI9ZF2DiiA7gJOdkfeM"
+
+// ApiHost is a hostname of Forest VPN back-end API that is stored in an environment variable and assigned during the build with ldflags.
+const ApiHost = "api.forestvpn.com"
+
+var InfoLogger = log.New(os.Stdout, "[DEBUG] ", log.Ldate|log.Ltime|log.Lmsgprefix)
 
 // ip2Net is a function for converting an IP address value, e.g. 127.0.0.1, into a network with mask of 24 bits, e.g. 127.0.0.0/24.
 func ip2Net(ip string) string {
@@ -171,10 +184,6 @@ func GetLocalTimezone() (string, error) {
 func GetHttpClient(retries int) *http.Client {
 	retryClient := retryablehttp.NewClient()
 	retryClient.RetryMax = retries
-
-	if !Verbose {
-		retryClient.Logger = nil
-	}
-
+	retryClient.Logger = nil
 	return retryClient.StandardClient()
 }

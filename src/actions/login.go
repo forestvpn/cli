@@ -23,7 +23,7 @@ func (w AuthClientWrapper) Login(email string, password string) error {
 
 	if len(userID) == 0 || !auth.IsAuthenticated() {
 		validate := false
-		passwordfield, err := auth.GetPasswordField([]byte(password), validate)
+		passwordfield, err := auth.GetPasswordField(password, validate)
 
 		if err != nil {
 			return err
