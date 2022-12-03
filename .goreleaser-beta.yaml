@@ -90,4 +90,4 @@ chocolateys:
     # Setting this will prevent goreleaser to actually try to push the package
     # to chocolatey repository, leaving the responsability of publishing it to
     # the user.
-    skip_publish: true
+    skip_publish: false
