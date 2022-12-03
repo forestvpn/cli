@@ -60,7 +60,6 @@ brews:
     system "#{bin}/fvpn --version"
 archives:
 - name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
-
 chocolateys:
   -
     owners: ForestVPN, Anatolio Nikiforidis
