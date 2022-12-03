@@ -86,3 +86,5 @@ chocolateys:
     # to chocolatey repository, leaving the responsability of publishing it to
     # the user.
     skip_publish: false
+extra_files:
+  - glob: packages/fvpn_{{.Env.VERSION}}.arm64.ipk

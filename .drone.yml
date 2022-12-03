@@ -43,7 +43,7 @@ steps:
       - cd src
       - go test ./...
   - name: release
-    image: golang:1.18.4
+    image: golang:1.18.4-bullseye
     environment:
       GITHUB_TOKEN:
         from_secret: GITHUB_TOKEN
@@ -54,9 +54,11 @@ steps:
     commands:
       - export VERSION=${DRONE_TAG}
       - apt update
-      - apt install git -y
+      - apt install git binutils -y
       - go install github.com/goreleaser/goreleaser@latest
-      - cd src
+      - cd packages
+      - build.sh
+      - cd ../src
       - goreleaser release -f ../.goreleaser-stable.yaml
     depends_on:
       - test
@@ -67,7 +69,7 @@ steps:
         exclude:
           - refs/tags/v*.*.*-beta*
   - name: beta-release
-    image: golang:1.18.4
+    image: golang:1.18.4-bullseye
     environment:
       GITHUB_TOKEN:
         from_secret: GITHUB_TOKEN
@@ -76,20 +78,19 @@ steps:
       - name: cache
         path: /cache
     commands:
-      - apt update
-      - apt install git -y
       - export VERSION=${DRONE_TAG}
+      - apt update
+      - apt install git binutils -y
       - go install github.com/goreleaser/goreleaser@latest
-      - cd src
-      # --skip-pubslish here
+      - cd packages
+      - build.sh
+      - cd ../src
       - goreleaser release -f ../.goreleaser-beta.yaml
-      # upload somewhere
     depends_on:
       - test
     when:
       ref:
         - refs/tags/v*.*.*-beta*
-  # a step to build a chocolatey package
 trigger:
   event:
     - tag
