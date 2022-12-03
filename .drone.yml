@@ -81,12 +81,15 @@ steps:
       - export VERSION=${DRONE_TAG}
       - go install github.com/goreleaser/goreleaser@latest
       - cd src
+      # --skip-pubslish here
       - goreleaser release -f ../.goreleaser-beta.yaml
+      # upload somewhere
     depends_on:
       - test
     when:
       ref:
         - refs/tags/v*.*.*-beta*
+  # a step to build a chocolatey package
 trigger:
   event:
     - tag
