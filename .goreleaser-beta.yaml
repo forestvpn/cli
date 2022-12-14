@@ -62,6 +62,38 @@ brews:
   test: |
     system "#{bin}/fvpn --version"
 archives:
-- name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
-release:
+  -
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        format: ziprelease:
   prerelease: true
+chocolateys:
+  -
+    owners: ForestVPN
+    authors: ForestVPN, Anatolio Nikiforidis
+    project_url: https://forestvpn.com/
+    url_template: "https://github.com/forestvpn/cli/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    copyright: 2022 ForestVPN
+    license_url: https://github.com/forestvpn/cli/blob/main/LICENSE
+    project_source_url: https://github.com/forestvpn/cli
+    docs_url: https://github.com/forestvpn/cli/blob/main/README.md
+    bug_tracker_url: https://github.com/forestvpn/cli/issues
+    tags: "vpn wireguard"
+    summary: ForestVPN - Fast, secure, and modern VPN.
+    description: |
+      {{ .ProjectName }} installer package.
+      ForestVPN - Fast, secure, and modern VPN.
+    dependencies:
+      - id: wireguard
+        version: 0.5.3
+    api_key: '{{ .Env.CHOCOLATEY_API_KEY }}'
+    source_repo: "https://push.chocolatey.org/"
+
+    # Setting this will prevent goreleaser to actually try to push the package
+    # to chocolatey repository, leaving the responsability of publishing it to
+    # the user.
+    skip_publish: false
+      icon_url: https://m.fvpn.io/i/b180.png
+extra_files:
+  - glob: packages/fvpn_{{.Env.VERSION}}.arm64.ipk

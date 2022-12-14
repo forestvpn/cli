@@ -8,3 +8,4 @@ entrypoint-ci.sh
 docker-compose.ci.yaml
 spec.yaml
 dist/
+.DS_Store*
