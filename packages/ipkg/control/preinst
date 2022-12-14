@@ -1,0 +1,6 @@
+#!/bin/bash
+arch=`uname -p`
+if [ $arch -ne 'arm' ]; then
+    echo "&{arch} is not supported"
+    exit 1
+fi
