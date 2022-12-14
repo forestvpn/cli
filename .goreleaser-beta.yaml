@@ -62,13 +62,16 @@ brews:
   test: |
     system "#{bin}/fvpn --version"
 archives:
-- name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
-release:
+  -
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        format: ziprelease:
   prerelease: true
 chocolateys:
   -
-    owners: ForestVPN, Anatolio Nikiforidis
-    authors: Anatolio Nikiforidis
+    owners: ForestVPN
+    authors: ForestVPN, Anatolio Nikiforidis
     project_url: https://forestvpn.com/
     url_template: "https://github.com/forestvpn/cli/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
     copyright: 2022 ForestVPN
@@ -91,5 +94,6 @@ chocolateys:
     # to chocolatey repository, leaving the responsability of publishing it to
     # the user.
     skip_publish: false
+      icon_url: https://m.fvpn.io/i/b180.png
 extra_files:
   - glob: packages/fvpn_{{.Env.VERSION}}.arm64.ipk
