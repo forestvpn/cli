@@ -10,6 +10,7 @@ builds:
       - arm64
       - arm
       - 386
+      - mips
     binary: fvpn
     ldflags:
       - "-X main.appVersion={{.Env.VERSION}}"
@@ -93,3 +94,4 @@ chocolateys:
     icon_url: https://m.fvpn.io/i/b180.png
 extra_files:
   - glob: packages/fvpn_{{.Env.VERSION}}.arm64.ipk
+  - glob: packages/fvpn_{{.Env.VERSION}}.mips.ipk
