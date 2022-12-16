@@ -61,7 +61,7 @@ steps:
       - cd ../ipkg/src
       - ./build.sh
       - cd ../../src
-      - goreleaser release --skip-validate -f ../.goreleaser-stable.yaml
+      - goreleaser release --skip-validate --rm-dist -f ../.goreleaser-stable.yaml
     depends_on:
       - test
     when:
