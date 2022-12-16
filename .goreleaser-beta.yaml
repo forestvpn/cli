@@ -68,8 +68,12 @@ archives:
     name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
     format_overrides:
       - goos: windows
-        format: ziprelease:
-  prerelease: true
+        format: zip
+release:
+  - prerelease: true
+    extra_files:
+      - glob: packages/fvpn_{{.Env.VERSION}}.arm64.ipk
+      - glob: packages/fvpn_{{.Env.VERSION}}.mips.ipk
 chocolateys:
   -
     owners: ForestVPN
@@ -97,6 +101,3 @@ chocolateys:
     # the user.
     skip_publish: false
       icon_url: https://m.fvpn.io/i/b180.png
-extra_files:
-  - glob: packages/fvpn_{{.Env.VERSION}}.arm64.ipk
-  - glob: packages/fvpn_{{.Env.VERSION}}.mips.ipk
