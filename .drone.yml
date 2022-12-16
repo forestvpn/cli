@@ -53,12 +53,14 @@ steps:
         path: /cache
     commands:
       - export VERSION=${DRONE_TAG}
+      - go install github.com/goreleaser/goreleaser@latest
+      - cd ./src
+      - goreleaser build -f ../.goreleaser-stable.yaml
       - apt update
       - apt install git binutils -y
-      - go install github.com/goreleaser/goreleaser@latest
       - cd ./ipkg/src
       - ./build.sh
-      - cd ../../
+      - cd ../../src
       - goreleaser release -f ../.goreleaser-stable.yaml
     depends_on:
       - test
