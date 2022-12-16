@@ -13,7 +13,9 @@ builds:
       - mips
     binary: fvpn
     ldflags:
-      - "-X main.appVersion={{.Env.VERSION}}"
+      - "-w -s -X main.appVersion={{.Env.VERSION}}"
+    gcflags:
+      - "-l -B -wb=false"
 checksum:
   name_template: 'checksums.txt'
 changelog:
