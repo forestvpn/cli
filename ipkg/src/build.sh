@@ -17,7 +17,12 @@ for arch in $ARCHS; do
     echo "Depends: wireguard" >> $CONTROL_FILE
     BIN_DIR="./$arch/data/usr/local/bin/"
     mkdir -p $BIN_DIR
-    cp ../../src/dist/fvpn-linux-$arch/fvpn $BIN_DIR
+
+    if [$arch = "mips"]; then
+        cp ../../src/dist/fvpn-linux-mips_hardfloat/fvpn $BIN_DIR
+    else
+        cp ../../src/dist/fvpn-linux-$arch/fvpn $BIN_DIR
+    fi
     pushd ./$arch/control
     tar --numeric-owner --group=0 --owner=0 -czf ./$arch/control.tar.gz ./*
     popd
