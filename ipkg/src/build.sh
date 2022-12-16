@@ -1,13 +1,12 @@
 #!/bin/bash
 ARCHS="arm64 mips"
-OUT_DIR="../"
 SOURCE_DIR="$OUT_DIR/src"
 
 for arch in $ARCHS; do
-    ln -s "$SOURCE_DIR/debian-binary" "$SOURCE_DIR/$arch/debian-binary"
-    mkdir -p "$SOURCE_DIR/$arch/control"
-    ln -s "$SOURCE_DIR/postinst" "$SOURCE_DIR/$arch/control/postinst"
-    CONTROL_FILE="$SOURCE_DIR/$arch/control/control"
+    cp "debian-binary" "./$arch/"
+    mkdir -p "./$arch/control"
+    cp "postinst" "./$arch/control/"
+    CONTROL_FILE="./$arch/control/control"
     touch $CONTROL_FILE
     echo "Package: fvpn" >> $CONTROL_FILE
     echo "Version: ${DRONE_TAG}" >> $CONTROL_FILE
@@ -16,16 +15,16 @@ for arch in $ARCHS; do
     echo "Description: ForestVPN - Fast, secure, and modern VPN." >> $CONTROL_FILE
     echo "Priority: optional" >> $CONTROL_FILE
     echo "Depends: wireguard" >> $CONTROL_FILE
-    BIN_DIR="$SOURCE_DIR/$arch/data/usr/local/bin/"
+    BIN_DIR="./$arch/data/usr/local/bin/"
     mkdir -p $BIN_DIR
-    ln -s $DRONE_WORKSPACE/src/dist/fvpn-linux-$arch/fvpn $BIN_DIR/fvpn
-    pushd $SOURCE_DIR/$arch/control
-    tar --numeric-owner --group=0 --owner=0 -czf /tmp/control.tar.gz ./*
+    cp ../../src/dist/fvpn-linux-$arch/fvpn $BIN_DIR
+    pushd ./$arch/control
+    tar --numeric-owner --group=0 --owner=0 -czf ./$arch/control.tar.gz ./*
     popd
-    pushd $SOURCE_DIR/$arch/data
-    tar --numeric-owner --group=0 --owner=0 -czf /tmp/data.tar.gz ./*
+    pushd ./$arch/data
+    tar --numeric-owner --group=0 --owner=0 -czf ./$arch/data.tar.gz ./*
     popd
-    pushd $SOURCE_DIR/$arch
-    tar --numeric-owner --group=0 --owner=0 -cf $OUT_DIR/fvpn_$DRONE_TAG.$arch.ipk $SOURCE_DIR/$arch/debian-binary /tmp/data.tar.gz /tmp/control.tar.gz 
+    pushd ./$arch
+    tar --numeric-owner --group=0 --owner=0 -cf ../fvpn_$DRONE_TAG.$arch.ipk ./$arch/debian-binary ./$arch/data.tar.gz ./$arch/control.tar.gz 
     popd
 done
