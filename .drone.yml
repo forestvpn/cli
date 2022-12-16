@@ -58,7 +58,7 @@ steps:
       - goreleaser build -f ../.goreleaser-stable.yaml
       - apt update
       - apt install git binutils -y
-      - cd ./ipkg/src
+      - cd ../ipkg/src
       - ./build.sh
       - cd ../../src
       - goreleaser release -f ../.goreleaser-stable.yaml
