@@ -1,10 +1,9 @@
-#!/bin/sh
-ARCHS="arm64"
-ARCHS="$ARCHS mips"
+#!/bin/bash
+ARCHS="arm64 mips"
 OUT_DIR="../"
 SOURCE_DIR="$OUT_DIR/src"
 
-for arch in ${ARCHS}; do
+for arch in $ARCHS; do
     ln -s "$SOURCE_DIR/debian-binary" "$SOURCE_DIR/$arch/debian-binary"
     mkdir -p "$SOURCE_DIR/$arch/control"
     ln -s "$SOURCE_DIR/postinst" "$SOURCE_DIR/$arch/control/postinst"
