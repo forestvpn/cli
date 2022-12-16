@@ -56,7 +56,8 @@ steps:
       - apt update
       - apt install git binutils -y
       - go install github.com/goreleaser/goreleaser@latest
-      - ${DRONE_WORKSPACE}/src/ipkg/build.sh
+      - cd 
+      - ${DRONE_WORKSPACE}/ipkg/src/build.sh
       - goreleaser release -f ../.goreleaser-stable.yaml
     depends_on:
       - test
