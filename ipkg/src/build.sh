@@ -1,7 +1,7 @@
 #!/bin/sh
 ARCHS="arm64"
 ARCHS="$ARCHS mips"
-OUT_DIR="$DRONE_WORKSPACE/packages/ipkg"
+OUT_DIR="../"
 SOURCE_DIR="$OUT_DIR/src"
 
 for arch in ${ARCHS}; do
