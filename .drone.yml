@@ -52,11 +52,12 @@ steps:
       - name: cache
         path: /cache
     commands:
+      - ls
+      - echo ${DRONE_WORKSPACE}
       - export VERSION=${DRONE_TAG}
       - apt update
       - apt install git binutils -y
       - go install github.com/goreleaser/goreleaser@latest
-      - cd 
       - ${DRONE_WORKSPACE}/ipkg/src/build.sh
       - goreleaser release -f ../.goreleaser-stable.yaml
     depends_on:
