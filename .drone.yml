@@ -43,24 +43,31 @@ steps:
       - cd src
       - go test ./...
   - name: release
-    image: golang:1.18.4-bullseye
+    image: chocolatey/choco:latest-linux
     environment:
       GITHUB_TOKEN:
         from_secret: GITHUB_TOKEN
+      GOPATH: /usr/local/go
     privileged: false
     volumes:
       - name: cache
         path: /cache
     commands:
+      - apt update
+      - apt install wget git binutils -y
+      - wget -q https://go.dev/dl/go1.18.9.linux-amd64.tar.gz
+      - tar -xf go1.18.9.linux-amd64.tar.gz
+      - chown -R root:root ./go
+      - mv go /usr/local
+      - export PATH=$PATH:$GOPATH/bin
       - export VERSION=${DRONE_TAG}
       - go install github.com/goreleaser/goreleaser@latest
       - cd ./src
       - goreleaser build -f ../.goreleaser-stable.yaml
-      - apt update
-      - apt install git binutils -y
       - cd ../ipkg/src
       - ./build.sh
       - cd ../../src
+      # run on win
       - goreleaser release --skip-validate --rm-dist -f ../.goreleaser-stable.yaml
     depends_on:
       - test
