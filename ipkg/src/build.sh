@@ -18,7 +18,7 @@ for arch in $ARCHS; do
     BIN_DIR="./$arch/data/usr/local/bin/"
     mkdir -p $BIN_DIR
 
-    if ["$arch" = "mips"]; then
+    if [[ "$arch" == "mips" ]]; then
         cp ../../src/dist/fvpn-linux-mips_hardfloat/fvpn $BIN_DIR
     else
         cp ../../src/dist/fvpn-linux-$arch/fvpn $BIN_DIR
