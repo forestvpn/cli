@@ -63,7 +63,7 @@ steps:
       - export VERSION=${DRONE_TAG}
       - go install github.com/goreleaser/goreleaser@latest
       - cd ./src
-      - goreleaser build -f ../.goreleaser-stable.yaml
+      - goreleaser build --skip-validate -f ../.goreleaser-stable.yaml
       - cd ../ipkg/src
       - ./build.sh
       - cd ../../src
