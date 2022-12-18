@@ -193,6 +193,8 @@ steps:
       - name: cache
         path: /cache
     commands:
+      - apt update
+      - apt install wget -y
       - wget -q https://go.dev/dl/go1.18.9.linux-amd64.tar.gz
       - tar -xf go1.18.9.linux-amd64.tar.gz
       - chown -R root:root ./go
