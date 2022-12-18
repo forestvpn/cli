@@ -85,7 +85,7 @@ steps:
   - name: build-ipkg-arm64
     image: debian
     depends_on:
-      - build
+      - build-linux-arm64
     commands:
       - apt update
       - apt install binutils tree -y
