@@ -179,6 +179,8 @@ steps:
           popd
 
         SCRIPT
+      - rm fvpn
+      - rm -rf ipkg
   - name: release
     image: chocolatey/choco:latest-linux
     environment:
