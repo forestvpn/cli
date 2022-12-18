@@ -109,8 +109,8 @@ steps:
       - chmod +x $PREINST
       - export POSTINST=ipkg/fvpn/control/postinst
       - echo "#!/bin/bash" > $POSTINST
-      - echo "fvpn" >> $POSTINST
-      - echo if [ $? -eq 0 ]; then >> $POSTINST
+      - echo fvpn >> $POSTINST
+      - echo "if [ $? -eq 0 ]; then" >> $POSTINST
       - echo "    echo Successfully installed" >> $POSTINST
       - echo else >> $POSTINST
       - echo "    echo Could not install >&2" >> $POSTINST
