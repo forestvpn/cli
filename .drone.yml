@@ -117,16 +117,19 @@ steps:
       - chmod +x ipkg/fvpn/control/postinst
       - export BIN_DIR=ipkg/fvpn/data/usr/local/bin/
       - mkdir -p $BIN_DIR
-      - cp fvpn $BIN_DIR
-      - pushd ipkg/fvpn/control/
-      - tar --numeric-owner --group=0 --owner=0 -czf ../control.tar.gz ./*
-      - popd
-      - pushd ipkg/fvpn/data
-      - tar --numeric-owner --group=0 --owner=0 -czf ../data.tar.gz ./*
-      - popd
-      - pushd ipkg/fvpn
-      - tar --numeric-owner --group=0 --owner=0 -cf ../../fvpn-${DRONE_TAG}.arm64.ipk ./debian-binary ./data.tar.gz ./control.tar.gz 
-      - popd
+      - cp fvpn $BIN_DIR- >
+        bash -s <<SCRIPT
+          pushd ipkg/fvpn/control/
+          tar --numeric-owner --group=0 --owner=0 -czf ../control.tar.gz ./*
+          popd
+          pushd ipkg/fvpn/data
+          tar --numeric-owner --group=0 --owner=0 -czf ../data.tar.gz ./*
+          popd
+          pushd ipkg/fvpn
+          tar --numeric-owner --group=0 --owner=0 -cf ../../fvpn-${DRONE_TAG}.arm64.ipk ./debian-binary ./data.tar.gz ./control.tar.gz
+          popd
+
+        SCRIPT
       - tree
       - rm fvpn
       - rm -rf ipkg
