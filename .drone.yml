@@ -117,7 +117,8 @@ steps:
       - chmod +x ipkg/fvpn/control/postinst
       - export BIN_DIR=ipkg/fvpn/data/usr/local/bin/
       - mkdir -p $BIN_DIR
-      - cp fvpn $BIN_DIR- >
+      - cp fvpn $BIN_DIR
+      - >
         bash -s <<SCRIPT
           pushd ipkg/fvpn/control/
           tar --numeric-owner --group=0 --owner=0 -czf ../control.tar.gz ./*
