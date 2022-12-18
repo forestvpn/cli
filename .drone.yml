@@ -184,19 +184,19 @@ steps:
     environment:
       GITHUB_TOKEN:
         from_secret: GITHUB_TOKEN
-      # GOPATH: /usr/local/go
+      GOPATH: /usr/local/go
     privileged: false
     volumes:
       - name: cache
         path: /cache
     commands:
       - apt update
-      - apt install golang -y
-      # - wget -q https://go.dev/dl/go1.18.9.linux-amd64.tar.gz
-      # - tar -xf go1.18.9.linux-amd64.tar.gz
-      # - chown -R root:root ./go
-      # - mv go /usr/local
-      # - export PATH=$PATH:$GOPATH/bin
+      - apt install wget -y
+      - wget -q https://go.dev/dl/go1.18.9.linux-amd64.tar.gz
+      - tar -xf go1.18.9.linux-amd64.tar.gz
+      - chown -R root:root go
+      - mv go /usr/local/
+      - export PATH=$PATH:$GOPATH/bin
       - export VERSION=${DRONE_TAG}
       - go install github.com/goreleaser/goreleaser@latest
       - cd src
