@@ -179,10 +179,6 @@ steps:
           popd
 
         SCRIPT
-      - tree
-      - rm fvpn
-      - rm -rf ipkg
-      - tree
   - name: release
     image: chocolatey/choco:latest-linux
     environment:
@@ -199,7 +195,7 @@ steps:
       - tar -xf go1.18.9.linux-amd64.tar.gz
       - chown -R root:root ./go
       - mv go /usr/local
-      # - export PATH=$PATH:$GOPATH/bin
+      - export PATH=$PATH:/usr/local/go/bin
       - export VERSION=${DRONE_TAG}
       - go install github.com/goreleaser/goreleaser@latest
       - cd src
