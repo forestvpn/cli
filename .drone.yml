@@ -104,7 +104,7 @@ steps:
       - echo "#!/bin/bash" > $PREINST
       - echo arch=`uname -m` > $PREINST
       - echo "if [ $arch -ne 'arm64' ]; then" >> $PREINST
-      - echo "    echo "${arch} is not supported" >> $PREINST
+      - echo "    echo ${arch} is not supported" >> $PREINST
       - echo "    exit 1" >> $PREINST
       - chmod +x $PREINST
       - export POSTINST=ipkg/fvpn/control/postinst
