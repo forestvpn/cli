@@ -56,7 +56,7 @@ steps:
         path: /cache
     commands:
       - cd src
-      - go build -o ../fvpn
+      - go build -w -s -ldflags="-X main.appVersion={{.Env.VERSION}}" -gcflags="-l -B -wb=false" -o ../fvpn
     depends_on:
       - test
     when:
@@ -127,7 +127,7 @@ steps:
         path: /cache
     commands:
       - cd src
-      - go build -o ../fvpn
+      - go build -w -s -ldflags="-X main.appVersion={{.Env.VERSION}}" -gcflags="-l -B -wb=false" -o ../fvpn
     depends_on:
       - build-ipkg-arm64
   - name: build-ipkg-mips
@@ -184,22 +184,23 @@ steps:
     environment:
       GITHUB_TOKEN:
         from_secret: GITHUB_TOKEN
+      # GOPATH: /usr/local/go
     privileged: false
     volumes:
       - name: cache
         path: /cache
     commands:
       - apt update
-      - apt install wget -y
-      - wget -q https://go.dev/dl/go1.18.9.linux-amd64.tar.gz
-      - tar -xf go1.18.9.linux-amd64.tar.gz
-      - chown -R root:root ./go
-      - mv go /usr/local
-      - export PATH=$PATH:/usr/local/go/bin
+      - apt install golang -y
+      # - wget -q https://go.dev/dl/go1.18.9.linux-amd64.tar.gz
+      # - tar -xf go1.18.9.linux-amd64.tar.gz
+      # - chown -R root:root ./go
+      # - mv go /usr/local
+      # - export PATH=$PATH:$GOPATH/bin
       - export VERSION=${DRONE_TAG}
       - go install github.com/goreleaser/goreleaser@latest
       - cd src
-      - goreleaser release --skip-validate --rm-dist -f ../.goreleaser-stable.yaml
+      - goreleaser release -f ../.goreleaser-stable.yaml
     depends_on:
       - build-ipkg-mips
     when:
