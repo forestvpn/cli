@@ -1,8 +1,0 @@
-#!/bin/bash
-fvpn
-if [ $? -eq 0 ] 
-then 
-  echo "Successfully installed" 
-else 
-  echo "Could not install" >&2 
-fi

@@ -1,6 +1,0 @@
-#!/bin/bash
-arch=`uname -m`
-if [ $arch -ne 'mips' ]; then
-    echo "${arch} is not supported"
-    exit 1
-fi
