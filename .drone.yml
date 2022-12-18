@@ -89,7 +89,8 @@ steps:
     commands:
       - apt update
       - apt install binutils tree -y
-      - mkdir -p ipkg/fvpn/{control,data}
+      - mkdir -p ipkg/fvpn/control
+      - mkdir ipkg/fvpn/data
       - >
         cat << EOF > ipkg/fvpn/control/control
         Package: fvpn
