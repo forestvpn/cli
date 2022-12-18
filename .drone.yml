@@ -42,33 +42,37 @@ steps:
       - apt install build-essential -y
       - cd src
       - go test ./...
-  - name: release
-    image: chocolatey/choco:latest-linux
+  - name: build-linux-arm64
+    image: golang:1.18.4
+    #chocolatey/choco:latest-linux
     environment:
       GITHUB_TOKEN:
         from_secret: GITHUB_TOKEN
-      GOPATH: /usr/local/go
+      # GOPATH: /usr/local/go
+      GOOS: linux
+      GOARCH: arm64
     privileged: false
     volumes:
       - name: cache
         path: /cache
     commands:
-      - apt update
-      - apt install wget git binutils -y
-      - wget -q https://go.dev/dl/go1.18.9.linux-amd64.tar.gz
-      - tar -xf go1.18.9.linux-amd64.tar.gz
-      - chown -R root:root ./go
-      - mv go /usr/local
-      - export PATH=$PATH:$GOPATH/bin
-      - export VERSION=${DRONE_TAG}
-      - go install github.com/goreleaser/goreleaser@latest
-      - cd ./src
-      - goreleaser build --skip-validate -f ../.goreleaser-stable.yaml
-      - cd ../ipkg/src
-      - ./build.sh
-      - cd ../../src
-      # run on win
-      - goreleaser release --skip-validate --rm-dist -f ../.goreleaser-stable.yaml
+      - cd src
+      - go build -o ../fvpn
+      # - apt update
+      # - apt install wget git binutils -y
+      # - wget -q https://go.dev/dl/go1.18.9.linux-amd64.tar.gz
+      # - tar -xf go1.18.9.linux-amd64.tar.gz
+      # - chown -R root:root ./go
+      # - mv go /usr/local
+      # - export PATH=$PATH:$GOPATH/bin
+      # - export VERSION=${DRONE_TAG}
+      # - go install github.com/goreleaser/goreleaser@latest
+      # - cd ./src
+      # - goreleaser build -f ../.goreleaser-stable.yaml
+      # - cd ../ipkg/src
+      # - ./build.sh
+      # - cd ../../src
+      # - goreleaser release --skip-validate --rm-dist -f ../.goreleaser-stable.yaml
     depends_on:
       - test
     when:
@@ -78,6 +82,63 @@ steps:
           - refs/tags/v*.*.*-post*
         exclude:
           - refs/tags/v*.*.*-beta*
+  - name: build-ipkg-arm64
+    image: debian
+    depends_on:
+      - build
+    commands:
+      - apt update
+      - apt install binutils tree -y
+      - mkdir -p ipkg/fvpn/{control,data}
+      - >
+        cat << EOF > ipkg/fvpn/control/control
+        Package: fvpn
+        Version: ${DRONE_TAG}
+        Architecture: arm64
+        Maintainer: nikiforova693@gmail.com
+        Description: ForestVPN - Fast, secure, and modern VPN.
+        Priority: optional
+        Depends: wireguard
+        EOF
+      - echo 2.0 > ipkg/fvpn/debian-binary
+      - >
+        cat << EOF > ipkg/fvpn/control/preinst
+        #!/bin/bash
+        arch=`uname -m`
+        if [ $arch -ne 'arm64' ]; then
+            echo "${arch} is not supported"
+            exit 1
+        fi
+        EOF
+      - chmod +x ipkg/fvpn/control/preinst
+      - >
+        cat << EOF > ipkg/fvpn/control/postinst
+        #!/bin/bash
+        fvpn
+        if [ $? -eq 0 ] 
+        then 
+          echo "Successfully installed" 
+        else 
+          echo "Could not install" >&2 
+        fi
+        EOF
+      - chmod +x ipkg/fvpn/control/postinst
+      - export BIN_DIR=ipkg/fvpn/data/usr/local/bin/
+      - mkdir -p $BIN_DIR
+      - cp fvpn $BIN_DIR
+      - pushd ipkg/fvpn/control/
+      - tar --numeric-owner --group=0 --owner=0 -czf ../control.tar.gz ./*
+      - popd
+      - pushd ipkg/fvpn/data
+      - tar --numeric-owner --group=0 --owner=0 -czf ../data.tar.gz ./*
+      - popd
+      - pushd ipkg/fvpn
+      - tar --numeric-owner --group=0 --owner=0 -cf ../../fvpn-${DRONE_TAG}.arm64.ipk ./debian-binary ./data.tar.gz ./control.tar.gz 
+      - popd
+      - tree
+      - rm fvpn
+      - rm -rf ipkg
+      - tree
   - name: beta-release
     image: golang:1.18.4-bullseye
     environment:
