@@ -71,7 +71,7 @@ steps:
       - build-linux-arm64
     commands:
       - apt update
-      - apt install binutils tree -y
+      - apt install binutils -y
       - mkdir -p ipkg/fvpn/control
       - mkdir ipkg/fvpn/data
       - export CTRLF=ipkg/fvpn/control/control
@@ -110,7 +110,7 @@ steps:
           tar --numeric-owner --group=0 --owner=0 -czf ../data.tar.gz ./*
           popd
           pushd ipkg/fvpn
-          tar --numeric-owner --group=0 --owner=0 -cf ../../fvpn-${DRONE_TAG}.arm64.ipk ./debian-binary ./data.tar.gz ./control.tar.gz
+          tar --numeric-owner --group=0 --owner=0 -cf ../../fvpn_${DRONE_TAG}_arm64.ipk ./debian-binary ./data.tar.gz ./control.tar.gz
           popd
 
         SCRIPT
@@ -136,7 +136,7 @@ steps:
       - build-linux-mips
     commands:
       - apt update
-      - apt install binutils tree -y
+      - apt install binutils -y
       - mkdir -p ipkg/fvpn/control
       - mkdir ipkg/fvpn/data
       - export CTRLF=ipkg/fvpn/control/control
@@ -175,7 +175,7 @@ steps:
           tar --numeric-owner --group=0 --owner=0 -czf ../data.tar.gz ./*
           popd
           pushd ipkg/fvpn
-          tar --numeric-owner --group=0 --owner=0 -cf ../../fvpn-${DRONE_TAG}.mips.ipk ./debian-binary ./data.tar.gz ./control.tar.gz
+          tar --numeric-owner --group=0 --owner=0 -cf ../../fvpn_${DRONE_TAG}_mips.ipk ./debian-binary ./data.tar.gz ./control.tar.gz
           popd
 
         SCRIPT
