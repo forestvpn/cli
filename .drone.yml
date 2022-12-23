@@ -232,7 +232,7 @@ steps:
       - cd ../src
       - goreleaser release -f ../.goreleaser-beta.yaml
     depends_on:
-      - build-ipkg-mips
+      - test
     when:
       ref:
         - refs/tags/v*.*.*-beta*
