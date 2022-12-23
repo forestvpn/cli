@@ -94,7 +94,7 @@ chocolateys:
     # the user.
     skip_publish: false
     icon_url: https://m.fvpn.io/i/b180.png
-release:
-  extra_files:
-    - glob: ../fvpn_{{.Env.VERSION}}_arm64.ipk
-    - glob: ../fvpn_{{.Env.VERSION}}_mips.ipk
+# release:
+#   extra_files:
+#     - glob: ../fvpn_{{.Env.VERSION}}_arm64.ipk
+#     - glob: ../fvpn_{{.Env.VERSION}}_mips.ipk
