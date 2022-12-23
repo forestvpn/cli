@@ -42,145 +42,145 @@ steps:
       - apt install build-essential -y
       - cd src
       - go test ./...
-  - name: build-linux-arm64
-    image: golang:1.18.4
-    #chocolatey/choco:latest-linux
-    environment:
-      # GITHUB_TOKEN:
-      #   from_secret: GITHUB_TOKEN
-      GOOS: linux
-      GOARCH: arm64
-    privileged: false
-    volumes:
-      - name: cache
-        path: /cache
-    commands:
-      - cd src
-      - go build -ldflags="-w -s -X main.appVersion={{.Env.VERSION}}" -gcflags="-l -B -wb=false" -o ../fvpn
-    depends_on:
-      - test
-    when:
-      ref:
-        include:
-          - refs/tags/v*.*.*
-          - refs/tags/v*.*.*-post*
-          - refs/tags/v*.*.*-beta*
-  - name: build-ipkg-arm64
-    image: debian
-    depends_on:
-      - build-linux-arm64
-    commands:
-      - apt update
-      - apt install binutils -y
-      - mkdir -p ipkg/fvpn/control
-      - mkdir ipkg/fvpn/data
-      - export CTRLF=ipkg/fvpn/control/control
-      - "echo Package: fvpn > $CTRLF"
-      - "echo Version: ${DRONE_TAG} >> $CTRLF"
-      - "echo Architecture: arm64 >> $CTRLF"
-      - "echo Maintainer: nikiforova693@gmail.com >> $CTRLF"
-      - "echo Description: ForestVPN - Fast, secure, and modern VPN. >> $CTRLF"
-      - "echo Priority: optional >> $CTRLF"
-      - "echo Depends: wireguard >> $CTRLF"
-      - echo 2.0 > ipkg/fvpn/debian-binary
-      - export PREINST=ipkg/fvpn/control/preinst
-      - echo "#!/bin/bash" > $PREINST
-      - echo arch=`uname -m` > $PREINST
-      - echo "if [ $arch -ne 'arm64' ]; then" >> $PREINST
-      - echo "    echo ${arch} is not supported" >> $PREINST
-      - echo "    exit 1" >> $PREINST
-      - chmod +x $PREINST
-      - export POSTINST=ipkg/fvpn/control/postinst
-      - echo "#!/bin/bash" > $POSTINST
-      - echo fvpn >> $POSTINST
-      - echo "if [ $? -eq 0 ]; then" >> $POSTINST
-      - echo "    echo Successfully installed" >> $POSTINST
-      - echo else >> $POSTINST
-      - echo "    echo Could not install >&2" >> $POSTINST
-      - chmod +x ipkg/fvpn/control/postinst
-      - export BIN_DIR=ipkg/fvpn/data/usr/local/bin/
-      - mkdir -p $BIN_DIR
-      - cp fvpn $BIN_DIR
-      - >
-        bash -s <<SCRIPT
-          pushd ipkg/fvpn/control/
-          tar --numeric-owner --group=0 --owner=0 -czf ../control.tar.gz ./*
-          popd
-          pushd ipkg/fvpn/data
-          tar --numeric-owner --group=0 --owner=0 -czf ../data.tar.gz ./*
-          popd
-          pushd ipkg/fvpn
-          tar --numeric-owner --group=0 --owner=0 -cf ../../fvpn_${DRONE_TAG}_arm64.ipk ./debian-binary ./data.tar.gz ./control.tar.gz
-          popd
+  # - name: build-linux-arm64
+  #   image: golang:1.18.4
+  #   #chocolatey/choco:latest-linux
+  #   environment:
+  #     # GITHUB_TOKEN:
+  #     #   from_secret: GITHUB_TOKEN
+  #     GOOS: linux
+  #     GOARCH: arm64
+  #   privileged: false
+  #   volumes:
+  #     - name: cache
+  #       path: /cache
+  #   commands:
+  #     - cd src
+  #     - go build -ldflags="-w -s -X main.appVersion={{.Env.VERSION}}" -gcflags="-l -B -wb=false" -o ../fvpn
+  #   depends_on:
+  #     - test
+  #   when:
+  #     ref:
+  #       include:
+  #         - refs/tags/v*.*.*
+  #         - refs/tags/v*.*.*-post*
+  #         - refs/tags/v*.*.*-beta*
+  # - name: build-ipkg-arm64
+  #   image: debian
+  #   depends_on:
+  #     - build-linux-arm64
+  #   commands:
+  #     - apt update
+  #     - apt install binutils -y
+  #     - mkdir -p ipkg/fvpn/control
+  #     - mkdir ipkg/fvpn/data
+  #     - export CTRLF=ipkg/fvpn/control/control
+  #     - "echo Package: fvpn > $CTRLF"
+  #     - "echo Version: ${DRONE_TAG} >> $CTRLF"
+  #     - "echo Architecture: arm64 >> $CTRLF"
+  #     - "echo Maintainer: nikiforova693@gmail.com >> $CTRLF"
+  #     - "echo Description: ForestVPN - Fast, secure, and modern VPN. >> $CTRLF"
+  #     - "echo Priority: optional >> $CTRLF"
+  #     - "echo Depends: wireguard >> $CTRLF"
+  #     - echo 2.0 > ipkg/fvpn/debian-binary
+  #     - export PREINST=ipkg/fvpn/control/preinst
+  #     - echo "#!/bin/bash" > $PREINST
+  #     - echo arch=`uname -m` > $PREINST
+  #     - echo "if [ $arch -ne 'arm64' ]; then" >> $PREINST
+  #     - echo "    echo ${arch} is not supported" >> $PREINST
+  #     - echo "    exit 1" >> $PREINST
+  #     - chmod +x $PREINST
+  #     - export POSTINST=ipkg/fvpn/control/postinst
+  #     - echo "#!/bin/bash" > $POSTINST
+  #     - echo fvpn >> $POSTINST
+  #     - echo "if [ $? -eq 0 ]; then" >> $POSTINST
+  #     - echo "    echo Successfully installed" >> $POSTINST
+  #     - echo else >> $POSTINST
+  #     - echo "    echo Could not install >&2" >> $POSTINST
+  #     - chmod +x ipkg/fvpn/control/postinst
+  #     - export BIN_DIR=ipkg/fvpn/data/usr/local/bin/
+  #     - mkdir -p $BIN_DIR
+  #     - cp fvpn $BIN_DIR
+  #     - >
+  #       bash -s <<SCRIPT
+  #         pushd ipkg/fvpn/control/
+  #         tar --numeric-owner --group=0 --owner=0 -czf ../control.tar.gz ./*
+  #         popd
+  #         pushd ipkg/fvpn/data
+  #         tar --numeric-owner --group=0 --owner=0 -czf ../data.tar.gz ./*
+  #         popd
+  #         pushd ipkg/fvpn
+  #         tar --numeric-owner --group=0 --owner=0 -cf ../../fvpn_${DRONE_TAG}_arm64.ipk ./debian-binary ./data.tar.gz ./control.tar.gz
+  #         popd
 
-        SCRIPT
-      - rm fvpn
-      - rm -rf ipkg
-  - name: build-linux-mips
-    image: golang:1.18.4
-    environment:
-      GOOS: linux
-      GOARCH: mips
-    privileged: false
-    volumes:
-      - name: cache
-        path: /cache
-    commands:
-      - cd src
-      - go build -ldflags="-w -s -X main.appVersion={{.Env.VERSION}}" -gcflags="-l -B -wb=false" -o ../fvpn
-    depends_on:
-      - build-ipkg-arm64
-  - name: build-ipkg-mips
-    image: debian
-    depends_on:
-      - build-linux-mips
-    commands:
-      - apt update
-      - apt install binutils -y
-      - mkdir -p ipkg/fvpn/control
-      - mkdir ipkg/fvpn/data
-      - export CTRLF=ipkg/fvpn/control/control
-      - "echo Package: fvpn > $CTRLF"
-      - "echo Version: ${DRONE_TAG} >> $CTRLF"
-      - "echo Architecture: mips >> $CTRLF"
-      - "echo Maintainer: nikiforova693@gmail.com >> $CTRLF"
-      - "echo Description: ForestVPN - Fast, secure, and modern VPN. >> $CTRLF"
-      - "echo Priority: optional >> $CTRLF"
-      - "echo Depends: wireguard >> $CTRLF"
-      - echo 2.0 > ipkg/fvpn/debian-binary
-      - export PREINST=ipkg/fvpn/control/preinst
-      - echo "#!/bin/bash" > $PREINST
-      - echo arch=`uname -m` > $PREINST
-      - echo "if [ $arch -ne 'mips' ]; then" >> $PREINST
-      - echo "    echo ${arch} is not supported" >> $PREINST
-      - echo "    exit 1" >> $PREINST
-      - chmod +x $PREINST
-      - export POSTINST=ipkg/fvpn/control/postinst
-      - echo "#!/bin/bash" > $POSTINST
-      - echo fvpn >> $POSTINST
-      - echo "if [ $? -eq 0 ]; then" >> $POSTINST
-      - echo "    echo Successfully installed" >> $POSTINST
-      - echo else >> $POSTINST
-      - echo "    echo Could not install >&2" >> $POSTINST
-      - chmod +x ipkg/fvpn/control/postinst
-      - export BIN_DIR=ipkg/fvpn/data/usr/local/bin/
-      - mkdir -p $BIN_DIR
-      - cp fvpn $BIN_DIR
-      - >
-        bash -s <<SCRIPT
-          pushd ipkg/fvpn/control/
-          tar --numeric-owner --group=0 --owner=0 -czf ../control.tar.gz ./*
-          popd
-          pushd ipkg/fvpn/data
-          tar --numeric-owner --group=0 --owner=0 -czf ../data.tar.gz ./*
-          popd
-          pushd ipkg/fvpn
-          tar --numeric-owner --group=0 --owner=0 -cf ../../fvpn_${DRONE_TAG}_mips.ipk ./debian-binary ./data.tar.gz ./control.tar.gz
-          popd
+  #       SCRIPT
+  #     - rm fvpn
+  #     - rm -rf ipkg
+  # - name: build-linux-mips
+  #   image: golang:1.18.4
+  #   environment:
+  #     GOOS: linux
+  #     GOARCH: mips
+  #   privileged: false
+  #   volumes:
+  #     - name: cache
+  #       path: /cache
+  #   commands:
+  #     - cd src
+  #     - go build -ldflags="-w -s -X main.appVersion={{.Env.VERSION}}" -gcflags="-l -B -wb=false" -o ../fvpn
+  #   depends_on:
+  #     - build-ipkg-arm64
+  # - name: build-ipkg-mips
+  #   image: debian
+  #   depends_on:
+  #     - build-linux-mips
+  #   commands:
+  #     - apt update
+  #     - apt install binutils -y
+  #     - mkdir -p ipkg/fvpn/control
+  #     - mkdir ipkg/fvpn/data
+  #     - export CTRLF=ipkg/fvpn/control/control
+  #     - "echo Package: fvpn > $CTRLF"
+  #     - "echo Version: ${DRONE_TAG} >> $CTRLF"
+  #     - "echo Architecture: mips >> $CTRLF"
+  #     - "echo Maintainer: nikiforova693@gmail.com >> $CTRLF"
+  #     - "echo Description: ForestVPN - Fast, secure, and modern VPN. >> $CTRLF"
+  #     - "echo Priority: optional >> $CTRLF"
+  #     - "echo Depends: wireguard >> $CTRLF"
+  #     - echo 2.0 > ipkg/fvpn/debian-binary
+  #     - export PREINST=ipkg/fvpn/control/preinst
+  #     - echo "#!/bin/bash" > $PREINST
+  #     - echo arch=`uname -m` > $PREINST
+  #     - echo "if [ $arch -ne 'mips' ]; then" >> $PREINST
+  #     - echo "    echo ${arch} is not supported" >> $PREINST
+  #     - echo "    exit 1" >> $PREINST
+  #     - chmod +x $PREINST
+  #     - export POSTINST=ipkg/fvpn/control/postinst
+  #     - echo "#!/bin/bash" > $POSTINST
+  #     - echo fvpn >> $POSTINST
+  #     - echo "if [ $? -eq 0 ]; then" >> $POSTINST
+  #     - echo "    echo Successfully installed" >> $POSTINST
+  #     - echo else >> $POSTINST
+  #     - echo "    echo Could not install >&2" >> $POSTINST
+  #     - chmod +x ipkg/fvpn/control/postinst
+  #     - export BIN_DIR=ipkg/fvpn/data/usr/local/bin/
+  #     - mkdir -p $BIN_DIR
+  #     - cp fvpn $BIN_DIR
+  #     - >
+  #       bash -s <<SCRIPT
+  #         pushd ipkg/fvpn/control/
+  #         tar --numeric-owner --group=0 --owner=0 -czf ../control.tar.gz ./*
+  #         popd
+  #         pushd ipkg/fvpn/data
+  #         tar --numeric-owner --group=0 --owner=0 -czf ../data.tar.gz ./*
+  #         popd
+  #         pushd ipkg/fvpn
+  #         tar --numeric-owner --group=0 --owner=0 -cf ../../fvpn_${DRONE_TAG}_mips.ipk ./debian-binary ./data.tar.gz ./control.tar.gz
+  #         popd
 
-        SCRIPT
-      - rm fvpn
-      - rm -rf ipkg
+  #       SCRIPT
+  #     - rm fvpn
+  #     - rm -rf ipkg
   - name: release
     image: chocolatey/choco:latest-linux
     environment:
@@ -205,7 +205,7 @@ steps:
       - cd src
       - goreleaser release -f ../.goreleaser-stable.yaml
     depends_on:
-      - build-ipkg-mips
+      - test
     when:
       ref:
         include:
