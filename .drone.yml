@@ -186,6 +186,8 @@ steps:
     environment:
       GITHUB_TOKEN:
         from_secret: GITHUB_TOKEN
+      CHOCOLATEY_API_KEY:
+        from_secret: CHOCOLATEY_API_KEY
       GOPATH: /usr/local/go
     privileged: false
     volumes:
@@ -218,6 +220,8 @@ steps:
     environment:
       GITHUB_TOKEN:
         from_secret: GITHUB_TOKEN
+      CHOCOLATEY_API_KEY:
+        from_secret: CHOCOLATEY_API_KEY
     privileged: false
     volumes:
       - name: cache
