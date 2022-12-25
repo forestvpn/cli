@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"regexp"
 	"runtime"
 	"strings"
 	"time"
@@ -124,21 +125,37 @@ func ExcludeDisallowedIps(allowed []string, disallowed []string) ([]string, erro
 // Then it extracts all the IP addresses from the command output and converts them into networks using ip2Net for a compability with Wiregaurd configuration format.
 // Returns a slice of networks representing the public networks of active ssh clients.
 func GetActiveSshClients() ([]string, error) {
-	out, err := exec.Command("who").Output()
+	var sshConnections []string
+	var ips []string
+
+	out, err := exec.Command("netstat").Output()
 
 	if err != nil {
 		return nil, err
 	}
 
 	records := strings.Split(string(out), "\n")
-	var ips []string
 
 	for _, record := range records {
-		if strings.Count(record, "(")+strings.Count(record, ")") > 0 {
-			ip := record[strings.Index(record, "(")+1 : strings.Index(record, ")")]
+		if strings.Contains(record, "ssh") {
+			sshConnections = append(sshConnections, record)
+		}
+	}
 
-			if net.ParseIP(ip) != nil {
-				ips = append(ips, ip2Net(ip))
+	for _, record := range sshConnections {
+		space := regexp.MustCompile(`\s+`)
+		record := space.ReplaceAllString(record, " ")
+		ip := strings.Split(strings.Split(record, " ")[4], ":")[0]
+
+		if net.ParseIP(ip) != nil {
+			ips = append(ips, ip2Net(ip))
+		} else {
+			_ips, err := net.LookupIP(ip)
+
+			if err == nil {
+				for _, _ip := range _ips {
+					ips = append(ips, ip2Net(_ip.String()))
+				}
 			}
 		}
 	}

@@ -52,7 +52,6 @@ nfpms:
       - wireguard-tools
       - openresolv
       - net-tools
-      - iproute2
     bindir: /usr/local/bin
     # Version Release.
     release: 1
