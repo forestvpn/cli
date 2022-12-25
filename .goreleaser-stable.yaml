@@ -11,11 +11,22 @@ builds:
       - arm
       - 386
       - mips
+      - mipsle
+      - mips64
+      - mips64le
     binary: fvpn
     ldflags:
       - "-w -s -X main.appVersion={{.Env.VERSION}}"
     gcflags:
       - "-l -B -wb=false"
+    ignore:
+      - goos: windows
+        goarch: arm, arm64, mips, mipsle, mips64, mips64le
+      - goos: darwin
+        goarch: 386, mips, mipsle, mips64, mips64le, arm
+    gomips:
+      - hardfloat
+      - softfloat
 checksum:
   name_template: 'checksums.txt'
 changelog:
