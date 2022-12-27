@@ -107,14 +107,14 @@ func (w AuthClientWrapper) SetLocation(device *forestvpn_api.Device, user_id str
 			allowedIps = append(allowedIps, "0.0.0.0/0")
 		} else {
 			allowedIps = peer.GetAllowedIps()
-			activeSShClients, err := utils.GetActiveSshClients()
+			activeSShClient := utils.GetActiveSshClient()
 
 			if err != nil {
 				return err
 			}
 
-			if len(activeSShClients) > 0 {
-				allowedIps, err = utils.ExcludeDisallowedIps(allowedIps, activeSShClients)
+			if len(activeSShClient) > 0 {
+				allowedIps, err = utils.ExcludeDisallowedIps(allowedIps, activeSShClient)
 
 				if err != nil {
 					return err
