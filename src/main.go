@@ -583,10 +583,12 @@ func main() {
 								return err
 							}
 
-							err = authClientWrapper.SetLocation(device, userID)
+							if !utils.IsOpenWRT() {
+								err = authClientWrapper.SetLocation(device, userID)
 
-							if err != nil {
-								return err
+								if err != nil {
+									return err
+								}
 							}
 
 							country := location.Location.GetCountry()

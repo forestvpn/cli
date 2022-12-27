@@ -4,6 +4,7 @@ package actions
 
 import (
 	"os/exec"
+	"strings"
 
 	"github.com/forestvpn/cli/auth"
 	"github.com/forestvpn/cli/utils"
@@ -44,7 +45,39 @@ func (s *State) SetUp(user_id string) error {
 	if utils.Os == "windows" {
 		command = exec.Command("wireguard", "/installtunnelservice", path)
 	} else {
-		command = exec.Command("wg-quick", "up", path)
+		if utils.IsOpenWRT() {
+			device, err := auth.LoadDevice(user_id)
+
+			if err != nil {
+				return err
+			}
+
+			wiregaurdInterface := "fvpn0"
+
+			err = utils.Firewall(wiregaurdInterface)
+
+			if err != nil {
+				return err
+			}
+
+			peer := device.Wireguard.GetPeers()[0]
+			endpoint := strings.Split(peer.GetEndpoint(), ":")
+			err = utils.Network(
+				wiregaurdInterface,
+				device.Wireguard.GetPrivKey(),
+				device.GetIps(),
+				peer.GetPubKey(),
+				peer.GetPsKey(),
+				endpoint[0],
+				endpoint[1],
+				peer.GetAllowedIps())
+
+			if err != nil {
+				return err
+			}
+		} else {
+			command = exec.Command("wg-quick", "up", path)
+		}
 	}
 
 	return command.Run()
