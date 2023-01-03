@@ -237,7 +237,7 @@ func main() {
 								return nil
 							}
 
-							state := actions.State{}
+							state := actions.State{WiregaurdInterface: "fvpn0"}
 							status := state.GetStatus()
 
 							if status {
@@ -314,7 +314,7 @@ func main() {
 								return err
 							}
 
-							state := actions.State{}
+							state := actions.State{WiregaurdInterface: "fvpn0"}
 
 							if state.GetStatus() {
 								fmt.Println("State is already up and running")
@@ -382,7 +382,7 @@ func main() {
 								return nil
 							}
 
-							state := actions.State{}
+							state := actions.State{WiregaurdInterface: "fvpn0"}
 
 							if state.GetStatus() {
 								userID, err := auth.LoadUserID()
@@ -420,7 +420,7 @@ func main() {
 								return nil
 							}
 
-							state := actions.State{}
+							state := actions.State{WiregaurdInterface: "fvpn0"}
 
 							if state.GetStatus() {
 								userID, err := auth.LoadUserID()
@@ -491,7 +491,7 @@ func main() {
 								return nil
 							}
 
-							state := actions.State{}
+							state := actions.State{WiregaurdInterface: "fvpn0"}
 
 							if state.GetStatus() {
 								fmt.Println("Please, set down the connection before setting a new location.")

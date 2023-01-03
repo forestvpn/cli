@@ -7,6 +7,17 @@ import (
 	"strings"
 )
 
+func Commit() error {
+	cmd := exec.Command("uci", "commit", "network")
+
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	cmd = exec.Command("/etc/init.d/network", "restart")
+	return cmd.Run()
+}
+
 // IsOpenWRT is a function to determine whether cli is running on OpenWRT device.
 func IsOpenWRT() bool {
 	data, err := os.ReadFile("/etc/banner")
@@ -151,12 +162,6 @@ func Network(
 		return err
 	}
 
-	cmd = exec.Command("uci", "commit", "network")
+	return Commit()
 
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	cmd = exec.Command("/etc/init.d/network", "restart")
-	return cmd.Run()
 }
