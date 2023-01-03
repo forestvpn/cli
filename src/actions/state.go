@@ -54,11 +54,11 @@ func (s *State) SetUp(user_id string) error {
 			return err
 		}
 
-		err = utils.Firewall(s.WiregaurdInterface)
+		// err = utils.Firewall(s.WiregaurdInterface)
 
-		if err != nil {
-			return err
-		}
+		// if err != nil {
+		// 	return err
+		// }
 
 		peer := device.Wireguard.GetPeers()[0]
 		endpoint := strings.Split(peer.GetEndpoint(), ":")

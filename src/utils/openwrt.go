@@ -7,15 +7,30 @@ import (
 	"strings"
 )
 
+func handleCommand(command *exec.Cmd) error {
+	out, err := command.Output()
+
+	if err != nil {
+		return err
+	}
+
+	if Verbose {
+		InfoLogger.Println(string(out))
+	}
+
+	return err
+}
+
 func Commit() error {
 	cmd := exec.Command("uci", "commit", "network")
+	err := handleCommand(cmd)
 
-	if err := cmd.Run(); err != nil {
+	if err != nil {
 		return err
 	}
 
 	cmd = exec.Command("/etc/init.d/network", "restart")
-	return cmd.Run()
+	return handleCommand(cmd)
 }
 
 // IsOpenWRT is a function to determine whether cli is running on OpenWRT device.
@@ -79,86 +94,100 @@ func Network(
 	wiregaurdEndpointPort string,
 	wireguardAllowedIps []string) error {
 	cmd := exec.Command("uci", "-q", "delete", fmt.Sprintf("network.%s", wiregaurdInterface))
+	err := handleCommand(cmd)
 
-	if err := cmd.Run(); err != nil {
+	if err != nil {
 		return err
 	}
 
 	cmd = exec.Command("uci", "set", fmt.Sprintf(`network.%s="interface"`, wiregaurdInterface))
+	err = handleCommand(cmd)
 
-	if err := cmd.Run(); err != nil {
+	if err != nil {
 		return err
 	}
 
 	cmd = exec.Command("uci", "set", fmt.Sprintf(`network.%s.proto="wireguard"`, wiregaurdInterface))
+	err = handleCommand(cmd)
 
-	if err := cmd.Run(); err != nil {
+	if err != nil {
 		return err
 	}
 
 	cmd = exec.Command("uci", "set", fmt.Sprintf(`network.%s.private_key="%s"`, wiregaurdInterface, wireguardPrivateKey))
+	err = handleCommand(cmd)
 
-	if err := cmd.Run(); err != nil {
+	if err != nil {
 		return err
 	}
 
 	cmd = exec.Command("uci", "add_list", fmt.Sprintf(`network.%s.addresses="%s"`, wiregaurdInterface, strings.Join(wiregaurdAddresses, ",")))
+	err = handleCommand(cmd)
 
-	if err := cmd.Run(); err != nil {
+	if err != nil {
 		return err
 	}
 
 	cmd = exec.Command("uci", "-q", "delete", "network.wgserver")
+	err = handleCommand(cmd)
 
-	if err := cmd.Run(); err != nil {
+	if err != nil {
 		return err
 	}
 
 	cmd = exec.Command("uci", "set", fmt.Sprintf(`network.wgserver="wireguard_%s"`, wiregaurdInterface))
+	err = handleCommand(cmd)
 
-	if err := cmd.Run(); err != nil {
+	if err != nil {
 		return err
 	}
 
 	cmd = exec.Command("uci", "set", fmt.Sprintf(`network.wgserver.public_key="%s"`, wiregaurdPublicKey))
+	err = handleCommand(cmd)
 
-	if err := cmd.Run(); err != nil {
+	if err != nil {
 		return err
 	}
 
 	cmd = exec.Command("uci", "set", fmt.Sprintf(`network.wgserver.preshared_key="%s"`, wiregaurdPreSharedKey))
+	err = handleCommand(cmd)
 
-	if err := cmd.Run(); err != nil {
+	if err != nil {
 		return err
 	}
 
 	cmd = exec.Command("uci", "set", fmt.Sprintf(`network.wgserver.endpoint_host="%s"`, wiregaurdEndpointHost))
+	err = handleCommand(cmd)
 
-	if err := cmd.Run(); err != nil {
+	if err != nil {
 		return err
 	}
 
 	cmd = exec.Command("uci", "set", fmt.Sprintf(`network.wgserver.endpoint_port="%s"`, wiregaurdEndpointPort))
+	err = handleCommand(cmd)
 
-	if err := cmd.Run(); err != nil {
+	if err != nil {
 		return err
 	}
 
 	cmd = exec.Command("uci", "set", `network.wgserver.route_allowed_ips="1"`)
+	err = handleCommand(cmd)
 
-	if err := cmd.Run(); err != nil {
+	if err != nil {
 		return err
 	}
 
 	cmd = exec.Command("uci", "set", `network.wgserver.persistent_keepalive="25"`)
+	err = handleCommand(cmd)
 
-	if err := cmd.Run(); err != nil {
+	if err != nil {
 		return err
 	}
 
 	cmd = exec.Command("uci", "set", fmt.Sprintf(`network.wgserver.allowed_ips="%s"`, strings.Join(wireguardAllowedIps, ",")))
+	err = handleCommand(cmd)
 
-	if err := cmd.Run(); err != nil {
+	if err != nil {
 		return err
 	}
 
