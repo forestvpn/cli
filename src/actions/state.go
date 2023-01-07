@@ -23,10 +23,19 @@ type State struct {
 // Using api.ApiClientWrapper.GetStatus instead
 func (s *State) setStatus() {
 	s.status = false
-	stdout, _ := exec.Command("wg", "show").CombinedOutput()
 
-	if len(stdout) > 0 {
-		s.status = true
+	if utils.IsOpenWRT() {
+		stdout, _ := exec.Command("uci", "show").CombinedOutput()
+
+		if strings.Contains(string(stdout), "wgserver") {
+			s.status = true
+		}
+	} else {
+		stdout, _ := exec.Command("wg", "show").CombinedOutput()
+
+		if len(stdout) > 0 {
+			s.status = true
+		}
 	}
 }
 
@@ -40,64 +49,92 @@ func (s *State) GetStatus() bool {
 
 // SetUp is a method used to establish a Wireguard connection.
 // It executes 'wg-quick' shell command.
-func (s *State) SetUp(user_id string) error {
-	var command *exec.Cmd
+func (s *State) SetUp(user_id string, persist bool) error {
 	var allowedIps []string
 	path := auth.ProfilesDir + user_id + auth.WireguardConfig
 
 	if utils.Os == "windows" {
-		command = exec.Command("wireguard", "/installtunnelservice", path)
+		return exec.Command("wireguard", "/installtunnelservice", path).Run()
 	} else if utils.IsOpenWRT() {
 		device, err := auth.LoadDevice(user_id)
+		IPs := device.GetIps()
 
 		if err != nil {
 			return err
 		}
 
-		// err = utils.Firewall(s.WiregaurdInterface)
-
-		// if err != nil {
-		// 	return err
-		// }
-
-		peer := device.Wireguard.GetPeers()[0]
-		endpoint := strings.Split(peer.GetEndpoint(), ":")
-		activeSShClient := utils.GetActiveSshClient()
-
-		if err != nil {
-			return err
-		}
-
-		if len(activeSShClient) > 0 {
-			allowedIps, err = utils.ExcludeDisallowedIps(peer.GetAllowedIps(), activeSShClient)
+		if persist {
+			err = utils.Firewall(s.WiregaurdInterface)
 
 			if err != nil {
 				return err
 			}
-		}
 
-		if err != nil {
-			return err
-		}
+			peer := device.Wireguard.GetPeers()[0]
+			endpoint := strings.Split(peer.GetEndpoint(), ":")
+			activeSShClient := utils.GetActiveSshClient()
 
-		err = utils.Network(
-			s.WiregaurdInterface,
-			device.Wireguard.GetPrivKey(),
-			device.GetIps(),
-			peer.GetPubKey(),
-			peer.GetPsKey(),
-			endpoint[0],
-			endpoint[1],
-			allowedIps)
+			if err != nil {
+				return err
+			}
 
-		if err != nil {
-			return err
+			if len(activeSShClient) > 0 {
+				allowedIps, err = utils.ExcludeDisallowedIps(peer.GetAllowedIps(), activeSShClient)
+
+				if err != nil {
+					return err
+				}
+			}
+
+			if err != nil {
+				return err
+			}
+
+			return utils.Network(
+				s.WiregaurdInterface,
+				device.Wireguard.GetPrivKey(),
+				IPs,
+				peer.GetPubKey(),
+				peer.GetPsKey(),
+				endpoint[0],
+				endpoint[1],
+				allowedIps)
+		} else {
+			err := exec.Command("ip", "link", "add", "dev", s.WiregaurdInterface, "type", "wireguard").Run()
+
+			if err != nil {
+				return err
+			}
+
+			err = exec.Command("ip", "address", "add", "dev", s.WiregaurdInterface, IPs[1]).Run()
+
+			if err != nil {
+				return err
+			}
+
+			err = exec.Command("ip", "-6", "address", "add", "dev", s.WiregaurdInterface, IPs[2]).Run()
+
+			if err != nil {
+				return err
+			}
+
+			err = exec.Command("wg", "setconf", s.WiregaurdInterface, path).Run()
+
+			if err != nil {
+				return err
+			}
+
+			err = exec.Command("ip", "link", "set", "up", "dev", s.WiregaurdInterface).Run()
+
+			if err != nil {
+				return err
+			}
+
+			return exec.Command("ip", "route", "add", "default", "dev", s.WiregaurdInterface).Run()
 		}
 	} else {
-		command = exec.Command("wg-quick", "up", path)
+		return exec.Command("wg-quick", "up", path).Run()
 	}
-
-	return command.Run()
 }
 
 // SetDown is used to terminate a Wireguard connection.
@@ -107,7 +144,7 @@ func (s *State) SetDown(user_id string) error {
 	path := auth.ProfilesDir + user_id + auth.WireguardConfig
 
 	if utils.Os == "windows" {
-		command = exec.Command("wireguard", "/uninstalltunnelservice", path)
+		command = exec.Command("wireguard", "/uninstalltunnelservice", s.WiregaurdInterface)
 	} else if utils.IsOpenWRT() {
 		err := exec.Command("uci", "-q", "delete", fmt.Sprintf("network.%s", s.WiregaurdInterface)).Run()
 

@@ -295,6 +295,14 @@ func main() {
 
 						Name:  "up",
 						Usage: "connect to the ForestVPN location",
+						Flags: []cli.Flag{
+							&cli.BoolFlag{
+								Name:    "persist",
+								Usage:   "Persist VPN connnection through reboots",
+								Value:   false,
+								Aliases: []string{"p"},
+							},
+						},
 						Action: func(c *cli.Context) error {
 							if !auth.IsAuthenticated() {
 								fmt.Println("Are you logged in?")
@@ -356,7 +364,9 @@ func main() {
 								fmt.Println("Your premium subscription will end in less than 3 days.")
 							}
 
-							err = state.SetUp(userID)
+							persist := c.Bool("persist")
+
+							err = state.SetUp(userID, persist)
 
 							if err != nil {
 								return err
