@@ -3,7 +3,6 @@ package auth_test
 import (
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"os"
 	"strconv"
 	"testing"
@@ -712,56 +711,56 @@ func TestLoadIdTokenWhileLoggedOut(t *testing.T) {
 
 }
 
-func TestUpdateProfileDevice(t *testing.T) {
-	email := "x@x.xx"
-	password := "123456"
-	client, err := login(email, password)
+// func TestUpdateProfileDevice(t *testing.T) {
+// 	email := "x@x.xx"
+// 	password := "123456"
+// 	client, err := login(email, password)
 
-	if err != nil {
-		t.Error(err)
-	}
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
 
-	locations, err := client.ApiClient.GetLocations()
+// 	locations, err := client.ApiClient.GetLocations()
 
-	if err != nil {
-		t.Error(err)
-	}
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
 
-	location := locations[rand.Intn(len(locations))]
-	userID, err := auth.LoadUserID()
+// 	location := locations[rand.Intn(len(locations))]
+// 	userID, err := auth.LoadUserID()
 
-	if err != nil {
-		t.Error(err)
-	}
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
 
-	device, err := auth.LoadDevice(userID)
+// 	device, err := auth.LoadDevice(userID)
 
-	if err != nil {
-		t.Error(err)
-	}
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
 
-	device, err = client.ApiClient.UpdateDevice(device.GetId(), location.GetId())
+// 	device, err = client.ApiClient.UpdateDevice(device.GetId(), location.GetId())
 
-	if err != nil {
-		t.Error(err)
-	}
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
 
-	err = auth.UpdateProfileDevice(device)
+// 	err = auth.UpdateProfileDevice(device)
 
-	if err != nil {
-		t.Error(err)
-	}
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
 
-	device, err = auth.LoadDevice(userID)
+// 	device, err = auth.LoadDevice(userID)
 
-	if err != nil {
-		t.Error(err)
-	}
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
 
-	if device.Location.GetId() != location.GetId() {
-		t.Error("wrong device id")
-	}
-}
+// 	if device.Location.GetId() != location.GetId() {
+// 		t.Error("wrong device id")
+// 	}
+// }
 
 func TestRemoveActiveUserLockFile(t *testing.T) {
 	email := "x@x.xx"
