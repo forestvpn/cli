@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"runtime"
 	"strings"
 	"time"
 
@@ -243,7 +244,7 @@ func main() {
 								return nil
 							}
 
-							state := actions.State{}
+							state := actions.State{WiregaurdInterface: "fvpn0"}
 							status := state.GetStatus()
 
 							if status {
@@ -301,6 +302,14 @@ func main() {
 
 						Name:  "up",
 						Usage: "connect to the ForestVPN location",
+						Flags: []cli.Flag{
+							&cli.BoolFlag{
+								Name:    "persist",
+								Usage:   "Persist VPN connnection through reboots",
+								Value:   false,
+								Aliases: []string{"p"},
+							},
+						},
 						Action: func(c *cli.Context) error {
 							if !auth.IsAuthenticated() {
 								fmt.Println("Are you logged in?")
@@ -320,7 +329,7 @@ func main() {
 								return err
 							}
 
-							state := actions.State{}
+							state := actions.State{WiregaurdInterface: "fvpn0"}
 
 							if state.GetStatus() {
 								fmt.Println("State is already up and running")
@@ -362,11 +371,14 @@ func main() {
 								fmt.Println("Your premium subscription will end in less than 3 days.")
 							}
 
-							err = state.SetUp(userID)
+							persist := c.Bool("persist")
+							err = state.SetUp(userID, persist)
 
 							if err != nil {
 								return err
 							}
+
+							time.Sleep(1 * time.Second)
 
 							if state.GetStatus() {
 								country := location.GetCountry()
@@ -388,7 +400,7 @@ func main() {
 								return nil
 							}
 
-							state := actions.State{}
+							state := actions.State{WiregaurdInterface: "fvpn0"}
 
 							if state.GetStatus() {
 								userID, err := auth.LoadUserID()
@@ -401,6 +413,10 @@ func main() {
 
 								if err != nil {
 									return err
+								}
+
+								if runtime.GOOS == "windows" {
+									time.Sleep(1 * time.Second)
 								}
 
 								if state.GetStatus() {
@@ -426,7 +442,7 @@ func main() {
 								return nil
 							}
 
-							state := actions.State{}
+							state := actions.State{WiregaurdInterface: "fvpn0"}
 
 							if state.GetStatus() {
 								userID, err := auth.LoadUserID()
@@ -497,7 +513,7 @@ func main() {
 								return nil
 							}
 
-							state := actions.State{}
+							state := actions.State{WiregaurdInterface: "fvpn0"}
 
 							if state.GetStatus() {
 								fmt.Println("Please, set down the connection before setting a new location.")
@@ -589,10 +605,12 @@ func main() {
 								return err
 							}
 
-							err = authClientWrapper.SetLocation(device, userID)
+							if !utils.IsOpenWRT() {
+								err = authClientWrapper.SetLocation(device, userID)
 
-							if err != nil {
-								return err
+								if err != nil {
+									return err
+								}
 							}
 
 							country := location.Location.GetCountry()

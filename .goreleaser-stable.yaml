@@ -24,6 +24,22 @@ builds:
         goarch: arm, arm64, mips, mipsle, mips64, mips64le
       - goos: darwin
         goarch: 386, mips, mipsle, mips64, mips64le, arm
+    targets:
+      - windows_amd64
+      - windows_386
+      - darwin_arm64
+      - linux_arm
+      - linux_arm64
+      - linux_amd64
+      - linux_386
+      - linux_mips_hardfloat
+      - linux_mipsle_hardfloat
+      - linux_mips64_hardfloat
+      - linux_mips64le_hardfloat
+      - linux_mips_softfloat
+      - linux_mipsle_softfloat
+      - linux_mips64_softfloat
+      - linux_mips64le_softfloat
     gomips:
       - hardfloat
       - softfloat
@@ -38,7 +54,7 @@ changelog:
 project_name: fvpn
 nfpms:
   -
-    vendor: ForestVPN.com
+    vendor: ForestVPN
     homepage: https://forestvpn.com/
     maintainer: Anatolio Nikiforidis <nikiforova693@gmail.com>
     description: |-
@@ -51,7 +67,7 @@ nfpms:
     dependencies:
       - wireguard-tools
       - openresolv
-      - net-tools
+      - iproute2
     bindir: /usr/local/bin
     # Version Release.
     release: 1
@@ -59,7 +75,6 @@ nfpms:
     section: default
     # Priority.
     priority: extra
-    file_name_template: "{{ .PackageName }}_{{ .Os }}_{{ .Arch }}"
 brews:
 - name: fvpn
   description: "Forest VPN CLI client for macOS, Linux, and Windows"
@@ -73,17 +88,17 @@ brews:
     system "#{bin}/fvpn --version"
 archives:
   -
-    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
     format_overrides:
       - goos: windows
         format: zip
 chocolateys:
   -
     owners: ForestVPN
-    authors: ForestVPN, Anatolio Nikiforidis
+    authors: Anatolio Nikiforidis
+    title: ForestVPN CLI
     project_url: https://forestvpn.com/
     url_template: "https://github.com/forestvpn/cli/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
-    copyright: 2022 ForestVPN
+    copyright: 2022-2023 ForestVPN
     license_url: https://github.com/forestvpn/cli/blob/main/LICENSE
     project_source_url: https://github.com/forestvpn/cli
     docs_url: https://github.com/forestvpn/cli/blob/main/README.md
@@ -104,6 +119,8 @@ chocolateys:
     # the user.
     skip_publish: false
     icon_url: https://m.fvpn.io/i/b180.png
+    package_source_url: https://github.com/forestvpn/cli
+    release_notes: "https://github.com/forestvpn/cli/releases/tag/{{ .Tag }}"
 # release:
 #   extra_files:
 #     - glob: ../fvpn_{{.Env.VERSION}}_arm64.ipk
