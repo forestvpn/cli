@@ -26,20 +26,20 @@ builds:
         goarch: 386, mips, mipsle, mips64, mips64le, arm
     targets:
       - windows_amd64
-      - windows_386
-      - darwin_arm64
-      - linux_arm
-      - linux_arm64
-      - linux_amd64
-      - linux_386
-      - linux_mips_hardfloat
-      - linux_mipsle_hardfloat
-      - linux_mips64_hardfloat
-      - linux_mips64le_hardfloat
-      - linux_mips_softfloat
-      - linux_mipsle_softfloat
-      - linux_mips64_softfloat
-      - linux_mips64le_softfloat
+      # - windows_386
+      # - darwin_arm64
+      # - linux_arm
+      # - linux_arm64
+      # - linux_amd64
+      # - linux_386
+      # - linux_mips_hardfloat
+      # - linux_mipsle_hardfloat
+      # - linux_mips64_hardfloat
+      # - linux_mips64le_hardfloat
+      # - linux_mips_softfloat
+      # - linux_mipsle_softfloat
+      # - linux_mips64_softfloat
+      # - linux_mips64le_softfloat
     gomips:
       - hardfloat
       - softfloat

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"runtime"
 	"strings"
 	"time"
 
@@ -365,12 +366,13 @@ func main() {
 							}
 
 							persist := c.Bool("persist")
-
 							err = state.SetUp(userID, persist)
 
 							if err != nil {
 								return err
 							}
+
+							time.Sleep(1 * time.Second)
 
 							if state.GetStatus() {
 								country := location.GetCountry()
@@ -405,6 +407,10 @@ func main() {
 
 								if err != nil {
 									return err
+								}
+
+								if runtime.GOOS == "windows" {
+									time.Sleep(1 * time.Second)
 								}
 
 								if state.GetStatus() {
