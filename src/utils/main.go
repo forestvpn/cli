@@ -7,11 +7,8 @@ import (
 	"io/ioutil"
 	"log"
 	"math"
-	"net"
 	"net/http"
 	"os"
-	"os/exec"
-	"regexp"
 	"runtime"
 	"strings"
 	"time"
@@ -39,7 +36,7 @@ func ip2Net(ip string) string {
 
 // ExcludeDisallowedIps is a function that expects two slices of a network values, e.g. [127.0.0.0/8,], where disallowed is a slice of networks to be excluded from the allowed slice.
 // Returns a new slice of networks formed out of the allowed slice without networks of disallowed slice.
-func ExcludeDisallowedIps(allowed []string, disallowed []string) ([]string, error) {
+func ExcludeDisallowedIps(allowed []string, disallowed string) ([]string, error) {
 	var netmap = make(map[string]bool)
 	var allowednew []string
 
@@ -51,40 +48,38 @@ func ExcludeDisallowedIps(allowed []string, disallowed []string) ([]string, erro
 			return nil, err
 		}
 
-		for _, d := range disallowed {
-			_, disallowedNetwork, err := iplib.ParseCIDR(d)
+		_, disallowedNetwork, err := iplib.ParseCIDR(disallowed)
 
-			if err != nil {
-				return nil, err
+		if err != nil {
+			return nil, err
+		}
+
+		contains := allowedNetwork.ContainsNet(disallowedNetwork)
+
+		if contains {
+			if !containsDisallowedNetwork {
+				containsDisallowedNetwork = true
 			}
 
-			contains := allowedNetwork.ContainsNet(disallowedNetwork)
+			ipv4net := iplib.Net4FromStr(allowedNetwork.String())
 
-			if contains {
-				if !containsDisallowedNetwork {
-					containsDisallowedNetwork = true
-				}
+			if ipv4net.Count() > 1 {
+				for ipv4net.String() != disallowedNetwork.String() {
 
-				ipv4net := iplib.Net4FromStr(allowedNetwork.String())
+					subnets, err := ipv4net.Subnet(0)
 
-				if ipv4net.Count() > 1 {
-					for ipv4net.String() != disallowedNetwork.String() {
-
-						subnets, err := ipv4net.Subnet(0)
-
-						if err != nil {
-							return nil, err
-						}
-
-						for _, subnet := range subnets {
-							if subnet.ContainsNet(disallowedNetwork) {
-								ipv4net = subnet
-							} else {
-								netmap[subnet.String()] = contains
-							}
-						}
-
+					if err != nil {
+						return nil, err
 					}
+
+					for _, subnet := range subnets {
+						if subnet.ContainsNet(disallowedNetwork) {
+							ipv4net = subnet
+						} else {
+							netmap[subnet.String()] = contains
+						}
+					}
+
 				}
 			}
 		}
@@ -103,13 +98,10 @@ func ExcludeDisallowedIps(allowed []string, disallowed []string) ([]string, erro
 		}
 
 		resultingNetwork := iplib.Net4FromStr(net.String())
+		disallowedNetwork := iplib.Net4FromStr(disallowed)
 
-		for _, d := range disallowed {
-			disallowedNetwork := iplib.Net4FromStr(d)
-
-			if resultingNetwork.ContainsNet(disallowedNetwork) {
-				delete(netmap, resultingNetwork.String())
-			}
+		if resultingNetwork.ContainsNet(disallowedNetwork) {
+			delete(netmap, resultingNetwork.String())
 		}
 	}
 
@@ -124,43 +116,14 @@ func ExcludeDisallowedIps(allowed []string, disallowed []string) ([]string, erro
 // GetActiveSshClientIps is a function that calls the "who" shell command to get active ssh sessions.
 // Then it extracts all the IP addresses from the command output and converts them into networks using ip2Net for a compability with Wiregaurd configuration format.
 // Returns a slice of networks representing the public networks of active ssh clients.
-func GetActiveSshClients() ([]string, error) {
-	var sshConnections []string
-	var ips []string
+func GetActiveSshClient() string {
+	val := os.Getenv("SSH_CLIENT")
 
-	out, err := exec.Command("netstat").Output()
-
-	if err != nil {
-		return nil, err
+	if len(val) > 0 {
+		val = ip2Net(strings.Split(val, " ")[0])
 	}
 
-	records := strings.Split(string(out), "\n")
-
-	for _, record := range records {
-		if strings.Contains(record, "ssh") {
-			sshConnections = append(sshConnections, record)
-		}
-	}
-
-	for _, record := range sshConnections {
-		space := regexp.MustCompile(`\s+`)
-		record := space.ReplaceAllString(record, " ")
-		ip := strings.Split(strings.Split(record, " ")[4], ":")[0]
-
-		if net.ParseIP(ip) != nil {
-			ips = append(ips, ip2Net(ip))
-		} else {
-			_ips, err := net.LookupIP(ip)
-
-			if err == nil {
-				for _, _ip := range _ips {
-					ips = append(ips, ip2Net(_ip.String()))
-				}
-			}
-		}
-	}
-
-	return ips, err
+	return val
 }
 
 // humanizeDuration humanizes time.Duration output to a meaningful value,
