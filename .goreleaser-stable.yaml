@@ -40,9 +40,9 @@ builds:
       # - linux_mipsle_softfloat
       # - linux_mips64_softfloat
       # - linux_mips64le_softfloat
-    gomips:
-      - hardfloat
-      - softfloat
+    # gomips:
+    #   - hardfloat
+    #   - softfloat
 checksum:
   name_template: 'checksums.txt'
 changelog:
@@ -54,12 +54,7 @@ changelog:
 project_name: fvpn
 nfpms:
   -
-    file_name_template: "{{ .PackageName }}{{ .Os }}_{{ .Arch }}"
-    builds:
-      - linux_arm
-      - linux_arm64
-      - linux_amd64
-      - linux_386
+    file_name_template: "{{ .PackageName }}_{{ .Os }}_{{ .Arch }}"
     vendor: ForestVPN
     homepage: https://forestvpn.com/
     maintainer: Anatolio Nikiforidis <nikiforova693@gmail.com>
@@ -120,10 +115,6 @@ chocolateys:
         version: 0.5.3
     api_key: '{{ .Env.CHOCOLATEY_API_KEY }}'
     source_repo: "https://push.chocolatey.org/"
-
-    # Setting this will prevent goreleaser to actually try to push the package
-    # to chocolatey repository, leaving the responsability of publishing it to
-    # the user.
     skip_publish: false
     icon_url: https://m.fvpn.io/i/b180.png
     package_source_url: https://github.com/forestvpn/cli
