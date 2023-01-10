@@ -10,10 +10,10 @@ builds:
       - arm64
       - arm
       - 386
-      - mips
-      - mipsle
-      - mips64
-      - mips64le
+      # - mips
+      # - mipsle
+      # - mips64
+      # - mips64le
     binary: fvpn
     ldflags:
       - "-w -s -X main.appVersion={{.Env.VERSION}}"
@@ -32,14 +32,14 @@ builds:
       - linux_arm64
       - linux_amd64
       - linux_386
-      - linux_mips_hardfloat
-      - linux_mipsle_hardfloat
-      - linux_mips64_hardfloat
-      - linux_mips64le_hardfloat
-      - linux_mips_softfloat
-      - linux_mipsle_softfloat
-      - linux_mips64_softfloat
-      - linux_mips64le_softfloat
+      # - linux_mips_hardfloat
+      # - linux_mipsle_hardfloat
+      # - linux_mips64_hardfloat
+      # - linux_mips64le_hardfloat
+      # - linux_mips_softfloat
+      # - linux_mipsle_softfloat
+      # - linux_mips64_softfloat
+      # - linux_mips64le_softfloat
     gomips:
       - hardfloat
       - softfloat
@@ -54,6 +54,7 @@ changelog:
 project_name: fvpn
 nfpms:
   -
+    file_name_template: "{{ .PackageName }}{{ .Os }}_{{ .Arch }}"
     builds:
       - linux_arm
       - linux_arm64
@@ -92,7 +93,8 @@ brews:
   test: |
     system "#{bin}/fvpn --version"
 archives:
-  -
+  - 
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
     format_overrides:
       - goos: windows
         format: zip
