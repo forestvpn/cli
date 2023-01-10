@@ -54,6 +54,11 @@ changelog:
 project_name: fvpn
 nfpms:
   -
+    builds:
+      - linux_arm
+      - linux_arm64
+      - linux_amd64
+      - linux_386
     vendor: ForestVPN
     homepage: https://forestvpn.com/
     maintainer: Anatolio Nikiforidis <nikiforova693@gmail.com>
