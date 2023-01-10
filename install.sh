@@ -153,8 +153,41 @@ main (){
 	# versions we support?
 	OS_UNSUPPORTED=
 	case "$OS" in
-		opensuse|arch|manjaro|void|gentoo|freebsd|nixos|openbsd)
+		opensuse)
 		    OS_UNSUPPORTED=1
+			;;
+		fedora)
+			# All versions supported, no version checking required.
+			;;
+		arch)
+			OS_UNSUPPORTED=1
+			;;
+		manjaro)
+			OS_UNSUPPORTED=1
+			;;
+		void)
+			OS_UNSUPPORTED=1
+			;;
+		gentoo)
+			OS_UNSUPPORTED=1
+			;;
+		freebsd)
+			OS_UNSUPPORTED=1
+			;;
+        nixos)
+            OS_UNSUPPORTED=1
+            ;;
+		openbsd)
+			OS_UNSUPPORTED=1
+			;;
+		macos)
+			# All versions supported, no version checking required.
+			;;
+		other-linux)
+			OS_UNSUPPORTED=1
+			;;
+		*)
+			OS_UNSUPPORTED=1
 			;;
 	esac
 	if [ "$OS_UNSUPPORTED" = "1" ]; then
