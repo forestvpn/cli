@@ -184,10 +184,10 @@ main (){
 			# All versions supported, no version checking required.
 			;;
 		other-linux)
-			OS_UNSUPPORTED=1
+			#OS_UNSUPPORTED=1
 			;;
 		*)
-			OS_UNSUPPORTED=1
+			#OS_UNSUPPORTED=1
 			;;
 	esac
 	if [ "$OS_UNSUPPORTED" = "1" ]; then
