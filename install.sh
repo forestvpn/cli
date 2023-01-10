@@ -241,109 +241,184 @@ main (){
 
     # Step 4: run the installation.
 	echo "Installing ForestVPN CLI for $OS $VERSION"
+
+	# Ideally we want to use curl, but on some installs we
+	# only have wget. Detect and use what's available.
+	CURL=
+	if type curl >/dev/null; then
+		CURL="curl -fsSL"
+	elif type wget >/dev/null; then
+		CURL="wget -q -O-"
+	fi
+	if [ -z "$CURL" ]; then
+		echo "The installer needs either curl or wget to download files."
+		echo "Please install either curl or wget to proceed."
+		exit 1
+	fi
 	case "$PACKAGETYPE" in
 		apt)
-			# Ideally we want to use curl, but on some installs we
-			# only have wget. Detect and use what's available.
-			CURL=
-			if type curl >/dev/null; then
-				CURL="curl -fsSL"
-			elif type wget >/dev/null; then
-				CURL="wget -q -O-"
-			fi
-			if [ -z "$CURL" ]; then
-				echo "The installer needs either curl or wget to download files."
-				echo "Please install either curl or wget to proceed."
-				exit 1
-			fi
 			export DEBIAN_FRONTEND=noninteractive
 			set -x
             case $ARCH in
                 aarch64|arm64)
-                    #
-                    ;;
-                386)
-                    #
+                    $CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_arm64.deb" > fvpn_linux_arm64.deb
+					$SUDO dpkg -i fvpn_linux_arm64.deb
+					if [ $? -eq 1 ] 
+					then 
+						apt install -fy
+					else 
+						rm fvpn_linux_arm64.deb
+					fi
                     ;;
                 arm)
-                #
+                    $CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_arm.deb" > fvpn_linux_arm.deb
+					$SUDO dpkg -i fvpn_linux_arm.deb
+					if [ $? -eq 1 ] 
+					then 
+						apt install -fy
+					else 
+						rm fvpn_linux_arm.deb
+					fi
+                    ;;
+				amd64)
+					$CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_amd64.deb" > fvpn_linux_amd64.deb
+					$SUDO dpkg -i fvpn_linux_amd64.deb
+					if [ $? -eq 1 ] 
+					then 
+						apt install -fy
+					else 
+						rm fvpn_linux_amd64.deb
+					fi
+                    ;;				
+                386)
+                    $CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_386.deb" > fvpn_linux_386.deb
+					$SUDO dpkg -i fvpn_linux_386.deb
+					if [ $? -eq 1 ] 
+					then 
+						apt install -fy
+					else 
+						rm fvpn_linux_386.deb
+					fi
                     ;;
             esac
-			# $SUDO mkdir -p --mode=0755 /usr/share/keyrings
-			# case "$APT_KEY_TYPE" in
-			# 	legacy)
-			# 		$CURL "https://pkgs.tailscale.com/$TRACK/$OS/$VERSION.asc" | $SUDO apt-key add -
-			# 		$CURL "https://pkgs.tailscale.com/$TRACK/$OS/$VERSION.list" | $SUDO tee /etc/apt/sources.list.d/tailscale.list
-			# 	;;
-			# 	keyring)
-			# 		$CURL "https://pkgs.tailscale.com/$TRACK/$OS/$VERSION.noarmor.gpg" | $SUDO tee /usr/share/keyrings/tailscale-archive-keyring.gpg >/dev/null
-			# 		$CURL "https://pkgs.tailscale.com/$TRACK/$OS/$VERSION.tailscale-keyring.list" | $SUDO tee /etc/apt/sources.list.d/tailscale.list
-			# 	;;
-			# esac
-			# $SUDO apt-get update
-			# $SUDO apt-get install -y tailscale
-			# if [ "$APT_SYSTEMCTL_START" = "true" ]; then
-			# 	$SUDO systemctl enable --now tailscaled
-			# 	$SUDO systemctl start tailscaled
-			# fi
 			set +x
-		;;
+			;;
 		yum)
 			set -x
-			$SUDO yum install yum-utils -y
-			$SUDO yum-config-manager -y --add-repo "https://pkgs.tailscale.com/$TRACK/$OS/$VERSION/tailscale.repo"
-			$SUDO yum install tailscale -y
-			$SUDO systemctl enable --now tailscaled
+			case $ARCH in
+				aarch64|arm64)
+                    $CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_arm64.rpm" > fvpn_linux_arm64.rpm
+					$SUDO yum localinstall fvpn_linux_arm64.rpm
+					if [ $? -eq 0 ] 
+					then
+						rm fvpn_linux_arm64.rpm
+					fi
+                    ;;
+                arm)
+                    $CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_arm.rpm" > fvpn_linux_arm.rpm
+					$SUDO yum localinstall -i fvpn_linux_arm.rpm
+					if [ $? -eq 0 ] 
+					then
+						rm fvpn_linux_arm.rpm
+					fi
+                    ;;
+				amd64)
+					$CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_amd64.rpm" > fvpn_linux_amd64.rpm
+					$SUDO yum localinstall fvpn_linux_amd64.rpm
+					if [ $? -eq 0 ] 
+					then
+						rm fvpn_linux_amd64.rpm
+					fi
+					;;
+                386)
+                    $CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_386.rpm" > fvpn_linux_386.rpm
+					$SUDO yum localinstall -i fvpn_linux_386.rpm
+					if [ $? -eq 0 ] 
+					then
+						rm fvpn_linux_386.rpm
+					fi
+                    ;;
+			esac			
 			set +x
-		;;
+			;;
 		dnf)
 			set -x
-			$SUDO dnf config-manager --add-repo "https://pkgs.tailscale.com/$TRACK/$OS/$VERSION/tailscale.repo"
-			$SUDO dnf install -y tailscale
-			$SUDO systemctl enable --now tailscaled
-			set +x
-		;;
-		zypper)
-			set -x
-			$SUDO zypper ar -g -r "https://pkgs.tailscale.com/$TRACK/$OS/$VERSION/tailscale.repo"
-			$SUDO zypper ref
-			$SUDO zypper in tailscale
-			$SUDO systemctl enable --now tailscaled
-			set +x
-			;;
-		pacman)
-			set -x
-			$SUDO pacman -S tailscale --noconfirm
-			$SUDO systemctl enable --now tailscaled
-			set +x
-			;;
-		pkg)
-			set -x
-			$SUDO pkg install tailscale
-			$SUDO service tailscaled enable
-			$SUDO service tailscaled start
+			case $ARCH in
+				aarch64|arm64)
+                    $CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_arm64.rpm" > fvpn_linux_arm64.rpm
+					$SUDO dnf localinstall fvpn_linux_arm64.rpm
+					if [ $? -eq 0 ] 
+					then
+						rm fvpn_linux_arm64.rpm
+					fi
+                    ;;
+                arm)
+                    $CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_arm.rpm" > fvpn_linux_arm.rpm
+					$SUDO dnf localinstall -i fvpn_linux_arm.rpm
+					if [ $? -eq 0 ] 
+					then
+						rm fvpn_linux_arm.rpm
+					fi
+                    ;;
+				amd64)
+					$CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_amd64.rpm" > fvpn_linux_amd64.rpm
+					$SUDO dnf localinstall fvpn_linux_amd64.rpm
+					if [ $? -eq 0 ] 
+					then
+						rm fvpn_linux_amd64.rpm
+					fi
+					;;
+                386)
+                    $CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_386.rpm" > fvpn_linux_386.rpm
+					$SUDO dnf localinstall -i fvpn_linux_386.rpm
+					if [ $? -eq 0 ] 
+					then
+						rm fvpn_linux_386.rpm
+					fi
+                    ;;
+			esac
 			set +x
 			;;
 		apk)
 			set -x
-			$SUDO apk add tailscale
-			$SUDO rc-update add tailscale
+			case $ARCH in
+				aarch64|arm64)
+                    $CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_arm64.apk" > fvpn_linux_arm64.apk
+					$SUDO apk add fvpn_linux_arm64.apk --allow-untrusted
+					if [ $? -eq 0 ] 
+					then
+						rm fvpn_linux_arm64.apk
+					fi
+                    ;;
+                arm)
+                    $CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_arm.apk" > fvpn_linux_arm.apk
+					$SUDO apk add -i fvpn_linux_arm.apk --allow-untrusted
+					if [ $? -eq 0 ] 
+					then
+						rm fvpn_linux_arm.apk
+					fi
+                    ;;
+				amd64)
+					$CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_amd64.apk" > fvpn_linux_amd64.apk
+					$SUDO apk add fvpn_linux_amd64.apk --allow-untrusted
+					if [ $? -eq 0 ] 
+					then
+						rm fvpn_linux_amd64.apk
+					fi
+					;;
+                386)
+                    $CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_386.apk" > fvpn_linux_386.apk
+					$SUDO apk add -i fvpn_linux_386.apk --allow-untrusted
+					if [ $? -eq 0 ] 
+					then
+						rm fvpn_linux_386.apk
+					fi
+                    ;;
+			esac
 			set +x
 			;;
-		xbps)
-			set -x
-			$SUDO xbps-install tailscale -y 
-			set +x
-			;;
-		emerge)
-			set -x
-			$SUDO emerge --ask=n net-vpn/tailscale
-			set +x
-			;;
-		appstore)
-			set -x
-			open "https://apps.apple.com/us/app/tailscale/id1475387142"
-			set +x
+		brew)
+			brew install forestvpn/stable/fvpn
 			;;
 		*)
 			echo "unexpected: unknown package type $PACKAGETYPE"
@@ -351,13 +426,9 @@ main (){
 			;;
 	esac
 
-	echo "Installation complete! Log in to start using Tailscale by running:"
-	echo
-	if [ -z "$SUDO" ]; then
-		echo "tailscale up"
-	else
-		echo "$SUDO tailscale up"
-	fi
+	echo "Installation complete! Log in to start using ForestVPN by running:"
+	echo fvpn account login
+	echo ""
 }
 
 main
