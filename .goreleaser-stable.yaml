@@ -68,7 +68,6 @@ nfpms:
     dependencies:
       - wireguard-tools
       - openresolv
-      - iproute2
     bindir: /usr/local/bin
     # Version Release.
     release: 1
@@ -76,6 +75,25 @@ nfpms:
     section: default
     # Priority.
     priority: extra
+    overrides:
+      # The depends override can for example be used to provide version
+      # constraints for dependencies where  different package formats use
+      # different versions or for dependencies that are named differently.
+      deb:
+        dependencies:
+          - wireguard-tools
+          - openresolv
+          - iproute2
+      rpm:
+        dependencies:
+          - wireguard-tools
+          - openresolv
+          - iproute
+      apk:
+        dependencies:
+          - wireguard-tools
+          - openresolv
+          - iproute2
 brews:
 - name: fvpn
   description: "Forest VPN CLI client for macOS, Linux, and Windows"
