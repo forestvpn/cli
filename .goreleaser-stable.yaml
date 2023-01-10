@@ -80,17 +80,17 @@ nfpms:
       # constraints for dependencies where  different package formats use
       # different versions or for dependencies that are named differently.
       deb:
-        depends:
+        dependencies:
           - wireguard-tools
           - openresolv
           - iproute2
       rpm:
-        depends:
+        dependencies:
           - wireguard-tools
           - openresolv
           - iproute
       apk:
-        depends:
+        dependencies:
           - wireguard-tools
           - openresolv
           - iproute2
