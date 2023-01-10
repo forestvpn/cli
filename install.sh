@@ -308,7 +308,7 @@ main (){
 			case $ARCH in
 				aarch64|arm64)
                     $CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_arm64.rpm" > fvpn_linux_arm64.rpm
-					$SUDO yum localinstall fvpn_linux_arm64.rpm
+					$SUDO yum localinstall fvpn_linux_arm64.rpm -y
 					if [ $? -eq 1 ] 
 					then
 						exit 1
@@ -318,7 +318,7 @@ main (){
                     ;;
                 arm)
                     $CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_arm.rpm" > fvpn_linux_arm.rpm
-					$SUDO yum localinstall -i fvpn_linux_arm.rpm
+					$SUDO yum localinstall -i fvpn_linux_arm.rpm -y
 					if [ $? -eq 1 ] 
 					then
 						exit 1
@@ -328,7 +328,7 @@ main (){
                     ;;
 				amd64)
 					$CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_amd64.rpm" > fvpn_linux_amd64.rpm
-					$SUDO yum localinstall fvpn_linux_amd64.rpm
+					$SUDO yum localinstall fvpn_linux_amd64.rpm -y
 					if [ $? -eq 1 ] 
 					then
 						exit 1
@@ -338,7 +338,7 @@ main (){
 					;;
                 386)
                     $CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_386.rpm" > fvpn_linux_386.rpm
-					$SUDO yum localinstall -i fvpn_linux_386.rpm
+					$SUDO yum localinstall -i fvpn_linux_386.rpm -y
 					if [ $? -eq 1 ] 
 					then
 						exit 1
@@ -354,7 +354,7 @@ main (){
 			case $ARCH in
 				aarch64|arm64)
                     $CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_arm64.rpm" > fvpn_linux_arm64.rpm
-					$SUDO dnf localinstall fvpn_linux_arm64.rpm
+					$SUDO dnf localinstall fvpn_linux_arm64.rpm -y
 					if [ $? -eq 1 ] 
 					then
 						exit 1
@@ -364,7 +364,7 @@ main (){
                     ;;
                 arm)
                     $CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_arm.rpm" > fvpn_linux_arm.rpm
-					$SUDO dnf localinstall -i fvpn_linux_arm.rpm
+					$SUDO dnf localinstall -i fvpn_linux_arm.rpm -y
 					if [ $? -eq 1 ] 
 					then
 						exit 1
@@ -374,7 +374,7 @@ main (){
                     ;;
 				amd64)
 					$CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_amd64.rpm" > fvpn_linux_amd64.rpm
-					$SUDO dnf localinstall fvpn_linux_amd64.rpm
+					$SUDO dnf localinstall fvpn_linux_amd64.rpm -y
 					if [ $? -eq 1 ] 
 					then
 						exit 1
@@ -384,7 +384,7 @@ main (){
 					;;
                 386)
                     $CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_386.rpm" > fvpn_linux_386.rpm
-					$SUDO dnf localinstall -i fvpn_linux_386.rpm
+					$SUDO dnf localinstall -i fvpn_linux_386.rpm -y
 					if [ $? -eq 1 ] 
 					then
 						exit 1
