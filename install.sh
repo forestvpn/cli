@@ -153,9 +153,42 @@ main (){
 	# versions we support?
 	OS_UNSUPPORTED=
 	case "$OS" in
-		opensuse|arch|manjaro|void|gentoo|freebsd|nixos|openbsd)
+		opensuse)
 		    OS_UNSUPPORTED=1
 			;;
+		fedora)
+			# All versions supported, no version checking required.
+			;;
+		arch)
+			OS_UNSUPPORTED=1
+			;;
+		manjaro)
+			OS_UNSUPPORTED=1
+			;;
+		void)
+			OS_UNSUPPORTED=1
+			;;
+		gentoo)
+			OS_UNSUPPORTED=1
+			;;
+		freebsd)
+			OS_UNSUPPORTED=1
+			;;
+        nixos)
+            OS_UNSUPPORTED=1
+            ;;
+		openbsd)
+			OS_UNSUPPORTED=1
+			;;
+		macos)
+			# All versions supported, no version checking required.
+			;;
+		other-linux)
+			OS_UNSUPPORTED=1
+			;;
+		# *)
+		# 	OS_UNSUPPORTED=1
+		# 	;;
 	esac
 	if [ "$OS_UNSUPPORTED" = "1" ]; then
 		case "$OS" in
@@ -276,32 +309,40 @@ main (){
 				aarch64|arm64)
                     $CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_arm64.rpm" > fvpn_linux_arm64.rpm
 					$SUDO yum localinstall fvpn_linux_arm64.rpm
-					if [ $? -eq 0 ] 
+					if [ $? -eq 1 ] 
 					then
+						exit 1
+					else
 						rm fvpn_linux_arm64.rpm
 					fi
                     ;;
                 arm)
                     $CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_arm.rpm" > fvpn_linux_arm.rpm
 					$SUDO yum localinstall -i fvpn_linux_arm.rpm
-					if [ $? -eq 0 ] 
+					if [ $? -eq 1 ] 
 					then
+						exit 1
+					else
 						rm fvpn_linux_arm.rpm
 					fi
                     ;;
 				amd64)
 					$CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_amd64.rpm" > fvpn_linux_amd64.rpm
 					$SUDO yum localinstall fvpn_linux_amd64.rpm
-					if [ $? -eq 0 ] 
+					if [ $? -eq 1 ] 
 					then
+						exit 1
+					else
 						rm fvpn_linux_amd64.rpm
 					fi
 					;;
                 386)
                     $CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_386.rpm" > fvpn_linux_386.rpm
 					$SUDO yum localinstall -i fvpn_linux_386.rpm
-					if [ $? -eq 0 ] 
+					if [ $? -eq 1 ] 
 					then
+						exit 1
+					else
 						rm fvpn_linux_386.rpm
 					fi
                     ;;
@@ -314,32 +355,40 @@ main (){
 				aarch64|arm64)
                     $CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_arm64.rpm" > fvpn_linux_arm64.rpm
 					$SUDO dnf localinstall fvpn_linux_arm64.rpm
-					if [ $? -eq 0 ] 
+					if [ $? -eq 1 ] 
 					then
+						exit 1
+					else
 						rm fvpn_linux_arm64.rpm
 					fi
                     ;;
                 arm)
                     $CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_arm.rpm" > fvpn_linux_arm.rpm
 					$SUDO dnf localinstall -i fvpn_linux_arm.rpm
-					if [ $? -eq 0 ] 
+					if [ $? -eq 1 ] 
 					then
+						exit 1
+					else
 						rm fvpn_linux_arm.rpm
 					fi
                     ;;
 				amd64)
 					$CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_amd64.rpm" > fvpn_linux_amd64.rpm
 					$SUDO dnf localinstall fvpn_linux_amd64.rpm
-					if [ $? -eq 0 ] 
+					if [ $? -eq 1 ] 
 					then
+						exit 1
+					else
 						rm fvpn_linux_amd64.rpm
 					fi
 					;;
                 386)
                     $CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_386.rpm" > fvpn_linux_386.rpm
 					$SUDO dnf localinstall -i fvpn_linux_386.rpm
-					if [ $? -eq 0 ] 
+					if [ $? -eq 1 ] 
 					then
+						exit 1
+					else
 						rm fvpn_linux_386.rpm
 					fi
                     ;;
@@ -352,32 +401,40 @@ main (){
 				aarch64|arm64)
                     $CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_arm64.apk" > fvpn_linux_arm64.apk
 					$SUDO apk add fvpn_linux_arm64.apk --allow-untrusted
-					if [ $? -eq 0 ] 
+					if [ $? -eq 1 ] 
 					then
+						exit 1
+					else
 						rm fvpn_linux_arm64.apk
 					fi
                     ;;
                 arm)
                     $CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_arm.apk" > fvpn_linux_arm.apk
 					$SUDO apk add -i fvpn_linux_arm.apk --allow-untrusted
-					if [ $? -eq 0 ] 
+					if [ $? -eq 1 ] 
 					then
+						exit 1
+					else
 						rm fvpn_linux_arm.apk
 					fi
                     ;;
 				amd64)
 					$CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_amd64.apk" > fvpn_linux_amd64.apk
 					$SUDO apk add fvpn_linux_amd64.apk --allow-untrusted
-					if [ $? -eq 0 ] 
+					if [ $? -eq 1 ] 
 					then
+						exit 1
+					else
 						rm fvpn_linux_amd64.apk
 					fi
 					;;
                 386)
                     $CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_386.apk" > fvpn_linux_386.apk
 					$SUDO apk add -i fvpn_linux_386.apk --allow-untrusted
-					if [ $? -eq 0 ] 
+					if [ $? -eq 1 ] 
 					then
+						exit 1
+					else
 						rm fvpn_linux_386.apk
 					fi
                     ;;
@@ -400,5 +457,4 @@ main (){
 
 main
 
-}
 
