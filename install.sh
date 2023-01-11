@@ -280,7 +280,7 @@ main (){
 						rm fvpn_linux_arm.deb
 					fi
                     ;;
-				amd64)
+				amd64|x86_64)
 					$CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_amd64.deb" > fvpn_linux_amd64.deb
 					$SUDO dpkg -i fvpn_linux_amd64.deb
 					if [ $? -eq 1 ] 
@@ -326,7 +326,7 @@ main (){
 						rm fvpn_linux_arm.rpm
 					fi
                     ;;
-				amd64)
+				amd64|x86_64)
 					$CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_amd64.rpm" > fvpn_linux_amd64.rpm
 					$SUDO yum localinstall fvpn_linux_amd64.rpm -y
 					if [ $? -eq 1 ] 
@@ -372,7 +372,7 @@ main (){
 						rm fvpn_linux_arm.rpm
 					fi
                     ;;
-				amd64)
+				amd64|x86_64)
 					$CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_amd64.rpm" > fvpn_linux_amd64.rpm
 					$SUDO dnf localinstall fvpn_linux_amd64.rpm -y
 					if [ $? -eq 1 ] 
@@ -418,7 +418,7 @@ main (){
 						rm fvpn_linux_arm.apk
 					fi
                     ;;
-				amd64)
+				amd64|x86_64)
 					$CURL "https://github.com/forestvpn/cli/releases/latest/download/fvpn_linux_amd64.apk" > fvpn_linux_amd64.apk
 					$SUDO apk add fvpn_linux_amd64.apk --allow-untrusted
 					if [ $? -eq 1 ] 
