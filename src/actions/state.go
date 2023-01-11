@@ -33,7 +33,7 @@ func (s *State) setStatus() {
 	} else {
 		stdout, _ := exec.Command("wg", "show").CombinedOutput()
 
-		if len(stdout) > 0 && strings.Contains(string(stdout), s.WiregaurdInterface) {
+		if len(stdout) > 0 {
 			s.status = true
 		}
 	}
