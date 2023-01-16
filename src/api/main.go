@@ -7,6 +7,8 @@ import (
 	"context"
 	"errors"
 	"io"
+	"os"
+	"runtime"
 	"strings"
 
 	forestvpn_api "github.com/forestvpn/api-client-go"
@@ -25,8 +27,20 @@ type ApiClientWrapper struct {
 //
 // See https://github.com/forestvpn/api-client-go/blob/main/docs/DeviceApi.md#createdevice for more information.
 func (w ApiClientWrapper) CreateDevice() (*forestvpn_api.Device, error) {
+	hostname, err := os.Hostname()
+
+	if err != nil {
+		return nil, err
+	}
+
+	info := map[string]string{"arch": runtime.GOARCH}
 	auth := context.WithValue(context.Background(), forestvpn_api.ContextAccessToken, w.AccessToken)
 	request := *forestvpn_api.NewCreateOrUpdateDeviceRequest()
+	request.SetName(hostname)
+	createOrUpdateDeviceRequestInfo := request.GetInfo()
+	createOrUpdateDeviceRequestInfo.SetType(runtime.GOOS)
+	createOrUpdateDeviceRequestInfo.SetInfo(info)
+	request.SetInfo(createOrUpdateDeviceRequestInfo)
 	dev, resp, err := w.APIClient.DeviceApi.CreateDevice(auth).CreateOrUpdateDeviceRequest(request).Execute()
 
 	if utils.Verbose {
@@ -51,8 +65,20 @@ func (w ApiClientWrapper) CreateDevice() (*forestvpn_api.Device, error) {
 //
 // See https://github.com/forestvpn/api-client-go/blob/main/docs/DeviceApi.md#updatedevice for more information.
 func (w ApiClientWrapper) UpdateDevice(deviceID string, locationID string) (*forestvpn_api.Device, error) {
+	hostname, err := os.Hostname()
+
+	if err != nil {
+		return nil, err
+	}
+
+	info := map[string]string{"arch": runtime.GOARCH}
 	auth := context.WithValue(context.Background(), forestvpn_api.ContextAccessToken, w.AccessToken)
 	request := *forestvpn_api.NewCreateOrUpdateDeviceRequest()
+	request.SetName(hostname)
+	createOrUpdateDeviceRequestInfo := request.GetInfo()
+	createOrUpdateDeviceRequestInfo.SetType(runtime.GOOS)
+	createOrUpdateDeviceRequestInfo.SetInfo(info)
+	request.SetInfo(createOrUpdateDeviceRequestInfo)
 	request.SetLocation(locationID)
 	dev, resp, err := w.APIClient.DeviceApi.UpdateDevice(auth, deviceID).CreateOrUpdateDeviceRequest(request).Execute()
 
