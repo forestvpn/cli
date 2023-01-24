@@ -1,7 +1,5 @@
 builds:
-  - 
-    id: fvpn-bin
-    env:
+  - env:
       - CGO_ENABLED=0
     goos:
       - linux
@@ -12,11 +10,39 @@ builds:
       - arm64
       - arm
       - 386
+      # - mips
+      # - mipsle
+      # - mips64
+      # - mips64le
     binary: fvpn
     ldflags:
       - "-w -s -X main.appVersion={{.Env.VERSION}}"
     gcflags:
       - "-l -B -wb=false"
+    ignore:
+      - goos: windows
+        goarch: arm, arm64, mips, mipsle, mips64, mips64le
+      - goos: darwin
+        goarch: 386, mips, mipsle, mips64, mips64le, arm
+    targets:
+      - windows_amd64
+      - windows_386
+      - darwin_arm64
+      - linux_arm
+      - linux_arm64
+      - linux_amd64
+      - linux_386
+      # - linux_mips_hardfloat
+      # - linux_mipsle_hardfloat
+      # - linux_mips64_hardfloat
+      # - linux_mips64le_hardfloat
+      # - linux_mips_softfloat
+      # - linux_mipsle_softfloat
+      # - linux_mips64_softfloat
+      # - linux_mips64le_softfloat
+    # gomips:
+    #   - hardfloat
+    #   - softfloat
 checksum:
   name_template: 'checksums.txt'
 changelog:
@@ -28,8 +54,8 @@ changelog:
 project_name: fvpn
 nfpms:
   -
-    id: fvpn-pkg
-    vendor: ForestVPN.com
+    file_name_template: "{{ .PackageName }}_{{ .Os }}_{{ .Arch }}"
+    vendor: ForestVPN
     homepage: https://forestvpn.com/
     maintainer: Anatolio Nikiforidis <nikiforova693@gmail.com>
     description: |-
@@ -42,7 +68,6 @@ nfpms:
     dependencies:
       - wireguard-tools
       - openresolv
-      - iproute2
     bindir: /usr/local/bin
     # Version Release.
     release: 1
@@ -50,7 +75,25 @@ nfpms:
     section: default
     # Priority.
     priority: extra
-    file_name_template: "{{ .PackageName }}_{{ .Os }}_{{ .Arch }}"
+    overrides:
+      # The depends override can for example be used to provide version
+      # constraints for dependencies where  different package formats use
+      # different versions or for dependencies that are named differently.
+      deb:
+        dependencies:
+          - wireguard-tools
+          - openresolv
+          - iproute2
+      rpm:
+        dependencies:
+          - wireguard-tools
+          - openresolv
+          - iproute
+      apk:
+        dependencies:
+          - wireguard-tools
+          - openresolv
+          - iproute2
 brews:
 - name: fvpn
   description: "Forest VPN CLI client for macOS, Linux, and Windows"
@@ -63,40 +106,10 @@ brews:
   test: |
     system "#{bin}/fvpn --version"
 archives:
-  -
+  - 
     name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
     format_overrides:
       - goos: windows
         format: zip
 release:
   - prerelease: true
-    extra_files:
-      - glob: packages/fvpn_{{.Env.VERSION}}.arm64.ipk
-      - glob: packages/fvpn_{{.Env.VERSION}}.mips.ipk
-chocolateys:
-  -
-    owners: ForestVPN
-    authors: ForestVPN, Anatolio Nikiforidis
-    project_url: https://forestvpn.com/
-    url_template: "https://github.com/forestvpn/cli/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
-    copyright: 2022 ForestVPN
-    license_url: https://github.com/forestvpn/cli/blob/main/LICENSE
-    project_source_url: https://github.com/forestvpn/cli
-    docs_url: https://github.com/forestvpn/cli/blob/main/README.md
-    bug_tracker_url: https://github.com/forestvpn/cli/issues
-    tags: "vpn wireguard"
-    summary: ForestVPN - Fast, secure, and modern VPN.
-    description: |
-      {{ .ProjectName }} installer package.
-      ForestVPN - Fast, secure, and modern VPN.
-    dependencies:
-      - id: wireguard
-        version: 0.5.3
-    api_key: '{{ .Env.CHOCOLATEY_API_KEY }}'
-    source_repo: "https://push.chocolatey.org/"
-
-    # Setting this will prevent goreleaser to actually try to push the package
-    # to chocolatey repository, leaving the responsability of publishing it to
-    # the user.
-    skip_publish: false
-      icon_url: https://m.fvpn.io/i/b180.png
