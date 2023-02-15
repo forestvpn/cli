@@ -39,7 +39,7 @@ type AuthClientWrapper struct {
 func (w AuthClientWrapper) ListLocations(country string) error
 ```
 
-ListLocations is a function to get the list of locations available for user.
+ListLocations is a function to get the list of locations available for profile.
 
 See https://github.com/forestvpn/api-client-go/blob/main/docs/GeoApi.md#listlocations for more information.
 
@@ -49,7 +49,7 @@ See https://github.com/forestvpn/api-client-go/blob/main/docs/GeoApi.md#listloca
 func (w AuthClientWrapper) Login(email string, password string, deviceID string) error
 ```
 
-Login is a method for logging in a user on the Firebase. Accepts the deviceID \(coming from local file\) which indicates wether the device was created on previous login. If the deviceID is empty, then should create a new device on login.
+Login is a method for logging in a profile on the Firebase. Accepts the deviceID \(coming from local file\) which indicates wether the device was created on previous login. If the deviceID is empty, then should create a new device on login.
 
 See https://firebase.google.com/docs/reference/rest/auth#section-sign-in-email-password for more information.
 
@@ -59,7 +59,7 @@ See https://firebase.google.com/docs/reference/rest/auth#section-sign-in-email-p
 func (w AuthClientWrapper) Logout() error
 ```
 
-Logout is a method that removes FirebaseAuthFile, i.e. logs out the user.
+Logout is a method that removes FirebaseAuthFile, i.e. logs out the profile.
 
 ### func \(AuthClientWrapper\) [Register](<https://github.com/forestvpn/cli/blob/main/src/actions/main.go#L37>)
 
@@ -67,7 +67,7 @@ Logout is a method that removes FirebaseAuthFile, i.e. logs out the user.
 func (w AuthClientWrapper) Register(email string, password string) error
 ```
 
-Register is a method to perform a user registration on Firebase.
+Register is a method to perform a profile registration on Firebase.
 
 See https://firebase.google.com/docs/reference/rest/auth#section-create-email-password for more information.
 
@@ -77,7 +77,7 @@ See https://firebase.google.com/docs/reference/rest/auth#section-create-email-pa
 func (w AuthClientWrapper) SetLocation(billingFeature forestvpn_api.BillingFeature, location LocationWrapper, includeHostIP bool) error
 ```
 
-SetLocation is a function that writes the location data into the Wireguard configuration file. It uses gopkg.in/ini.v1 package to form Woreguard compatible configuration file from the location data. If the user subscrition on the Forest VPN services is out of date, it calls BuyPremiumDialog.
+SetLocation is a function that writes the location data into the Wireguard configuration file. It uses gopkg.in/ini.v1 package to form Woreguard compatible configuration file from the location data. If the profile subscrition on the Forest VPN services is out of date, it calls BuyPremiumDialog.
 
 See https://github.com/forestvpn/api-client-go/blob/main/docs/BillingFeature.md for more information.
 

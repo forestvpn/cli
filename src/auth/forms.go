@@ -3,13 +3,9 @@ package auth
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"os"
 	"strings"
-	"syscall"
-
-	"golang.org/x/term"
 )
 
 // SignInForm is a structure to store user's email and password.
@@ -33,59 +29,21 @@ type InfoForm struct {
 	Info Info
 }
 
-// ValidatePasswordConfirmation is a method that compares password and the password confirmation values.
-func (s SignUpForm) ValidatePasswordConfirmation() error {
-	if s.PasswordField.Value != s.PasswordConfirmationField.Value {
-		return errors.New("password confirmation doesn't match")
-	}
-	return nil
-}
-
-// GetPasswordField is a method that prompts the user a password and then validates it.
-// validate is a boolean that allows to enable or disable password validation.
-// E.g. when password validation is needed on registration but not on login.
-func GetPasswordField(password string, validate bool) (PasswordField, error) {
-	passwordfield := PasswordField{Value: password}
-
-	for !(len(passwordfield.Value) > 0) {
-		fmt.Print("Enter password: ")
-		password, err := term.ReadPassword(int(syscall.Stdin))
-		fmt.Println()
-
-		if err != nil {
-			return passwordfield, err
-		}
-
-		passwordfield.Value = strings.TrimSuffix(string(password), "\r")
-	}
-
-	if validate {
-		err := passwordfield.Validate()
-
-		if err != nil {
-			return passwordfield, err
-		}
-	}
-
-	return passwordfield, nil
-}
-
 // GetEmailField is a method that prompts a user an email and then validates it.
 func GetEmailField(email string) (EmailField, error) {
-	var reader = bufio.NewReader(os.Stdin)
+	reader := bufio.NewReader(os.Stdin)
 	emailfield := EmailField{Value: email}
 
-	for !(len(emailfield.Value) > 0) {
+	for len(emailfield.Value) == 0 {
 		fmt.Print("Enter email: ")
-		email, err := reader.ReadString('\n')
-
+		input, err := reader.ReadString('\n')
 		if err != nil {
 			return emailfield, err
 		}
 
-		email = strings.TrimSuffix(email, "\n")
-		email = strings.TrimSuffix(email, "\r")
-		emailfield.Value = strings.TrimSuffix(email, "\n")
+		input = strings.TrimSuffix(input, "\n")
+		input = strings.TrimSuffix(input, "\r")
+		emailfield.Value = input
 	}
 
 	err := emailfield.Validate()

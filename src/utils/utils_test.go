@@ -1,6 +1,7 @@
 package utils_test
 
 import (
+	"reflect"
 	"sort"
 	"strings"
 	"testing"
@@ -15,19 +16,16 @@ func TestExcludeDisallowedIpsResult(t *testing.T) {
 	disallowed := "192.168.1.0/24"
 	expectedResult := strings.Split("192.168.0.0/24, 192.168.2.0/23, 192.168.4.0/22, 192.168.8.0/21, 192.168.16.0/20, 192.168.32.0/19, 192.168.64.0/18, 192.168.128.0/17", ", ")
 	actualResult, err := utils.ExcludeDisallowedIps(allowed, disallowed)
-
 	if err != nil {
 		t.Error(err)
+		return
 	}
 
 	sort.Strings(actualResult)
 	sort.Strings(expectedResult)
 
-	actual := strings.Join(actualResult, ",")
-	expected := strings.Join(expectedResult, ",")
-
-	if actual != expected {
-		t.Errorf("%s != %s; want ==", actual, expected)
+	if !reflect.DeepEqual(actualResult, expectedResult) {
+		t.Errorf("Expected %s, got %s", expectedResult, actualResult)
 	}
 }
 
@@ -35,31 +33,28 @@ func TestExcludeDisallowedIpsExclude(t *testing.T) {
 	allowed := []string{"192.168.0.0/16"}
 	disallowed := "192.168.1.0/24"
 	result, err := utils.ExcludeDisallowedIps(allowed, disallowed)
-
 	if err != nil {
 		t.Error(err)
 	}
+
+	disallowedNet := iplib.Net4FromStr(disallowed)
 	for _, n := range result {
-		resultingv4net := iplib.Net4FromStr(n)
-		disallowedv4net := iplib.Net4FromStr(disallowed)
-
-		if resultingv4net.ContainsNet(disallowedv4net) {
-			t.Errorf("%s contains %s", resultingv4net.String(), disallowedv4net.String())
+		resultingNet := iplib.Net4FromStr(n)
+		if resultingNet.ContainsNet(disallowedNet) {
+			t.Errorf("%s contains %s", resultingNet.String(), disallowedNet.String())
 		}
-
 	}
 }
 
 func TestHumanizeDuration(t *testing.T) {
-	d, err := time.ParseDuration("2h45m")
-
+	duration, err := time.ParseDuration("2h45m")
 	if err != nil {
-		t.Error(err)
+		t.Errorf("unexpected error: %v", err)
 	}
 
-	h := utils.HumanizeDuration(d)
-
-	if h != "2 hours 45 minutes 0 seconds" {
-		t.Error(h)
+	expected := "2 hours 45 minutes 0 seconds"
+	actual := utils.HumanizeDuration(duration)
+	if expected != actual {
+		t.Errorf("expected %q, got %q", expected, actual)
 	}
 }
