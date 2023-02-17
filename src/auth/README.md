@@ -10,9 +10,9 @@ auth is a package containing an authentication client built around Firebase REST
 
 See https://firebase.google.com/docs/reference/rest for more information.
 
-fields is a package containing structures for storing user prompted data such as email or password.
+fields is a package containing structures for storing profile prompted data such as email or password.
 
-forms is package contaning structures to work with user input during Firebase authentication process.
+forms is package contaning structures to work with profile input during Firebase authentication process.
 
 Authentication related utilities around firebase REST authentication workflow. See https://firebase.google.com/docs/reference/rest for more information.
 
@@ -68,7 +68,7 @@ See https://github.com/go-resty/resty for more information.
 var Client = resty.New()
 ```
 
-The DeviceFile represents the device created for the user.
+The DeviceFile represents the device created for the profile.
 
 Read more: https://github.com/forestvpn/api-client-go.
 
@@ -104,7 +104,7 @@ var WireguardConfig = AppDir + "fvpn0.conf"
 func BuyPremiumDialog() error
 ```
 
-BuyPremiumDialog is a function that prompts the user to by premium subscrition on Forest VPN. If the user prompts 'yes', then it opens https://forestvpn.com/pricing/ page in the default browser.
+BuyPremiumDialog is a function that prompts the profile to by premium subscrition on Forest VPN. If the profile prompts 'yes', then it opens https://forestvpn.com/pricing/ page in the default browser.
 
 ## func [HandleFirebaseAuthResponse](<https://github.com/forestvpn/cli/blob/main/src/auth/utils.go#L108>)
 
@@ -136,7 +136,7 @@ Init is a function that creates directories structure for Forest CLI.
 func IsAuthenticated() bool
 ```
 
-IsAuthenticated is a helper function to quickly check wether user is authenticated by checking existance of an access token.
+IsAuthenticated is a helper function to quickly check wether profile is authenticated by checking existance of an access token.
 
 ## func [IsDeviceCreated](<https://github.com/forestvpn/cli/blob/main/src/auth/utils.go#L158>)
 
@@ -236,7 +236,7 @@ GetAccessToken is a method to obtain a new access token from Firebase REST API a
 func (c AuthClient) GetUserData(email string) (*resty.Response, error)
 ```
 
-GetUserInfo is used to check if the user already exists in the Firebase database during the registration.
+GetUserInfo is used to check if the profile already exists in the Firebase database during the registration.
 
 See https://firebase.google.com/docs/reference/rest/auth#section-get-account-info for more information.
 
@@ -276,7 +276,7 @@ type EmailField struct {
 func GetEmailField(email string) (EmailField, error)
 ```
 
-GetEmailField is a method that prompts a user an email and then validates it.
+GetEmailField is a method that prompts a profile an email and then validates it.
 
 ### func \(EmailField\) [Validate](<https://github.com/forestvpn/cli/blob/main/src/auth/fields.go#L25>)
 
@@ -284,7 +284,7 @@ GetEmailField is a method that prompts a user an email and then validates it.
 func (f EmailField) Validate() error
 ```
 
-Validate is a method to check user's email address.
+Validate is a method to check profile's email address.
 
 ## type [Info](<https://github.com/forestvpn/cli/blob/main/src/auth/forms.go#L26-L28>)
 
@@ -329,7 +329,7 @@ type PasswordField struct {
 func GetPasswordField(password []byte) (PasswordField, error)
 ```
 
-getPasswordField is a method that prompts the user a password and then validates it.
+getPasswordField is a method that prompts the profile a password and then validates it.
 
 ### func \(PasswordField\) [Validate](<https://github.com/forestvpn/cli/blob/main/src/auth/fields.go#L34>)
 
@@ -341,7 +341,7 @@ Validate is a method to check password's strength.
 
 ## type [SignInForm](<https://github.com/forestvpn/cli/blob/main/src/auth/forms.go#L15-L18>)
 
-SignInForm is a structure to store user's email and password.
+SignInForm is a structure to store profile's email and password.
 
 ```go
 type SignInForm struct {

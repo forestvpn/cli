@@ -23,7 +23,11 @@ type PasswordConfirmationField struct {
 
 // Validate is a method to check user's email address.
 func (f EmailField) Validate() error {
-	if len(f.Value) < 5 || !strings.Contains(f.Value, "@") || !strings.Contains(f.Value, ".") {
+	if len(f.Value) < 5 {
+		return errors.New("password must be at least 5 characters long")
+	}
+
+	if !strings.Contains(f.Value, "@") || !strings.Contains(f.Value, ".") {
 		return errors.New("invalid email address")
 	}
 
@@ -32,8 +36,13 @@ func (f EmailField) Validate() error {
 
 // Validate is a method to check password's strength.
 func (p PasswordField) Validate() error {
-	if len(p.Value) < 6 {
-		return errors.New("password must be at least 6 characters long")
+	if len(p.Value) < 5 {
+		return errors.New("password must be at least 5 characters long")
 	}
+
+	if !strings.Contains(p.Value, "@") || !strings.Contains(p.Value, ".") {
+		return errors.New("invalid email address")
+	}
+
 	return nil
 }
