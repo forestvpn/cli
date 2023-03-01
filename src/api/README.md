@@ -52,7 +52,7 @@ See https://github.com/forestvpn/api-client-go for more information.
 func (w ApiClientWrapper) CreateDevice() (*forestvpn_api.Device, error)
 ```
 
-CreateDevice sends a POST request to create a new device on the back\-end after the user successfully logged in.
+CreateDevice sends a POST request to create a new device on the back\-end after the profile successfully logged in.
 
 See https://github.com/forestvpn/api-client-go/blob/main/docs/DeviceApi.md#createdevice for more information.
 
@@ -62,7 +62,7 @@ See https://github.com/forestvpn/api-client-go/blob/main/docs/DeviceApi.md#creat
 func (w ApiClientWrapper) GetBillingFeatures() ([]forestvpn_api.BillingFeature, error)
 ```
 
-GetBillingFeatures is a method for getting locations available to the user.
+GetBillingFeatures is a method for getting locations available to the profile.
 
 See https://github.com/forestvpn/api-client-go/blob/main/docs/BillingApi.md#listbillingfeatures for more information.
 
@@ -78,7 +78,7 @@ func (w ApiClientWrapper) GetConnectedLocation() (forestvpn_api.Location, error)
 func (w ApiClientWrapper) GetDevice(id string) (*forestvpn_api.Device, error)
 ```
 
-GetDevice is a method to get the device created on the registraton of the user.
+GetDevice is a method to get the device created on the registraton of the profile.
 
 See https://github.com/forestvpn/api-client-go/blob/main/docs/DeviceApi.md#getdevice for more information.
 
@@ -104,7 +104,7 @@ func (w ApiClientWrapper) GetStatus() (bool, error)
 func (w ApiClientWrapper) UpdateDevice(deviceID string, locationID string) (*forestvpn_api.Device, error)
 ```
 
-UpdateDevice updates an existing device for the user on the back\-end.
+UpdateDevice updates an existing device for the profile on the back\-end.
 
 See https://github.com/forestvpn/api-client-go/blob/main/docs/DeviceApi.md#updatedevice for more information.
 

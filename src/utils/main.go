@@ -21,9 +21,6 @@ var Verbose bool
 
 const Os = runtime.GOOS
 
-// FirebaseApiKey is stored in an environment variable and assigned during the build with ldflags.
-const FirebaseApiKey = "AIzaSyArN6RVqftrSVBrEI9ZF2DiiA7gJOdkfeM"
-
 // ApiHost is a hostname of Forest VPN back-end API that is stored in an environment variable and assigned during the build with ldflags.
 const ApiHost = "api.forestvpn.com"
 

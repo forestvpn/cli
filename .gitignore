@@ -9,4 +9,5 @@ docker-compose.ci.yaml
 spec.yaml
 dist/
 .DS_Store*
-*.ipk
+*.ipkinfo.yaml
+.idea

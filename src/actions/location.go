@@ -20,35 +20,21 @@ const Helsinki = "7fc5b17c-eddf-413f-8b37-9d36eb5e33ec"
 // See https://github.com/forestvpn/api-client-go/blob/main/docs/GeoApi.md#listlocations for more information.
 func (w AuthClientWrapper) ListLocations(country string) error {
 	var data [][]string
-	locations, err := w.ApiClient.GetLocations()
 
+	locations, err := w.ApiClient.GetLocations()
 	if err != nil {
 		return err
 	}
 
 	if len(country) > 0 {
-		var locationsByCountry []forestvpn_api.Location
-
-		for _, location := range locations {
-			if strings.EqualFold(location.Country.GetName(), country) {
-				locationsByCountry = append(locationsByCountry, location)
-			}
-		}
-
-		if len(locationsByCountry) > 0 {
-			locations = locationsByCountry
-		}
+		locations = filterLocationsByCountry(locations, country)
 	}
 
-	sort.Slice(locations, func(i, j int) bool {
-		return locations[i].GetName() < locations[j].GetName() && locations[i].Country.GetName() < locations[j].Country.GetName()
-	})
-
+	sortLocations(locations)
 	wrappedLocations := GetLocationWrappers(locations)
 
 	for _, loc := range wrappedLocations {
 		premiumMark := ""
-
 		if loc.Premium {
 			premiumMark = "*"
 		}
@@ -60,7 +46,24 @@ func (w AuthClientWrapper) ListLocations(country string) error {
 	table.SetBorder(false)
 	table.AppendBulk(data)
 	table.Render()
+
 	return nil
+}
+
+func filterLocationsByCountry(locations []forestvpn_api.Location, country string) []forestvpn_api.Location {
+	var locationsByCountry []forestvpn_api.Location
+	for _, location := range locations {
+		if strings.EqualFold(location.Country.GetName(), country) {
+			locationsByCountry = append(locationsByCountry, location)
+		}
+	}
+	return locationsByCountry
+}
+
+func sortLocations(locations []forestvpn_api.Location) {
+	sort.Slice(locations, func(i, j int) bool {
+		return locations[i].GetName() < locations[j].GetName() && locations[i].Country.GetName() < locations[j].Country.GetName()
+	})
 }
 
 // SetLocation is a function that writes the location data into the Wireguard configuration file.
@@ -68,54 +71,43 @@ func (w AuthClientWrapper) ListLocations(country string) error {
 // If the user subscrition on the Forest VPN services is out of date, it calls BuyPremiumDialog.
 //
 // See https://github.com/forestvpn/api-client-go/blob/main/docs/BillingFeature.md for more information.
-func (w AuthClientWrapper) SetLocation(device *forestvpn_api.Device, user_id string) error {
+func (w AuthClientWrapper) SetLocation(device *forestvpn_api.Device, user_id auth.ProfileID) error {
 	config := ini.Empty()
+
 	interfaceSection, err := config.NewSection("Interface")
-
 	if err != nil {
 		return err
 	}
-
 	_, err = interfaceSection.NewKey("Address", strings.Join(device.GetIps()[:], ","))
-
 	if err != nil {
 		return err
 	}
-
 	_, err = interfaceSection.NewKey("PrivateKey", device.Wireguard.GetPrivKey())
-
 	if err != nil {
 		return err
 	}
-
 	_, err = interfaceSection.NewKey("DNS", strings.Join(device.GetDns()[:], ","))
-
 	if err != nil {
 		return err
 	}
 
 	for _, peer := range device.Wireguard.GetPeers() {
 		peerSection, err := config.NewSection("Peer")
-
 		if err != nil {
 			return err
 		}
 
 		var allowedIps []string
-
 		if utils.Os == "darwin" || utils.Os == "windows" {
 			allowedIps = append(allowedIps, "0.0.0.0/0")
 		} else {
 			allowedIps = peer.GetAllowedIps()
 			activeSShClient := utils.GetActiveSshClient()
-
 			if err != nil {
 				return err
 			}
-
 			if len(activeSShClient) > 0 {
 				allowedIps, err = utils.ExcludeDisallowedIps(allowedIps, activeSShClient)
-
 				if err != nil {
 					return err
 				}
@@ -123,37 +115,28 @@ func (w AuthClientWrapper) SetLocation(device *forestvpn_api.Device, user_id str
 		}
 
 		_, err = peerSection.NewKey("AllowedIPs", strings.Join(allowedIps, ", "))
-
 		if err != nil {
 			return err
 		}
-
 		_, err = peerSection.NewKey("Endpoint", peer.GetEndpoint())
-
 		if err != nil {
 			return err
 		}
-
 		_, err = peerSection.NewKey("PublicKey", peer.GetPubKey())
-
 		if err != nil {
 			return err
 		}
-
 		presharedKey := peer.GetPsKey()
-
 		if len(presharedKey) > 0 {
 			_, err = peerSection.NewKey("PresharedKey", presharedKey)
 		}
-
 		if err != nil {
 			return err
 		}
 	}
 
-	path := auth.ProfilesDir + user_id + auth.WireguardConfig
+	path := auth.ProfilesDir + string(user_id) + auth.WireguardConfig
 	err = config.SaveTo(path)
-
 	if err != nil {
 		return err
 	}
@@ -167,19 +150,19 @@ type LocationWrapper struct {
 }
 
 func GetLocationWrappers(locations []forestvpn_api.Location) []LocationWrapper {
-	var wrappers []LocationWrapper
-
+	wrappers := make([]LocationWrapper, 0, len(locations))
 	for _, location := range locations {
-		wrapper := LocationWrapper{Location: location, Premium: IsPremiumLocation(location)}
-		wrappers = append(wrappers, wrapper)
+		wrappers = append(wrappers, LocationWrapper{Location: location, Premium: IsPremiumLocation(location)})
 	}
-
 	return wrappers
 }
 
 func IsPremiumLocation(location forestvpn_api.Location) bool {
-	if location.GetId() == Helsinki || location.GetId() == Falkenstein {
+	switch location.GetId() {
+	case Helsinki, Falkenstein:
 		return false
+	case "":
+		return true
 	}
 	return true
 }

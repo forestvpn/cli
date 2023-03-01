@@ -31,17 +31,9 @@ const Dsn = "https://ef875c1346ed49289812f9df5a44f03f@sentry.fvpn.uk/8"
 
 const url = "https://forestvpn.com/checkout/"
 
-// FirebaseApiKey is stored in an environment variable and assigned during the build with ldflags.
-const firebaseApiKey = "AIzaSyArN6RVqftrSVBrEI9ZF2DiiA7gJOdkfeM"
-
-// ApiHost is a hostname of Forest VPN back-end API that is stored in an environment variable and assigned during the build with ldflags.
-const apiHost = "api.fvpn.dev"
-
 func main() {
 	// email is user's email address used to sign in or sign up on the Firebase.
 	var email string
-	// password is user's password used during sign in or sign up on the Firebase.
-	var password string
 	// country is stores prompted country name to filter locations by country.
 	var country string
 
@@ -92,40 +84,24 @@ func main() {
 						Name:  "ls",
 						Usage: "see local accounts ever logged in",
 						Action: func(c *cli.Context) error {
-							if !auth.IsAuthenticated() {
-								fmt.Println("Are you logged in?")
-								fmt.Println("Try 'forest account login'")
-								return nil
-							}
-
-							m := auth.GetAccountsMap(auth.AccountsMapFile)
-							return m.ListLocalAccounts()
+							return auth.PrintLocalAccounts()
 						},
 					},
 					{
 						Name:  "status",
 						Usage: "see logged-in account info",
 						Action: func(c *cli.Context) error {
-							if !auth.IsAuthenticated() {
-								fmt.Println("Are you logged in?")
-								fmt.Println("Try 'forest account login'")
-								return nil
+							profile := auth.OpenUserDB().CurrentUser()
+							if err = profile.SignIn(utils.ApiHost); err != nil {
+								return err
 							}
 
-							userID, err := auth.LoadUserID()
-
+							authClientWrapper, err := actions.GetAuthClientWrapper(profile, utils.ApiHost)
 							if err != nil {
 								return err
 							}
 
-							authClientWrapper, err := actions.GetAuthClientWrapper(utils.ApiHost, utils.FirebaseApiKey)
-
-							if err != nil {
-								return err
-							}
-
-							b, err := authClientWrapper.GetUnexpiredOrMostRecentBillingFeature(userID)
-
+							b, err := authClientWrapper.GetUnexpiredOrMostRecentBillingFeature(profile.ID)
 							if err != nil {
 								return err
 							}
@@ -133,10 +109,9 @@ func main() {
 							expiryDate := b.GetExpiryDate()
 							now := time.Now()
 							left := expiryDate.Sub(now)
-							email := authClientWrapper.AccountsMap.GetEmail(userID)
 							caser := cases.Title(language.English)
 							plan := caser.String(strings.Split(b.GetBundleId(), ".")[2])
-							fmt.Printf("Logged-in as %s\n", email)
+							fmt.Printf("Logged-in as %s\n", profile.Email)
 							fmt.Printf("Plan: %s\n", plan)
 							tz, err := utils.GetLocalTimezone()
 
@@ -159,47 +134,6 @@ func main() {
 						},
 					},
 					{
-						Name:  "register",
-						Usage: "create a new ForestVPN account",
-						Flags: []cli.Flag{
-							&cli.StringFlag{
-								Name:        "email",
-								Destination: &email,
-								Usage:       "your email address",
-								Value:       "",
-								Aliases:     []string{"e"},
-							},
-							&cli.StringFlag{
-								Name:        "password",
-								Destination: &password,
-								Usage:       "password must be at least 8 characters long",
-								Value:       "",
-								Aliases:     []string{"p"},
-							},
-						},
-						Action: func(c *cli.Context) error {
-							if auth.IsAuthenticated() {
-								fmt.Println("Please, logout before attempting to register a new account.")
-								fmt.Println("Try 'fvpn account logout'")
-								return nil
-							}
-
-							authClientWrapper, err := actions.GetAuthClientWrapper(utils.ApiHost, utils.FirebaseApiKey)
-
-							if err != nil {
-								return err
-							}
-
-							err = authClientWrapper.Register(email, password)
-
-							if err == nil {
-								fmt.Println("Registered")
-							}
-
-							return err
-						},
-					},
-					{
 						Name:  "login",
 						Usage: "log into your ForestVPN account",
 						Flags: []cli.Flag{
@@ -210,22 +144,12 @@ func main() {
 								Value:       "",
 								Aliases:     []string{"e"},
 							},
-							&cli.StringFlag{
-								Name:        "password",
-								Destination: &password,
-								Usage:       "your password",
-								Value:       "",
-								Aliases:     []string{"p"},
-							},
 						},
 						Action: func(c *cli.Context) error {
-							authClientWrapper, err := actions.GetAuthClientWrapper(utils.ApiHost, utils.FirebaseApiKey)
-
-							if err != nil {
+							profile := auth.OpenUserDB().CreateUser()
+							if err = profile.SignIn(utils.ApiHost); err != nil {
 								return err
 							}
-
-							err = authClientWrapper.Login(email, password)
 
 							if err == nil {
 								fmt.Println("Logged in")
@@ -238,56 +162,20 @@ func main() {
 						Name:  "logout",
 						Usage: "unlink this device from your ForstVPN account",
 						Action: func(c *cli.Context) error {
-							if !auth.IsAuthenticated() {
-								fmt.Println("Are you logged in?")
-								fmt.Println("Try 'forest account login'")
-								return nil
+							profile := auth.OpenUserDB().CurrentUser()
+							if err = profile.SignIn(utils.ApiHost); err != nil {
+								return err
 							}
 
 							state := actions.State{WiregaurdInterface: "fvpn0"}
 							status := state.GetStatus()
-
 							if status {
 								fmt.Println("Please, set down the connection before attempting to log out.")
 								fmt.Println("Try 'forest state down'")
 								return nil
 							}
 
-							exists, err := auth.IsRefreshTokenExists()
-
-							if err != nil {
-								return err
-							}
-
-							if exists {
-								userID, err := auth.LoadUserID()
-
-								if err != nil {
-									return err
-								}
-
-								if len(userID) > 0 {
-									err = auth.RemoveFirebaseAuthFile(userID)
-
-									if err != nil {
-										return err
-									}
-
-									err = auth.RemoveActiveUserLockFile()
-
-									if err != nil {
-										return err
-									}
-
-									m := auth.GetAccountsMap(auth.AccountsMapFile)
-									err = m.RemoveAccount(userID)
-
-									if err != nil {
-										return err
-									}
-								}
-							}
-
+							profile.MarkAsInactive()
 							fmt.Println("Logged out")
 							return nil
 						},
@@ -311,39 +199,27 @@ func main() {
 							},
 						},
 						Action: func(c *cli.Context) error {
-							if !auth.IsAuthenticated() {
-								fmt.Println("Are you logged in?")
-								fmt.Println("Try 'forest account login'")
-								return nil
-							}
-
-							client, err := actions.GetAuthClientWrapper(utils.ApiHost, utils.FirebaseApiKey)
-
-							if err != nil {
+							profile := auth.OpenUserDB().CurrentUser()
+							if err = profile.SignIn(utils.ApiHost); err != nil {
 								return err
 							}
-
-							userID, err := auth.LoadUserID()
-
-							if err != nil {
-								return err
-							}
-
 							state := actions.State{WiregaurdInterface: "fvpn0"}
-
 							if state.GetStatus() {
 								fmt.Println("State is already up and running")
 								os.Exit(1)
 							}
 
-							b, err := client.GetUnexpiredOrMostRecentBillingFeature(userID)
-
+							client, err := actions.GetAuthClientWrapper(profile, utils.ApiHost)
 							if err != nil {
 								return err
 							}
 
-							device, err := auth.LoadDevice(userID)
+							b, err := client.GetUnexpiredOrMostRecentBillingFeature(profile.ID)
+							if err != nil {
+								return err
+							}
 
+							device, err := auth.LoadDevice(profile.ID)
 							if err != nil {
 								return err
 							}
@@ -372,7 +248,7 @@ func main() {
 							}
 
 							persist := c.Bool("persist")
-							err = state.SetUp(userID, persist)
+							err = state.SetUp(profile.ID, persist)
 
 							if err != nil {
 								return err
@@ -394,10 +270,9 @@ func main() {
 						Name:        "down",
 						Description: "disconnect from the ForestVPN location",
 						Action: func(ctx *cli.Context) error {
-							if !auth.IsAuthenticated() {
-								fmt.Println("Are you logged in?")
-								fmt.Println("Try 'forest account login'")
-								return nil
+							profile := auth.OpenUserDB().CurrentUser()
+							if err = profile.SignIn(utils.ApiHost); err != nil {
+								return err
 							}
 
 							state := actions.State{WiregaurdInterface: "fvpn0"}
@@ -436,22 +311,15 @@ func main() {
 						Name:  "status",
 						Usage: "see wether connection is active",
 						Action: func(ctx *cli.Context) error {
-							if !auth.IsAuthenticated() {
-								fmt.Println("Are you logged in?")
-								fmt.Println("Try 'forest account login'")
-								return nil
+							profile := auth.OpenUserDB().CurrentUser()
+							if err = profile.SignIn(utils.ApiHost); err != nil {
+								return err
 							}
 
 							state := actions.State{WiregaurdInterface: "fvpn0"}
 
 							if state.GetStatus() {
-								userID, err := auth.LoadUserID()
-
-								if err != nil {
-									return err
-								}
-
-								device, err := auth.LoadDevice(userID)
+								device, err := auth.LoadDevice(profile.ID)
 
 								if err != nil {
 									return err
@@ -479,19 +347,12 @@ func main() {
 						Name:  "status",
 						Usage: "see the location is set as default location to connect",
 						Action: func(cCtx *cli.Context) error {
-							if !auth.IsAuthenticated() {
-								fmt.Println("Are you logged in?")
-								fmt.Println("Try 'fvpn account login'")
-								return nil
-							}
-
-							userID, err := auth.LoadUserID()
-
-							if err != nil {
+							profile := auth.OpenUserDB().CurrentUser()
+							if err = profile.SignIn(utils.ApiHost); err != nil {
 								return err
 							}
 
-							device, err := auth.LoadDevice(userID)
+							device, err := auth.LoadDevice(profile.ID)
 
 							if err != nil {
 								return err
@@ -507,10 +368,9 @@ func main() {
 						Name:  "set",
 						Usage: "set the default location by specifying `UUID` or `Name`",
 						Action: func(cCtx *cli.Context) error {
-							if !auth.IsAuthenticated() {
-								fmt.Println("Are you logged in?")
-								fmt.Println("Try 'fvpn account login'")
-								return nil
+							profile := auth.OpenUserDB().CurrentUser()
+							if err = profile.SignIn(utils.ApiHost); err != nil {
+								return err
 							}
 
 							state := actions.State{WiregaurdInterface: "fvpn0"}
@@ -527,14 +387,12 @@ func main() {
 								return errors.New("UUID or name required")
 							}
 
-							authClientWrapper, err := actions.GetAuthClientWrapper(utils.ApiHost, utils.FirebaseApiKey)
-
+							authClientWrapper, err := actions.GetAuthClientWrapper(profile, utils.ApiHost)
 							if err != nil {
 								return err
 							}
 
 							locations, err := authClientWrapper.ApiClient.GetLocations()
-
 							if err != nil {
 								return err
 							}
@@ -567,13 +425,7 @@ func main() {
 								return err
 							}
 
-							userID, err := auth.LoadUserID()
-
-							if err != nil {
-								return err
-							}
-
-							b, err := authClientWrapper.GetUnexpiredOrMostRecentBillingFeature(userID)
+							b, err := authClientWrapper.GetUnexpiredOrMostRecentBillingFeature(profile.ID)
 
 							if err != nil {
 								return err
@@ -587,26 +439,23 @@ func main() {
 								return nil
 							}
 
-							device, err := auth.LoadDevice(userID)
-
+							device, err := auth.LoadDevice(profile.ID)
 							if err != nil {
 								return err
 							}
 
 							device, err = authClientWrapper.ApiClient.UpdateDevice(device.GetId(), location.Location.GetId())
-
 							if err != nil {
 								return err
 							}
 
 							err = auth.UpdateProfileDevice(device)
-
 							if err != nil {
 								return err
 							}
 
 							if !utils.IsOpenWRT() {
-								err = authClientWrapper.SetLocation(device, userID)
+								err = authClientWrapper.SetLocation(device, profile.ID)
 
 								if err != nil {
 									return err
@@ -632,13 +481,12 @@ func main() {
 							},
 						},
 						Action: func(c *cli.Context) error {
-							if !auth.IsAuthenticated() {
-								fmt.Println("Are you logged in?")
-								fmt.Println("Try 'fvpn account login'")
-								return nil
+							profile := auth.OpenUserDB().CurrentUser()
+							if err = profile.SignIn(utils.ApiHost); err != nil {
+								return err
 							}
 
-							authClientWrapper, err := actions.GetAuthClientWrapper(utils.ApiHost, utils.FirebaseApiKey)
+							authClientWrapper, err := actions.GetAuthClientWrapper(profile, utils.ApiHost)
 
 							if err != nil {
 								return err

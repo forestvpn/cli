@@ -1,64 +1,30 @@
 package actions
 
 import (
+	"context"
+	"fmt"
+	forestvpn_api "github.com/forestvpn/api-client-go"
 	"github.com/forestvpn/cli/auth"
 )
 
-// Login is a method for logging in a user on the Firebase.
-// Accepts the deviceID (coming from local file) which indicates wether the device was created on previous login.
-// If the deviceID is empty, then should create a new device on login.
-//
-// See https://firebase.google.com/docs/reference/rest/auth#section-sign-in-email-password for more information.
-func (w AuthClientWrapper) Login(email string, password string) error {
-	var userID string
-	signinform := auth.SignInForm{}
-	emailfield, err := auth.GetEmailField(email)
-
-	if err != nil {
-		return err
+func (w AuthClientWrapper) Login() error {
+	// Create the user profile
+	profile := w.AccountsMap.CreateUser()
+	token, loginErr := profile.Token()
+	if loginErr != nil {
+		return loginErr
 	}
-
-	signinform.EmailField = emailfield
-	userID = w.AccountsMap.GetUserID(emailfield.Value)
-
-	if len(userID) == 0 || !auth.IsAuthenticated() {
-		validate := false
-		passwordfield, err := auth.GetPasswordField(password, validate)
-
-		if err != nil {
-			return err
-		}
-
-		signinform.PasswordField = passwordfield
-		response, err := w.AuthClient.SignIn(signinform)
-
-		if err != nil {
-			return err
-		}
-
-		err = auth.HandleFirebaseSignInResponse(response)
-
-		if err != nil {
-			return err
-		}
-
-		userID, err = w.SetUpProfile(response)
-
-		if err != nil {
-			return err
-		}
-
-		err = w.AccountsMap.AddAccount(signinform.EmailField.Value, userID)
-
-		if err != nil {
-			return err
-		}
+	// Create a new context with the token as the access token
+	authCtx := context.WithValue(context.Background(), forestvpn_api.ContextAccessToken, token.Raw())
+	// Make a request to the WhoAmI endpoint
+	userInfo, _, loginErr := w.ApiClient.APIClient.AuthApi.WhoAmI(authCtx).Execute()
+	// If there is an error, log it and return it
+	if loginErr != nil {
+		fmt.Println(token.Raw())
+		return loginErr
 	}
-
-	active := auth.IsActiveProfile(userID)
-
-	if !active {
-		return auth.SetActiveProfile(userID)
-	}
+	profile.ID, profile.Email = auth.ProfileID(userInfo.GetId()), auth.ProfileEmail(userInfo.GetEmail())
+	profile.Touch()
+	profile.MarkAsActive()
 	return nil
 }
