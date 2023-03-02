@@ -13,6 +13,7 @@ volumes:
 environment:
   GOCACHE: /cache/go/build
   GOMODCACHE: /cache/go/download
+  GOPRIVATE: github.com/forestvpn/goauthlib
 
 steps:
   - name: deps
@@ -20,7 +21,11 @@ steps:
     volumes:
       - name: cache
         path: /cache
+    environment:
+      GITHUB_TOKEN:
+        from_secret: GITHUB_TOKEN
     commands:
+      - utils/ci_setup.sh
       - apt update
       - apt install git -y
       - cd src
