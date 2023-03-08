@@ -26,5 +26,11 @@ func (w AuthClientWrapper) Login() error {
 	profile.ID, profile.Email = auth.ProfileID(userInfo.GetId()), auth.ProfileEmail(userInfo.GetEmail())
 	profile.Touch()
 	profile.MarkAsActive()
+	// Create a new device for the user
+	if device, err := w.ApiClient.CreateDevice(); err != nil {
+		return err
+	} else if err = auth.UpdateProfileDevice(device, profile.ID); err != nil {
+		return err
+	}
 	return nil
 }

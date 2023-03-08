@@ -104,18 +104,13 @@ func LoadDevice(userID ProfileID) (*forestvpn_api.Device, error) {
 }
 
 // UpdateProfileDevice is a helper function to quickly update the local device file of the logged in (active) user.
-func UpdateProfileDevice(device *forestvpn_api.Device) error {
-	userID, err := LoadUserID()
-	if err != nil {
-		return err
-	}
-
+func UpdateProfileDevice(device *forestvpn_api.Device, userID ProfileID) error {
 	data, err := json.MarshalIndent(device, "", "    ")
 	if err != nil {
 		return err
 	}
 
-	return JsonDump(data, ProfilesDir+userID+DeviceFile)
+	return JsonDump(data, ProfilesDir+string(userID)+DeviceFile)
 }
 
 // LoadBillingFeatures is a function to read local billing features from file for the user with id value of given user id.

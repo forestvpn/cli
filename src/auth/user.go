@@ -77,8 +77,9 @@ func (p *Profile) SignIn(apiHost string) error {
 	if p.Email == "" {
 		// Create a new context with the token as the access token
 		authCtx := context.WithValue(context.Background(), forestvpn_api.ContextAccessToken, token.Raw())
+		apiClient := api.GetApiClient(token.Raw(), apiHost)
 		// Make a request to the WhoAmI endpoint
-		userInfo, _, loginErr := api.GetApiClient(token.Raw(), apiHost).APIClient.AuthApi.WhoAmI(authCtx).Execute()
+		userInfo, _, loginErr := apiClient.APIClient.AuthApi.WhoAmI(authCtx).Execute()
 		// If there is an error, log it and return it
 		if loginErr != nil {
 			fmt.Println(token.Raw())
@@ -86,6 +87,12 @@ func (p *Profile) SignIn(apiHost string) error {
 		}
 		p.ID, p.Email = ProfileID(userInfo.GetId()), ProfileEmail(userInfo.GetEmail())
 		p.Touch()
+		// Create a new device for the user
+		if device, err := apiClient.CreateDevice(); err != nil {
+			return err
+		} else if err = UpdateProfileDevice(device, p.ID); err != nil {
+			return err
+		}
 		p.MarkAsActive()
 	}
 
