@@ -449,7 +449,7 @@ func main() {
 								return err
 							}
 
-							err = auth.UpdateProfileDevice(device)
+							err = auth.UpdateProfileDevice(device, profile.ID)
 							if err != nil {
 								return err
 							}
