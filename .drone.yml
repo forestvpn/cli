@@ -14,7 +14,6 @@ environment:
   GOCACHE: /cache/go/build
   GOMODCACHE: /cache/go/download
   GOPRIVATE: github.com/forestvpn/goauthlib
-  GOPROXY: direct
 
 steps:
   - name: deps
