@@ -111,14 +111,14 @@ func (s *State) SetUp(user_id auth.ProfileID, persist bool) error {
 			return exec.Command("ip", "route", "add", "default", "dev", s.WiregaurdInterface).Run()
 		}
 	} else {
-		return exec.Command("wg-quick", "up", path).Run()
+		return exec.Command("sudo", "wg-quick", "up", path).Run()
 	}
 }
 
 // SetDown is used to terminate a Wireguard connection.
 // It executes 'wg-quick' shell command.
-func (s *State) SetDown(user_id string) error {
-	configPath := auth.ProfilesDir + user_id + auth.WireguardConfig
+func (s *State) SetDown(user_id auth.ProfileID) error {
+	configPath := auth.ProfilesDir + string(user_id) + auth.WireguardConfig
 	var command *exec.Cmd
 	switch {
 	case utils.Os == "windows":
@@ -132,7 +132,7 @@ func (s *State) SetDown(user_id string) error {
 		}
 		return utils.Commit()
 	default:
-		command = exec.Command("wg-quick", "down", configPath)
+		command = exec.Command("sudo", "wg-quick", "down", configPath)
 	}
 	return command.Run()
 }

@@ -278,13 +278,7 @@ func main() {
 							state := actions.State{WiregaurdInterface: "fvpn0"}
 
 							if state.GetStatus() {
-								userID, err := auth.LoadUserID()
-
-								if err != nil {
-									return err
-								}
-
-								err = state.SetDown(userID)
+								err = state.SetDown(profile.ID)
 
 								if err != nil {
 									return err
