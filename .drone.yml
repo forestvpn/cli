@@ -17,7 +17,7 @@ environment:
 
 steps:
   - name: deps
-    image: golang:1.18.4
+    image: golang:1.20.2
     volumes:
       - name: cache
         path: /cache
@@ -36,7 +36,7 @@ steps:
     commands:
       - git fetch --tags
   - name: test
-    image: golang:1.18.4
+    image: golang:1.20.2
     volumes:
       - name: cache
         path: /cache
@@ -48,7 +48,7 @@ steps:
       - cd src
       - go test ./...
   # - name: build-linux-arm64
-  #   image: golang:1.18.4
+  #   image: golang:1.20.2
   #   #chocolatey/choco:latest-linux
   #   environment:
   #     # GITHUB_TOKEN:
@@ -201,9 +201,9 @@ steps:
     commands:
       - apt update
       - apt install git wget -y
-      - wget -q https://go.dev/dl/go1.18.9.linux-amd64.tar.gz
-      - tar -xf go1.18.9.linux-amd64.tar.gz
-      - rm go1.18.9.linux-amd64.tar.gz
+      - wget -q https://go.dev/dl/go1.20.2.linux-amd64.tar.gz
+      - tar -xf go1.20.2.linux-amd64.tar.gz
+      - rm go1.20.2.linux-amd64.tar.gz
       - chown -R root:root go
       - mv go /usr/local/
       - export PATH=$PATH:$GOPATH/bin
@@ -221,7 +221,7 @@ steps:
         exclude:
           - refs/tags/v*.*.*-beta*
   - name: beta-release
-    image: golang:1.18.4-bullseye
+    image: golang:1.20.2-bullseye
     environment:
       GITHUB_TOKEN:
         from_secret: GITHUB_TOKEN
