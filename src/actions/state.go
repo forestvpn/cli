@@ -111,7 +111,7 @@ func (s *State) SetUp(user_id auth.ProfileID, persist bool) error {
 			return exec.Command("ip", "route", "add", "default", "dev", s.WiregaurdInterface).Run()
 		}
 	} else {
-		return exec.Command("sudo", "wg-quick", "up", path).Run()
+		return exec.Command("wg-quick", "up", path).Run()
 	}
 }
 
@@ -132,7 +132,7 @@ func (s *State) SetDown(user_id auth.ProfileID) error {
 		}
 		return utils.Commit()
 	default:
-		command = exec.Command("sudo", "wg-quick", "down", configPath)
+		command = exec.Command("wg-quick", "down", configPath)
 	}
 	return command.Run()
 }
