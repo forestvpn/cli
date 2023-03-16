@@ -36,11 +36,13 @@ func (w AuthClientWrapper) Login() error {
 	if err = w.SetLocation(device, profile.ID); err != nil {
 		return errors.Join(err, errors.New("(w AuthClientWrapper) Login()"))
 	}
+
+	// DO NOT NEED TO DO THIS
 	// Create a new device for the user
-	if device, err := w.ApiClient.CreateDevice(); err != nil {
-		return err
-	} else if err = auth.UpdateProfileDevice(device, profile.ID); err != nil {
-		return err
-	}
+	// if device, err := w.ApiClient.CreateDevice(); err != nil {
+	// 	return err
+	// } else if err = auth.UpdateProfileDevice(device, profile.ID); err != nil {
+	// 	return err
+	// }
 	return nil
 }

@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"fmt"
 	"os"
 	"sort"
 	"strings"
@@ -66,7 +67,7 @@ func sortLocations(locations []forestvpn_api.Location) {
 	})
 }
 
-// SetLocation is a function that writes the location data into the Wireguard configuration file.
+// Deprecated: SetLocation is a function that writes the location data into the Wireguard configuration file.
 // It uses gopkg.in/ini.v1 package to form Woreguard compatible configuration file from the location data.
 // If the user subscrition on the Forest VPN services is out of date, it calls BuyPremiumDialog.
 //
@@ -136,6 +137,7 @@ func (w AuthClientWrapper) SetLocation(device *forestvpn_api.Device, user_id aut
 	}
 
 	path := auth.ProfilesDir + string(user_id) + auth.WireguardConfig
+	fmt.Println(path)
 	err = config.SaveTo(path)
 	if err != nil {
 		return err

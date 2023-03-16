@@ -151,7 +151,20 @@ func main() {
 						},
 						Action: func(c *cli.Context) error {
 							profile := auth.OpenUserDB().CreateUser()
+
 							if err = profile.SignIn(utils.ApiHost); err != nil {
+								logger.WithError(err).Debugf("failed to %+v", err)
+								return err
+							}
+
+							device, err := auth.LoadDevice(profile.ID)
+
+							if err != nil {
+								logger.WithError(err).Debugf("failed to %+v", err)
+								return err
+							}
+
+							if err = profile.CreateLocalWireguardConfigurationFile(device); err != nil {
 								logger.WithError(err).Debugf("failed to %+v", err)
 								return err
 							}
