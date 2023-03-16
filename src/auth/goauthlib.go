@@ -2,12 +2,13 @@ package auth
 
 import (
 	"fmt"
+	"log"
+	"strings"
+
 	"github.com/forestvpn/cli/utils"
 	"github.com/forestvpn/goauthlib/pkg/logger"
 	"github.com/forestvpn/goauthlib/pkg/svc"
 	"github.com/sirupsen/logrus"
-	"log"
-	"strings"
 )
 
 var AuthStore, _ = svc.NewFilePersistentStore()
@@ -101,7 +102,7 @@ func AuthService(userID string) svc.Svc {
 	return svc.New(userID,
 		svc.WithAuthSvcBaseUrl(utils.ApiHost[4:]),
 		svc.WithAuthSvcLogger(NewSimpleLogger()),
-		svc.WithAuthSvcAutoOpen(true),
+		//		svc.WithAuthSvcAutoOpen(true),
 		svc.WithAuthSvcPersistentStore(AuthStore),
 	)
 }

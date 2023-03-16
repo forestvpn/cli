@@ -158,9 +158,9 @@ func main() {
 
 							if err == nil {
 								fmt.Println("Logged in")
+								logger.WithError(err).Debugf("failed to %+v", err.Error())
 							}
 
-							logger.WithError(err).Debugf("failed to %+v", err.Error())
 							return err
 						},
 					},
