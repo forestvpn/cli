@@ -102,7 +102,7 @@ func AuthService(userID string) svc.Svc {
 	return svc.New(userID,
 		svc.WithAuthSvcBaseUrl(utils.ApiHost[4:]),
 		svc.WithAuthSvcLogger(NewSimpleLogger()),
-		//		svc.WithAuthSvcAutoOpen(true),
+		svc.WithAuthSvcAutoOpen(true),
 		svc.WithAuthSvcPersistentStore(AuthStore),
 	)
 }
