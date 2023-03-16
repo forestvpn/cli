@@ -2,7 +2,9 @@ package actions
 
 import (
 	"context"
+	"errors"
 	"fmt"
+
 	forestvpn_api "github.com/forestvpn/api-client-go"
 	"github.com/forestvpn/cli/auth"
 )
@@ -26,6 +28,14 @@ func (w AuthClientWrapper) Login() error {
 	profile.ID, profile.Email = auth.ProfileID(userInfo.GetId()), auth.ProfileEmail(userInfo.GetEmail())
 	profile.Touch()
 	profile.MarkAsActive()
+
+	device, err := auth.LoadDevice(profile.ID)
+	if err != nil {
+		return errors.Join(err, errors.New("(w AuthClientWrapper) Login()"))
+	}
+	if err = w.SetLocation(device, profile.ID); err != nil {
+		return errors.Join(err, errors.New("(w AuthClientWrapper) Login()"))
+	}
 	// Create a new device for the user
 	if device, err := w.ApiClient.CreateDevice(); err != nil {
 		return err
