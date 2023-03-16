@@ -94,19 +94,19 @@ func main() {
 						Action: func(c *cli.Context) error {
 							profile := auth.OpenUserDB().CurrentUser()
 							if err = profile.SignIn(utils.ApiHost); err != nil {
-								logger.WithError(err).Debugf("failed to %+v", err.Error())
+								logger.WithError(err).Debugf("failed to %+v", err)
 								return err
 							}
 
 							authClientWrapper, err := actions.GetAuthClientWrapper(profile, utils.ApiHost)
 							if err != nil {
-								logger.WithError(err).Debugf("failed to %+v", err.Error())
+								logger.WithError(err).Debugf("failed to %+v", err)
 								return err
 							}
 
 							b, err := authClientWrapper.GetUnexpiredOrMostRecentBillingFeature(profile.ID)
 							if err != nil {
-								logger.WithError(err).Debugf("failed to %+v", err.Error())
+								logger.WithError(err).Debugf("failed to %+v", err)
 								return err
 							}
 
@@ -152,13 +152,13 @@ func main() {
 						Action: func(c *cli.Context) error {
 							profile := auth.OpenUserDB().CreateUser()
 							if err = profile.SignIn(utils.ApiHost); err != nil {
-								logger.WithError(err).Debugf("failed to %+v", err.Error())
+								logger.WithError(err).Debugf("failed to %+v", err)
 								return err
 							}
 
 							if err == nil {
 								fmt.Println("Logged in")
-								logger.WithError(err).Debugf("failed to %+v", err.Error())
+								logger.WithError(err).Debugf("failed to %+v", err)
 							}
 
 							return err
@@ -170,7 +170,7 @@ func main() {
 						Action: func(c *cli.Context) error {
 							profile := auth.OpenUserDB().CurrentUser()
 							if err = profile.SignIn(utils.ApiHost); err != nil {
-								logger.WithError(err).Debugf("failed to %+v", err.Error())
+								logger.WithError(err).Debugf("failed to %+v", err)
 								return err
 							}
 
@@ -208,7 +208,7 @@ func main() {
 						Action: func(c *cli.Context) error {
 							profile := auth.OpenUserDB().CurrentUser()
 							if err = profile.SignIn(utils.ApiHost); err != nil {
-								logger.WithError(err).Debugf("failed to %+v", err.Error())
+								logger.WithError(err).Debugf("failed to %+v", err)
 								return err
 							}
 							state := actions.State{WiregaurdInterface: "fvpn0"}
@@ -219,19 +219,19 @@ func main() {
 
 							client, err := actions.GetAuthClientWrapper(profile, utils.ApiHost)
 							if err != nil {
-								logger.WithError(err).Debugf("failed to %+v", err.Error())
+								logger.WithError(err).Debugf("failed to %+v", err)
 								return err
 							}
 
 							b, err := client.GetUnexpiredOrMostRecentBillingFeature(profile.ID)
 							if err != nil {
-								logger.WithError(err).Debugf("failed to %+v", err.Error())
+								logger.WithError(err).Debugf("failed to %+v", err)
 								return err
 							}
 
 							device, err := auth.LoadDevice(profile.ID)
 							if err != nil {
-								logger.WithError(err).Debugf("failed to %+v", err.Error())
+								logger.WithError(err).Debugf("failed to %+v", err)
 								return err
 							}
 
@@ -262,7 +262,7 @@ func main() {
 							err = state.SetUp(profile.ID, persist)
 
 							if err != nil {
-								logger.WithError(err).Debugf("failed to %+v", err.Error())
+								logger.WithError(err).Debugf("failed to %+v", err)
 								return err
 							}
 
@@ -272,7 +272,7 @@ func main() {
 								country := location.GetCountry()
 								fmt.Printf("Connected to %s, %s\n", location.GetName(), country.GetName())
 							} else {
-								logger.WithError(err).Debugf("failed to %+v", err.Error())
+								logger.WithError(err).Debugf("failed to %+v", err)
 								return errors.New("unexpected error: state.status is false after state is up")
 							}
 
@@ -285,7 +285,7 @@ func main() {
 						Action: func(ctx *cli.Context) error {
 							profile := auth.OpenUserDB().CurrentUser()
 							if err = profile.SignIn(utils.ApiHost); err != nil {
-								logger.WithError(err).Debugf("failed to %+v", err.Error())
+								logger.WithError(err).Debugf("failed to %+v", err)
 								return err
 							}
 
@@ -295,7 +295,7 @@ func main() {
 								err = state.SetDown(profile.ID)
 
 								if err != nil {
-									logger.WithError(err).Debugf("failed to %+v", err.Error())
+									logger.WithError(err).Debugf("failed to %+v", err)
 									return err
 								}
 
@@ -304,7 +304,7 @@ func main() {
 								}
 
 								if state.GetStatus() {
-									logger.WithError(err).Debugf("failed to %+v", err.Error())
+									logger.WithError(err).Debugf("failed to %+v", err)
 									return errors.New("unexpected error: state.status is true after state is down")
 								}
 
@@ -323,7 +323,7 @@ func main() {
 						Action: func(ctx *cli.Context) error {
 							profile := auth.OpenUserDB().CurrentUser()
 							if err = profile.SignIn(utils.ApiHost); err != nil {
-								logger.WithError(err).Debugf("failed to %+v", err.Error())
+								logger.WithError(err).Debugf("failed to %+v", err)
 								return err
 							}
 
@@ -333,7 +333,7 @@ func main() {
 								device, err := auth.LoadDevice(profile.ID)
 
 								if err != nil {
-									logger.WithError(err).Debugf("failed to %+v", err.Error())
+									logger.WithError(err).Debugf("failed to %+v", err)
 									return err
 								}
 
@@ -361,14 +361,14 @@ func main() {
 						Action: func(cCtx *cli.Context) error {
 							profile := auth.OpenUserDB().CurrentUser()
 							if err = profile.SignIn(utils.ApiHost); err != nil {
-								logger.WithError(err).Debugf("failed to %+v", err.Error())
+								logger.WithError(err).Debugf("failed to %+v", err)
 								return err
 							}
 
 							device, err := auth.LoadDevice(profile.ID)
 
 							if err != nil {
-								logger.WithError(err).Debugf("failed to %+v", err.Error())
+								logger.WithError(err).Debugf("failed to %+v", err)
 								return err
 							}
 
@@ -384,7 +384,7 @@ func main() {
 						Action: func(cCtx *cli.Context) error {
 							profile := auth.OpenUserDB().CurrentUser()
 							if err = profile.SignIn(utils.ApiHost); err != nil {
-								logger.WithError(err).Debugf("failed to %+v", err.Error())
+								logger.WithError(err).Debugf("failed to %+v", err)
 								return err
 							}
 
@@ -399,19 +399,19 @@ func main() {
 							arg := cCtx.Args().Get(0)
 
 							if len(arg) < 1 {
-								logger.WithError(err).Debugf("failed to %+v", err.Error())
+								logger.WithError(err).Debugf("failed to %+v", err)
 								return errors.New("UUID or name required")
 							}
 
 							authClientWrapper, err := actions.GetAuthClientWrapper(profile, utils.ApiHost)
 							if err != nil {
-								logger.WithError(err).Debugf("failed to %+v", err.Error())
+								logger.WithError(err).Debugf("failed to %+v", err)
 								return err
 							}
 
 							locations, err := authClientWrapper.ApiClient.GetLocations()
 							if err != nil {
-								logger.WithError(err).Debugf("failed to %+v", err.Error())
+								logger.WithError(err).Debugf("failed to %+v", err)
 								return err
 							}
 
@@ -440,14 +440,14 @@ func main() {
 
 							if !found {
 								err := fmt.Errorf("no such location: %s", arg)
-								logger.WithError(err).Debugf("failed to %+v", err.Error())
+								logger.WithError(err).Debugf("failed to %+v", err)
 								return err
 							}
 
 							b, err := authClientWrapper.GetUnexpiredOrMostRecentBillingFeature(profile.ID)
 
 							if err != nil {
-								logger.WithError(err).Debugf("failed to %+v", err.Error())
+								logger.WithError(err).Debugf("failed to %+v", err)
 								return err
 							}
 
@@ -461,19 +461,19 @@ func main() {
 
 							device, err := auth.LoadDevice(profile.ID)
 							if err != nil {
-								logger.WithError(err).Debugf("failed to %+v", err.Error())
+								logger.WithError(err).Debugf("failed to %+v", err)
 								return err
 							}
 
 							device, err = authClientWrapper.ApiClient.UpdateDevice(device.GetId(), location.Location.GetId())
 							if err != nil {
-								logger.WithError(err).Debugf("failed to %+v", err.Error())
+								logger.WithError(err).Debugf("failed to %+v", err)
 								return err
 							}
 
 							err = auth.UpdateProfileDevice(device, profile.ID)
 							if err != nil {
-								logger.WithError(err).Debugf("failed to %+v", err.Error())
+								logger.WithError(err).Debugf("failed to %+v", err)
 								return err
 							}
 
@@ -481,7 +481,7 @@ func main() {
 								err = authClientWrapper.SetLocation(device, profile.ID)
 
 								if err != nil {
-									logger.WithError(err).Debugf("failed to %+v", err.Error())
+									logger.WithError(err).Debugf("failed to %+v", err)
 									return err
 								}
 							}
@@ -507,14 +507,14 @@ func main() {
 						Action: func(c *cli.Context) error {
 							profile := auth.OpenUserDB().CurrentUser()
 							if err = profile.SignIn(utils.ApiHost); err != nil {
-								logger.WithError(err).Debugf("failed to %+v", err.Error())
+								logger.WithError(err).Debugf("failed to %+v", err)
 								return err
 							}
 
 							authClientWrapper, err := actions.GetAuthClientWrapper(profile, utils.ApiHost)
 
 							if err != nil {
-								logger.WithError(err).Debugf("failed to %+v", err.Error())
+								logger.WithError(err).Debugf("failed to %+v", err)
 								return err
 							}
 
