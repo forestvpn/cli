@@ -159,6 +159,14 @@ func main() {
 
 							device, err := auth.LoadDevice(profile.ID)
 
+							if len(device.GetId()) == 0 {
+								device, err = profile.ApiClient(utils.ApiHost).CreateDevice()
+
+								if err != nil {
+									return err
+								}
+							}
+
 							if err != nil {
 								logger.WithError(err).Debugf("failed to %+v", err)
 								return err

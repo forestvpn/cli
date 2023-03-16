@@ -92,11 +92,11 @@ func (p *Profile) SignIn(apiHost string) error {
 		p.ID, p.Email = ProfileID(userInfo.GetId()), ProfileEmail(userInfo.GetEmail())
 		p.Touch()
 		// Create a new device for the user
-		if device, err := apiClient.CreateDevice(); err != nil {
-			return err
-		} else if err = UpdateProfileDevice(device, p.ID); err != nil {
-			return err
-		}
+		// if device, err := apiClient.CreateDevice(); err != nil {
+		// 	return err
+		// } else if err = UpdateProfileDevice(device, p.ID); err != nil {
+		// 	return err
+		// }
 		p.MarkAsActive()
 	}
 
