@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -98,6 +99,33 @@ func main() {
 								return err
 							}
 
+							device, err := auth.LoadDevice(profile.ID)
+
+							if err != nil {
+								logger.WithError(err).Debugf("failed to %+v", err)
+								// return err
+							}
+
+							if len(device.GetId()) == 0 {
+								device, err = profile.ApiClient(utils.ApiHost).CreateDevice()
+
+								if err != nil {
+									return err
+								}
+
+								j, err := json.MarshalIndent(device, "", "    ")
+
+								if err != nil {
+									return err
+								}
+
+								err = auth.JsonDump(j, auth.ProfilesDir+string(profile.ID)+auth.DeviceFile)
+
+								if err != nil {
+									return err
+								}
+							}
+
 							authClientWrapper, err := actions.GetAuthClientWrapper(profile, utils.ApiHost)
 							if err != nil {
 								logger.WithError(err).Debugf("failed to %+v", err)
@@ -159,17 +187,29 @@ func main() {
 
 							device, err := auth.LoadDevice(profile.ID)
 
+							if err != nil {
+								logger.WithError(err).Debugf("failed to %+v", err)
+								// return err
+							}
+
 							if len(device.GetId()) == 0 {
 								device, err = profile.ApiClient(utils.ApiHost).CreateDevice()
 
 								if err != nil {
 									return err
 								}
-							}
 
-							if err != nil {
-								logger.WithError(err).Debugf("failed to %+v", err)
-								return err
+								j, err := json.MarshalIndent(device, "", "    ")
+
+								if err != nil {
+									return err
+								}
+
+								err = auth.JsonDump(j, auth.ProfilesDir+string(profile.ID)+auth.DeviceFile)
+
+								if err != nil {
+									return err
+								}
 							}
 
 							if err = profile.CreateLocalWireguardConfigurationFile(device); err != nil {
