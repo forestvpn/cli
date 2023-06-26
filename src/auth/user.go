@@ -247,10 +247,6 @@ func (db *UserDB) Sync() *UserDB {
 		if !user.Active {
 			continue
 		}
-		if time.Now().Unix()-user.LastSeen > 30*24*60*60 {
-			user.MarkAsInactive()
-			continue
-		}
 		if db.current == "" {
 			db.current = user.Pk
 			continue
